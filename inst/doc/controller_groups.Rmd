@@ -1,0 +1,76 @@
+---
+title: "Controller groups"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Controller groups}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+set.seed(0)
+library(crew)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  paged.print = FALSE,
+  eval = FALSE
+)
+```
+
+Each controller object only supports only one type of worker configuration which you set in advance. However, different controllers may have different types of workers, and `crew` supports controller groups to coordinate among these different worker types. With third-party launcher subclasses from other packages, this mechanism will allow you to e.g. send some tasks to GPU-capable or high-memory workers while other tasks go to low-spec workers.
+
+We demonstrate with a controller of fully persistent workers which always stay running and a controller of semi-persistent workers which terminate after completing four tasks. We create controller objects with names.
+
+```{r}
+persistent <- crew_controller_callr(name = "persistent")
+transient <- crew_controller_callr(name = "semi-persistent", tasks_max = 4L)
+```
+
+`crew` uses a different TCP port for each controller you run, so please do not create hundreds of controllers. Please see the subsection on ports in the [README](https://wlandau.github.io/crew/index.html).
+
+We put these controller objects into a new controller group object.
+
+```{r}
+group <- crew_controller_group(persistent, transient)
+```
+
+This controller group has a global `connect()` method to initialize both controllers.
+
+```{r}
+group$start()
+```
+
+You can choose which worker pool to receive tasks.
+
+```{r}
+group$push(name = "my task", command = sqrt(4), controller = "semi-persistent")
+```
+
+The controller group also supports global methods for `wait()`, `pop()`, and `terminate()`. These methods operate on all controllers at once by default, but the `controllers` argument allows you to select a subset of controllers to act on.
+
+```{r}
+group$wait(controllers = "semi-persistent")
+group$pop()
+#> # A tibble: 1 × 7
+#>   name    command result    seconds error traceback warnings
+#>   <chr>   <chr>   <list>      <dbl> <chr> <chr>     <chr>
+#> 1 my task sqrt(4) <dbl [1]>       0 NA    NA        NA
+```
+
+The controller group has a `summary()` method which aggregates all the information from the selected controllers.
+
+```{r}
+group$summary(columns = starts_with(c("controller", "tasks")))
+#> # A tibble: 2 × 3
+#>   controller     tasks_assigned tasks_complete
+#>   <chr>                   <int>          <int>
+#> 1 persistent                  0              0
+#> 2 semi-persistent             1              1
+```
+
+When you are finished, please call `terminate()` with no arguments to terminate all controllers in the controller group.
+
+```{r}
+group$terminate()
+```
