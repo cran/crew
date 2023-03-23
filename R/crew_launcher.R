@@ -219,6 +219,7 @@ crew_class_launcher <- R6::R6Class(
       for (field in c("async_dial", "cleanup")) {
         true(self[[field]], isTRUE(.) || isFALSE(.))
       }
+      true(self$async_dial, isTRUE(.) || isFALSE(.))
       true(self$workers, is.data.frame(.))
       invisible()
     },
@@ -237,6 +238,47 @@ crew_class_launcher <- R6::R6Class(
         exitlinger = self$seconds_exit * 1000,
         cleanup = self$cleanup
       )
+    },
+    #' @description Create a call to [crew_worker()] to
+    #'   help create custom launchers.
+    #' @return Character of length 1 with a call to [crew_worker()].
+    #' @param socket Socket where the worker will receive tasks.
+    #' @param host IP address of the `mirai` client that sends tasks.
+    #' @param port TCP port to register a successful connection
+    #'   to the host. Different from that of `socket`.
+    #' @param token Character of length 1 to identify the instance
+    #'   of the `mirai` server process connected to the socket.
+    #' @param name User-supplied name of the launcher, useful for
+    #'   constructing informative job labels.
+    #' @examples
+    #' launcher <- crew_launcher_callr()
+    #' launcher$call(
+    #'   socket = "ws://127.0.0.1:5000",
+    #'   host = "127.0.0.1",
+    #'   port = "5711",
+    #'   token = "my_token",
+    #'   name = "my_name"
+    #' )
+    call = function(socket, host, port, token, name) {
+      args <- self$settings(socket)
+      args$.fn <- "list"
+      call_settings <- do.call(what = rlang::call2, args = args)
+      call <- substitute(
+        crew::crew_worker(
+          token = token,
+          host = host,
+          port = port,
+          settings = settings
+        ),
+        env = list(
+          settings = call_settings,
+          host = host,
+          port = port,
+          token = token
+        )
+      )
+      out <- deparse_safe(expr = call, collapse = " ")
+      gsub(pattern = "   *", replacement = " ", x = out)
     },
     #' @description Populate the workers data frame.
     #' @return `NULL` (invisibly).
@@ -341,6 +383,16 @@ crew_class_launcher <- R6::R6Class(
         self$workers$listener[[index]] <- crew_null
         self$workers$handle[[index]] <- crew_null
       }
+      invisible()
+    },
+    #' @description Abstract method.
+    #' @details Does not actually terminate a worker. This method is a
+    #'   placeholder, and its presence allows manual worker termination
+    #'   to be optional.
+    #' @return `NULL` (invisibly).
+    #' @param handle A `callr` process handle previously
+    #'   returned by `launch_worker()`.
+    terminate_worker = function(handle) {
       invisible()
     }
   )
