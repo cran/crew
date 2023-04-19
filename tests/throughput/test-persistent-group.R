@@ -1,6 +1,5 @@
 library(crew)
-crew_session_start()
-controller <- crew_controller_callr(
+controller <- crew_controller_local(
   name = "test",
   workers = 2L
 )
@@ -28,8 +27,6 @@ time <- system.time({
 message(time["elapsed"])
 View(x$summary())
 x$terminate()
-View(x$summary())
 results <- tibble::as_tibble(do.call(rbind, results))
 results$result <- as.integer(results$result)
 table(results$result) # 200 total tasks should be about evenly distributed.
-crew_session_terminate()

@@ -13,7 +13,7 @@ See \code{\link[=crew_controller]{crew_controller()}}.
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-launcher <- crew_launcher_callr()
+launcher <- crew_launcher_local()
 controller <- crew_controller(router = router, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
@@ -30,7 +30,7 @@ crew_session_terminate()
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-launcher <- crew_launcher_callr()
+launcher <- crew_launcher_local()
 controller <- crew_controller(router = router, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
@@ -43,8 +43,8 @@ crew_session_terminate()
 \seealso{
 Other controllers: 
 \code{\link{crew_class_controller_group}},
-\code{\link{crew_controller_callr}()},
 \code{\link{crew_controller_group}()},
+\code{\link{crew_controller_local}()},
 \code{\link{crew_controller}()}
 }
 \concept{controllers}
@@ -70,17 +70,16 @@ Other controllers:
 \itemize{
 \item \href{#method-crew_class_controller-new}{\code{crew_class_controller$new()}}
 \item \href{#method-crew_class_controller-validate}{\code{crew_class_controller$validate()}}
+\item \href{#method-crew_class_controller-empty}{\code{crew_class_controller$empty()}}
 \item \href{#method-crew_class_controller-start}{\code{crew_class_controller$start()}}
-\item \href{#method-crew_class_controller-clean}{\code{crew_class_controller$clean()}}
 \item \href{#method-crew_class_controller-launch}{\code{crew_class_controller$launch()}}
 \item \href{#method-crew_class_controller-scale}{\code{crew_class_controller$scale()}}
-\item \href{#method-crew_class_controller-collect}{\code{crew_class_controller$collect()}}
 \item \href{#method-crew_class_controller-push}{\code{crew_class_controller$push()}}
+\item \href{#method-crew_class_controller-collect}{\code{crew_class_controller$collect()}}
 \item \href{#method-crew_class_controller-pop}{\code{crew_class_controller$pop()}}
 \item \href{#method-crew_class_controller-wait}{\code{crew_class_controller$wait()}}
 \item \href{#method-crew_class_controller-summary}{\code{crew_class_controller$summary()}}
 \item \href{#method-crew_class_controller-terminate}{\code{crew_class_controller$terminate()}}
-\item \href{#method-crew_class_controller-clone}{\code{crew_class_controller$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -111,7 +110,7 @@ An \code{R6} object with the controller object.
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-launcher <- crew_launcher_callr()
+launcher <- crew_launcher_local()
 controller <- crew_controller(router = router, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
@@ -140,6 +139,32 @@ Validate the router.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-empty"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-empty}{}}}
+\subsection{Method \code{empty()}}{
+See if the controller is empty.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$empty(controllers = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{controllers}}{Not used. Included to ensure the signature is
+compatible with the analogous method of controller groups.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+A controller is empty if it has no running tasks
+or completed tasks waiting to be retrieved with \code{push()}.
+}
+
+\subsection{Returns}{
+\code{TRUE} if the controller is empty, \code{FALSE} otherwise.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller-start"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-start}{}}}
 \subsection{Method \code{start()}}{
@@ -159,20 +184,6 @@ compatible with the analogous method of controller groups.}
 \subsection{Details}{
 Register the mirai client and register worker websockets
 with the launcher.
-}
-
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller-clean"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller-clean}{}}}
-\subsection{Method \code{clean()}}{
-Force terminate workers whose startup time has elapsed
-and are not connected to the \code{mirai} client.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$clean()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
@@ -244,6 +255,79 @@ number of workers.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-push"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-push}{}}}
+\subsection{Method \code{push()}}{
+Push a task to the head of the task list.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$push(
+  command,
+  data = list(),
+  globals = list(),
+  substitute = TRUE,
+  seed = sample.int(n = 1000000000L, size = 1L),
+  packages = character(0),
+  library = NULL,
+  seconds_timeout = NULL,
+  scale = TRUE,
+  name = NULL,
+  controller = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{command}}{Language object with R code to run.}
+
+\item{\code{data}}{Named list of local data objects in the
+evaluation environment.}
+
+\item{\code{globals}}{Named list of objects to temporarily assign to the
+global environment for the task. See the \code{reset_globals} argument
+of \code{\link[=crew_controller_local]{crew_controller_local()}}.}
+
+\item{\code{substitute}}{Logical of length 1, whether to call
+\code{base::substitute()} on the supplied value of the
+\code{command} argument. If \code{TRUE} (default) then \code{command} is quoted
+literally as you write it, e.g.
+\code{push(command = your_function_call())}. If \code{FALSE}, then \code{crew}
+assumes \code{command} is a language object and you are passing its
+value, e.g. \code{push(command = quote(your_function_call()))}.
+\code{substitute = TRUE} is appropriate for interactive use,
+whereas \code{substitute = FALSE} is meant for automated R programs
+that invoke \code{crew} controllers.}
+
+\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
+seed to temporarily set for the evaluation of the task.
+At the end of the task, the seed is restored.}
+
+\item{\code{packages}}{Character vector of packages to load for the task.}
+
+\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
+argument of \code{require()}.}
+
+\item{\code{seconds_timeout}}{Optional task timeout passed to the \code{.timeout}
+argument of \code{mirai::mirai()} (after converting to milliseconds).}
+
+\item{\code{scale}}{Logical, whether to automatically scale workers to meet
+demand. If \code{TRUE}, then \code{collect()} runs first
+so demand can be properly assessed before scaling and the number
+of workers is not too high.}
+
+\item{\code{name}}{Optional name of the task. Replaced with a random name
+if \code{NULL} or in conflict with an existing name in the task list.}
+
+\item{\code{controller}}{Not used. Included to ensure the signature is
+compatible with the analogous method of controller groups.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller-collect"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-collect}{}}}
 \subsection{Method \code{collect()}}{
@@ -267,71 +351,6 @@ list as applicable and moves them to the \code{results} list.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller-push"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller-push}{}}}
-\subsection{Method \code{push()}}{
-Push a task to the head of the task list.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$push(
-  command,
-  data = list(),
-  globals = list(),
-  seed = sample.int(n = 1000000000L, size = 1L),
-  garbage_collection = FALSE,
-  packages = character(0),
-  library = NULL,
-  seconds_timeout = NULL,
-  name = NULL,
-  scale = TRUE,
-  controller = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{command}}{Language object with R code to run.}
-
-\item{\code{data}}{Named list of local data objects in the
-evaluation environment.}
-
-\item{\code{globals}}{Named list of objects to temporarily assign to the
-global environment for the task. At the end of the task,
-these values are reset to their previous values.}
-
-\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
-seed to temporarily set for the evaluation of the task.
-At the end of the task, the seed is restored.}
-
-\item{\code{garbage_collection}}{Logical, whether to run garbage collection
-with \code{gc()} before running the task.}
-
-\item{\code{packages}}{Character vector of packages to load for the task.}
-
-\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
-argument of \code{require()}.}
-
-\item{\code{seconds_timeout}}{Optional task timeout passed to the \code{.timeout}
-argument of \code{mirai::mirai()} (after converting to milliseconds).}
-
-\item{\code{name}}{Optional name of the task. Replaced with a random name
-if \code{NULL} or in conflict with an existing name in the task list.}
-
-\item{\code{scale}}{Logical, whether to automatically scale workers to meet
-demand. If \code{TRUE}, then \code{clean()} and \code{collect()} run first
-so demand can be properly assessed before scaling and the number
-of workers is not too high.}
-
-\item{\code{controller}}{Not used. Included to ensure the signature is
-compatible with the analogous method of controller groups.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller-pop"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-pop}{}}}
 \subsection{Method \code{pop()}}{
@@ -344,7 +363,7 @@ Pop a completed task from the results data frame.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{scale}}{Logical, whether to automatically scale workers to meet
-demand. If \code{TRUE}, then \code{clean()} and \code{collect()} run first
+demand. If \code{TRUE}, then \code{collect()} runs first
 so demand can be properly assessed before scaling and the number
 of workers is not too high. Scaling up on \code{pop()} may be important
 for transient or nearly transient workers that tend to drop off
@@ -440,46 +459,6 @@ A data frame of summary statistics on the workers and tasks.
 It has one row per worker websocket and the following columns:
 \itemize{
 \item \code{controller}: name of the controller.
-\item \code{worker_socket} full websocket address of the worker, including
-the protocol, IP address, TCP port, and path.
-To identify specific pieces of the websocket address,
-call \code{nanonext::parse_url()}.
-\item \code{worker_connected}: \code{TRUE} if a worker is currently connected
-to the websocket, \code{FALSE} if not connected, or \code{NA}
-if the status cannot be determined because the \code{mirai}
-client is not running.
-\item \code{worker_busy}: \code{TRUE} if a worker is currently busy running a
-task, \code{FALSE} if not busy, or \code{NA}
-if the status cannot be determined because the \code{mirai}
-client is not running.
-\item \code{worker_launches}: number of attempts to launch a worker
-at the websocket since the controller started. If
-the number of launch attempts gets much higher than
-the number of popped tasks or worker instances, then this is a
-sign that something is wrong with the workers or platform,
-and it is recommended to quit the pipeline and troubleshoot.
-\item \code{worker_instances}: number of different worker processes
-that have connected to the websocket since the \code{start()}
-of the controller object. For persistent workers that
-always stay running, \code{worker_instances} will be no more than 1.
-However, in the case of transient workers, e.g. \code{tasks_max = 1}
-or a small value of \code{seconds_idle}, worker processes may
-time out or exit when the task workload subsides. Then when the
-task workload surges again, different workers may be launch
-and connect to the available websockets, so \code{worker_instances}
-could be greater than 1.
-\item \code{tasks_assigned}: number of pushed tasks assigned to the
-current worker process at the websocket. The counter resets
-every time a new worker replaces the previous worker at the
-websocket. So in the case of transient
-workers, this number may be much smaller than the number of
-popped tasks.
-\item \code{tasks_complete}: number of pushed tasks completed by the
-current worker process at the websocket. The counter resets
-every time a new worker replaces the previous worker at the
-websocket. So in the case of transient
-workers, this number may be much smaller than the number of
-popped tasks.
 \item \code{popped_tasks}: number of tasks which were completed by
 a worker at the websocket and then returned by calling
 \code{pop()} on the controller object.
@@ -495,6 +474,39 @@ at the website, encountered one or more warnings in R,
 and then retrieved with \code{pop()}. Note: \code{popped_warnings}
 is actually the number of \emph{tasks}, not the number of warnings.
 (A task could throw more than one warning.)
+\item \code{tasks_assigned}: number of pushed tasks assigned to the
+current worker process at the websocket. The counter resets
+every time a new worker instance starts.
+So in the case of transient
+workers, this number may be much smaller than the number of
+popped tasks.
+\item \code{tasks_complete}: number of pushed tasks completed by the
+current worker process at the websocket. The counter resets
+every time a new worker instance starts.
+So in the case of transient
+workers, this number may be much smaller than the number of
+popped tasks.
+\item \code{worker_connected}: \code{TRUE} if a worker is currently connected
+to the websocket, \code{FALSE} if not connected, or \code{NA}
+if the status cannot be determined because the \code{mirai}
+client is not running.
+\item \code{worker_launches}: number of attempts to launch a worker
+at the websocket since the controller started. If
+the number of launch attempts gets much higher than
+the number of popped tasks or worker instances, then this is a
+sign that something is wrong with the workers or platform,
+and it is recommended to quit the pipeline and troubleshoot.
+\item \code{worker_instances}: number of different worker processes
+that have connected to the websocket since the \code{start()}
+of the controller object. Should either be 0 or 1 unless
+something is wrong and more than one worker has connected
+to the current websocket.
+\item \code{worker_socket} full websocket address of the worker, including
+the protocol, IP address, TCP port, and path.
+This websocket rotates with every additional instance
+of a worker process.
+To identify specific pieces of the websocket address,
+call \code{nanonext::parse_url()}.
 }
 }
 }
@@ -517,23 +529,6 @@ compatible with the analogous method of controller groups.}
 }
 \subsection{Returns}{
 \code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
 }
 }
 }

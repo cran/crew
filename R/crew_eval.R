@@ -12,13 +12,10 @@
 #' @param command Language object with R code to run.
 #' @param data Named list of local data objects in the evaluation environment.
 #' @param globals Named list of objects to temporarily assign to the
-#'   global environment for the task. At the end of the task,
-#'   these values are reset to their previous values.
+#'   global environment for the task.
 #' @param seed Integer of length 1 with the pseudo-random number generator
 #'   seed to temporarily set for the evaluation of the task.
 #'   At the end of the task, the seed is restored.
-#' @param garbage_collection Logical, whether to run garbage collection
-#'   with `gc()` before running the task.
 #' @param packages Character vector of packages to load for the task.
 #' @param library Library path to load the packages. See the `lib.loc`
 #'   argument of `require()`.
@@ -28,31 +25,18 @@ crew_eval <- function(
   command,
   data = list(),
   globals = list(),
-  seed = sample.int(n = 1e9L, size = 1L),
-  garbage_collection = FALSE,
+  seed = as.integer(stats::runif(n = 1L, min = 1, max = 1e9)),
   packages = character(0),
   library = NULL
 ) {
-  true(is.language(command))
-  true(data, is.list(.), is_named(.))
-  true(globals, is.list(.), is_named(.))
-  true(seed, is.numeric(.), length(.) == 1L, !anyNA(.))
-  true(garbage_collection, isTRUE(.) || isFALSE(.))
   load_packages(packages = packages, library = library)
-  old_options <- options()
-  old_globals <- envir_state(names(globals), envir = globalenv())
   withr::local_seed(seed)
-  on.exit(envir_restore(state = old_globals, envir = globalenv()), add = TRUE)
-  on.exit(options_restore(old_options), add = TRUE)
   list2env(x = globals, envir = globalenv())
   envir <- list2env(x = data, parent = globalenv())
-  if (garbage_collection) {
-    gc()
-  }
   capture_error <- function(condition) {
     state$error <- crew_eval_message(condition)
     state$error_class <- class(condition)
-    state$traceback <- paste(as.character(sys.calls()), collapse = "\n")
+    state$trace <- paste(as.character(sys.calls()), collapse = "\n")
     NULL
   }
   capture_warning <- function(condition) {
@@ -73,7 +57,7 @@ crew_eval <- function(
     invokeRestart("muffleWarning")
   }
   state <- new.env(hash = FALSE, parent = emptyenv())
-  start <- as.numeric(proc.time()["elapsed"])
+  start <- nanonext::mclock()
   result <- tryCatch(
     expr = withCallingHandlers(
       expr = eval(expr = command, envir = envir),
@@ -82,43 +66,19 @@ crew_eval <- function(
     ),
     error = function(condition) NULL
   )
-  seconds <- as.numeric(proc.time()["elapsed"]) - start
+  seconds <- (nanonext::mclock() - start) / 1000
   monad_init(
     command = deparse_safe(command),
-    result = result,
+    result = result %|||% NA,
     seconds = seconds,
     seed = seed,
     error = state$error %|||% NA_character_,
-    traceback = state$traceback %|||% NA_character_,
+    trace = state$trace %|||% NA_character_,
     warnings = state$warnings %|||% NA_character_,
-    socket_data = Sys.getenv("CREW_SOCKET_DATA", unset = NA_character_),
-    socket_session = Sys.getenv("CREW_SOCKET_SESSION", unset = NA_character_)
+    launcher = Sys.getenv("CREW_LAUNCHER", unset = NA_character_),
+    worker = as.integer(Sys.getenv("CREW_WORKER", unset = NA_character_)),
+    instance = Sys.getenv("CREW_INSTANCE", unset = NA_character_)
   )
-}
-
-envir_state <- function(names, envir) {
-  names_revert <- intersect(names, names(envir))
-  revert <- map(names_revert, get, envir = envir)
-  names(revert) <- names_revert
-  list(
-    delete = setdiff(names, names(envir)),
-    revert = revert
-  )
-}
-
-envir_restore <- function(state, envir) {
-  rm(list = as.character(state$delete), envir = envir)
-  list2env(state$revert, envir = envir)
-  invisible()
-}
-
-options_restore <- function(x) {
-  names <- setdiff(names(options()), names(x))
-  drop <- replicate(length(names), NULL, simplify = FALSE)
-  names(drop) <- names
-  do.call(what = options, args = drop)
-  options(x)
-  invisible()
 }
 
 crew_eval_message <- function(condition, prefix = character(0)) {

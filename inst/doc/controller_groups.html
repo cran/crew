@@ -358,8 +358,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <p>Each controller object only supports only one type of worker configuration which you set in advance. However, different controllers may have different types of workers, and <code>crew</code> supports controller groups to coordinate among these different worker types. With third-party launcher subclasses from other packages, this mechanism will allow you to e.g. send some tasks to GPU-capable or high-memory workers while other tasks go to low-spec workers.</p>
 <p>We demonstrate with a controller of fully persistent workers which always stay running and a controller of semi-persistent workers which terminate after completing four tasks. We create controller objects with names.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>persistent &lt;-<span class="st"> </span><span class="kw">crew_controller_callr</span>(<span class="dt">name =</span> <span class="st">&quot;persistent&quot;</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a>transient &lt;-<span class="st"> </span><span class="kw">crew_controller_callr</span>(<span class="dt">name =</span> <span class="st">&quot;semi-persistent&quot;</span>, <span class="dt">tasks_max =</span> 4L)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(crew)</span>
+<span id="cb1-2"><a href="#cb1-2"></a>persistent &lt;-<span class="st"> </span><span class="kw">crew_controller_local</span>(<span class="dt">name =</span> <span class="st">&quot;persistent&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3"></a>transient &lt;-<span class="st"> </span><span class="kw">crew_controller_local</span>(<span class="dt">name =</span> <span class="st">&quot;semi-persistent&quot;</span>, <span class="dt">tasks_max =</span> 4L)</span></code></pre></div>
 <p><code>crew</code> uses a different TCP port for each controller you run, so please do not create hundreds of controllers. Please see the subsection on ports in the <a href="https://wlandau.github.io/crew/index.html">README</a>.</p>
 <p>We put these controller objects into a new controller group object.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>group &lt;-<span class="st"> </span><span class="kw">crew_controller_group</span>(persistent, transient)</span></code></pre></div>
@@ -367,13 +368,15 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>group<span class="op">$</span><span class="kw">start</span>()</span></code></pre></div>
 <p>You can choose which worker pool to receive tasks.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>group<span class="op">$</span><span class="kw">push</span>(<span class="dt">name =</span> <span class="st">&quot;my task&quot;</span>, <span class="dt">command =</span> <span class="kw">sqrt</span>(<span class="dv">4</span>), <span class="dt">controller =</span> <span class="st">&quot;semi-persistent&quot;</span>)</span></code></pre></div>
-<p>The controller group also supports global methods for <code>wait()</code>, <code>pop()</code>, and <code>terminate()</code>. These methods operate on all controllers at once by default, but the <code>controllers</code> argument allows you to select a subset of controllers to act on.</p>
+<p>The controller group also supports global methods for <code>wait()</code>, <code>pop()</code>, and <code>terminate()</code>. These methods operate on all controllers at once by default, but the <code>controllers</code> argument allows you to select a subset of controllers to act on. Below in <code>pop()</code> the <code>launcher</code> column of the output indicates which controller ran the task.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>group<span class="op">$</span><span class="kw">wait</span>(<span class="dt">controllers =</span> <span class="st">&quot;semi-persistent&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2"></a>group<span class="op">$</span><span class="kw">pop</span>()</span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#&gt; # A tibble: 1 × 7</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt;   name    command result    seconds error traceback warnings</span></span>
-<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a><span class="co">#&gt; 1 my task sqrt(4) &lt;dbl [1]&gt;       0 NA    NA        NA</span></span></code></pre></div>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#&gt; # A tibble: 1 × 11</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt;   name    command result seconds   seed error trace warni…¹ launc…² worker</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;   &lt;dbl&gt;  &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;    &lt;int&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co">#&gt; 1 my task sqrt(4) &lt;dbl&gt;        0 5.11e8 NA    NA    NA      semi-p…      1</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co">#&gt; # … with 1 more variable: instance &lt;chr&gt;, and abbreviated variable names</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="co">#&gt; #   ¹​warnings, ²​launcher</span></span></code></pre></div>
 <p>The controller group has a <code>summary()</code> method which aggregates all the information from the selected controllers.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>group<span class="op">$</span><span class="kw">summary</span>(<span class="dt">columns =</span> <span class="kw">starts_with</span>(<span class="kw">c</span>(<span class="st">&quot;controller&quot;</span>, <span class="st">&quot;tasks&quot;</span>)))</span>
 <span id="cb6-2"><a href="#cb6-2"></a><span class="co">#&gt; # A tibble: 2 × 3</span></span>

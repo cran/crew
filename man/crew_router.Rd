@@ -9,7 +9,7 @@ crew_router(
   workers = 1L,
   host = NULL,
   port = NULL,
-  seconds_interval = 0.001,
+  seconds_interval = 0.01,
   seconds_timeout = 5
 )
 }
@@ -23,9 +23,7 @@ generated.}
 If \code{NULL}, the host defaults to the local IP address.}
 
 \item{port}{TCP port to listen for the workers. If \code{NULL},
-then \code{parallelly::freePort()}
-automatically chooses an available ephemeral port between
-49152 and 65535.}
+then an available ephemeral port is automatically chosen.}
 
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
@@ -41,7 +39,7 @@ client.
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 router <- crew_router()
-router$listen()
+router$start()
 router$daemons
 router$terminate()
 }

@@ -19,20 +19,19 @@
 #'   [`clustermq`](https://mschubert.github.io/clustermq/),
 #'   and [`batchtools`](https://mllg.github.io/batchtools/).
 #' @family help
-#' @importFrom bench hires_time
-#' @importFrom callr r_bg
 #' @importFrom getip getip
-#' @importFrom mirai daemons mirai server
-#' @importFrom nanonext random sha224 socket stat unresolved
-#' @importFrom parallelly freePort
+#' @importFrom mirai daemons mirai saisei server
+#' @importFrom nanonext mclock msleep random sha1 .unresolved
+#' @importFrom processx process
 #' @importFrom ps ps_handle ps_is_running ps_kill
 #' @importFrom R6 R6Class
-#' @importFrom rlang abort as_function enquo quo_squash
+#' @importFrom rlang abort as_function duplicate enquo quo_squash
+#' @importFrom stats runif
 #' @importFrom tibble tibble
 #' @importFrom tidyselect all_of any_of contains ends_with eval_select
 #'   everything last_col matches num_range one_of starts_with
 #' @importFrom utils globalVariables head
-#' @importFrom withr local_options
+#' @importFrom withr local_seed
 NULL
 
 utils::globalVariables(".")

@@ -8,8 +8,7 @@ crew_eval(
   command,
   data = list(),
   globals = list(),
-  seed = sample.int(n = 1000000000L, size = 1L),
-  garbage_collection = FALSE,
+  seed = as.integer(stats::runif(n = 1L, min = 1, max = 1e+09)),
   packages = character(0),
   library = NULL
 )
@@ -20,15 +19,11 @@ crew_eval(
 \item{data}{Named list of local data objects in the evaluation environment.}
 
 \item{globals}{Named list of objects to temporarily assign to the
-global environment for the task. At the end of the task,
-these values are reset to their previous values.}
+global environment for the task.}
 
 \item{seed}{Integer of length 1 with the pseudo-random number generator
 seed to temporarily set for the evaluation of the task.
 At the end of the task, the seed is restored.}
-
-\item{garbage_collection}{Logical, whether to run garbage collection
-with \code{gc()} before running the task.}
 
 \item{packages}{Character vector of packages to load for the task.}
 
@@ -53,7 +48,9 @@ crew_eval(quote(1 + 1))
 }
 \seealso{
 Other utilities: 
-\code{\link{crew_wait}()},
+\code{\link{crew_assert}()},
+\code{\link{crew_random_name}()},
+\code{\link{crew_retry}()},
 \code{\link{crew_worker}()}
 }
 \concept{utilities}

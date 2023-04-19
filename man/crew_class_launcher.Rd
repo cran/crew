@@ -11,11 +11,11 @@ which launch and manage workers.
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-router$listen()
-launcher <- crew_launcher_callr()
+router$start()
+launcher <- crew_launcher_local()
 launcher$populate(sockets = router$sockets)
 launcher$launch()
-m <- mirai::mirai("result")
+m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
@@ -29,11 +29,11 @@ crew_session_terminate()
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-router$listen()
-launcher <- crew_launcher_callr()
+router$start()
+launcher <- crew_launcher_local()
 launcher$populate(sockets = router$sockets)
 launcher$launch()
-m <- mirai::mirai("result")
+m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
@@ -44,19 +44,18 @@ crew_session_terminate()
 ## Method `crew_class_launcher$call`
 ## ------------------------------------------------
 
-launcher <- crew_launcher_callr()
+launcher <- crew_launcher_local()
 launcher$call(
-  socket = "ws://127.0.0.1:5000",
-  host = "127.0.0.1",
-  port = "5711",
-  token = "my_token",
-  name = "my_name"
+  socket = "ws://127.0.0.1:5000/3/cba033e58",
+  launcher = "launcher_a",
+  worker = 3L,
+  instance = "cba033e58"
 )
 }
 \seealso{
 Other launchers: 
-\code{\link{crew_class_launcher_callr}},
-\code{\link{crew_launcher_callr}()},
+\code{\link{crew_class_launcher_local}},
+\code{\link{crew_launcher_local}()},
 \code{\link{crew_launcher}()}
 }
 \concept{launchers}
@@ -83,9 +82,13 @@ Other launchers:
 
 \item{\code{tasks_timers}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{async_dial}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+\item{\code{reset_globals}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{cleanup}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+\item{\code{reset_packages}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{reset_options}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{garbage_collection}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -96,9 +99,10 @@ Other launchers:
 \item \href{#method-crew_class_launcher-validate}{\code{crew_class_launcher$validate()}}
 \item \href{#method-crew_class_launcher-settings}{\code{crew_class_launcher$settings()}}
 \item \href{#method-crew_class_launcher-call}{\code{crew_class_launcher$call()}}
-\item \href{#method-crew_class_launcher-populate}{\code{crew_class_launcher$populate()}}
-\item \href{#method-crew_class_launcher-active}{\code{crew_class_launcher$active()}}
+\item \href{#method-crew_class_launcher-start}{\code{crew_class_launcher$start()}}
 \item \href{#method-crew_class_launcher-launch}{\code{crew_class_launcher$launch()}}
+\item \href{#method-crew_class_launcher-expected}{\code{crew_class_launcher$expected()}}
+\item \href{#method-crew_class_launcher-launching}{\code{crew_class_launcher$launching()}}
 \item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
 \item \href{#method-crew_class_launcher-terminate_worker}{\code{crew_class_launcher$terminate_worker()}}
 }
@@ -119,8 +123,10 @@ Launcher constructor.
   seconds_exit = NULL,
   tasks_max = NULL,
   tasks_timers = NULL,
-  async_dial = NULL,
-  cleanup = NULL
+  reset_globals = NULL,
+  reset_packages = NULL,
+  reset_options = NULL,
+  garbage_collection = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -135,8 +141,7 @@ Launcher constructor.
 
 \item{\code{seconds_timeout}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{seconds_idle}}{See \code{\link[=crew_launcher]{crew_launcher()}}.
-See the \code{idletime} argument of \code{mirai::server()}.}
+\item{\code{seconds_idle}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_wall}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
@@ -146,9 +151,13 @@ See the \code{idletime} argument of \code{mirai::server()}.}
 
 \item{\code{tasks_timers}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{async_dial}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+\item{\code{reset_globals}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{cleanup}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+\item{\code{reset_packages}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{reset_options}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{garbage_collection}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -160,11 +169,11 @@ An \code{R6} object with the launcher.
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-router$listen()
-launcher <- crew_launcher_callr()
+router$start()
+launcher <- crew_launcher_local()
 launcher$populate(sockets = router$sockets)
 launcher$launch()
-m <- mirai::mirai("result")
+m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
@@ -217,7 +226,7 @@ List of arguments for \code{mirai::server()}.
 Create a call to \code{\link[=crew_worker]{crew_worker()}} to
 help create custom launchers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$call(socket, host, port, token, name)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$call(socket, launcher, worker, instance)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -225,16 +234,14 @@ help create custom launchers.
 \describe{
 \item{\code{socket}}{Socket where the worker will receive tasks.}
 
-\item{\code{host}}{IP address of the \code{mirai} client that sends tasks.}
+\item{\code{launcher}}{Character of length 1, name of the launcher.}
 
-\item{\code{port}}{TCP port to register a successful connection
-to the host. Different from that of \code{socket}.}
+\item{\code{worker}}{Positive integer of length 1, index of the worker.
+This worker index remains the same even when the current instance
+of the worker exits and a new instance launches.}
 
-\item{\code{token}}{Character of length 1 to identify the instance
-of the \code{mirai} server process connected to the socket.}
-
-\item{\code{name}}{User-supplied name of the launcher, useful for
-constructing informative job labels.}
+\item{\code{instance}}{Character of length 1 to uniquely identify
+the instance of the worker.}
 }
 \if{html}{\out{</div>}}
 }
@@ -243,13 +250,12 @@ Character of length 1 with a call to \code{\link[=crew_worker]{crew_worker()}}.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{launcher <- crew_launcher_callr()
+\preformatted{launcher <- crew_launcher_local()
 launcher$call(
-  socket = "ws://127.0.0.1:5000",
-  host = "127.0.0.1",
-  port = "5711",
-  token = "my_token",
-  name = "my_name"
+  socket = "ws://127.0.0.1:5000/3/cba033e58",
+  launcher = "launcher_a",
+  worker = 3L,
+  instance = "cba033e58"
 )
 }
 \if{html}{\out{</div>}}
@@ -258,76 +264,85 @@ launcher$call(
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-populate"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-populate}{}}}
-\subsection{Method \code{populate()}}{
-Populate the workers data frame.
+\if{html}{\out{<a id="method-crew_class_launcher-start"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-start}{}}}
+\subsection{Method \code{start()}}{
+Start the launcher.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$populate(sockets)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$start(workers = 1L)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sockets}}{Character vector of worker websockets.}
+\item{\code{workers}}{Positive integer of length 1,
+number of workers to allow.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Creates the workers data frame.
+Meant to be called once at the beginning of the launcher
+life cycle.
+}
+
 \subsection{Returns}{
 \code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-active"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-active}{}}}
-\subsection{Method \code{active()}}{
-Get the active workers.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$active()}\if{html}{\out{</div>}}
-}
-
-\subsection{Details}{
-An active worker is a worker that should be given the chance
-to run tasks. To determine if the worker is active,
-\code{crew} monitors seconds past launch time, and it listens
-to a special non-\code{mirai} NNG websocket that the worker
-is supposed to dial into on launch.
-If the worker is currently connected to the websocket,
-then it is active. Otherwise, if the worker is not connected
-and the startup window has expired, the worker is inactive.
-Otherwise, if the worker is not connected and the startup
-window has not yet expired, then the worker is active
-if it has not ever connected to a websocket.
-}
-
-\subsection{Returns}{
-Character vector of worker websockets.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_launcher-launch"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-launch}{}}}
 \subsection{Method \code{launch()}}{
-Launch one or more workers.
+Launch a worker.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$launch(sockets = character(0))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$launch(index, socket = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sockets}}{Sockets where the workers will dial in.}
+\item{\code{index}}{Positive integer of length 1, index of the worker
+to launch.}
+
+\item{\code{socket}}{Character of length 1, sockets of the worker to launch.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-If a worker is already assigned to a socket,
-the previous worker is terminated before the next
-one is launched.
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-expected"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-expected}{}}}
+\subsection{Method \code{expected()}}{
+Show which workers are expected to launch.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$expected()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-\code{NULL} (invisibly).
+A logical vector indicating which workers are expected
+to launch.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-launching"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-launching}{}}}
+\subsection{Method \code{launching()}}{
+Show whether each worker is launching.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$launching()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+A worker is considered "launching" if it was started
+recently (\code{seconds_launch} seconds ago or sooner).
+}
+
+\subsection{Returns}{
+A logical vector indicating which workers are launching.
 }
 }
 \if{html}{\out{<hr>}}
@@ -336,14 +351,14 @@ one is launched.
 \subsection{Method \code{terminate()}}{
 Terminate one or more workers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate(sockets = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate(indexes = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sockets}}{Character vector of sockets of the workers
-to terminate.}
+\item{\code{indexes}}{Integer vector of the indexes of the workers
+to terminate. If \code{NULL}, all current workers are terminated.}
 }
 \if{html}{\out{</div>}}
 }
@@ -363,8 +378,9 @@ Abstract method.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{handle}}{A \code{callr} process handle previously
-returned by \code{launch_worker()}.}
+\item{\code{handle}}{A handle object previously
+returned by \code{launch_worker()} which allows the termination
+of the worker.}
 }
 \if{html}{\out{</div>}}
 }

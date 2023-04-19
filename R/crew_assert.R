@@ -1,4 +1,20 @@
-true <- function(
+#' @title Crew assertion
+#' @export
+#' @family utilities
+#' @description Assert that a condition is true.
+#' @return `NULL` (invisibly). Throws an error if the condition is not true.
+#' @param value An object or condition.
+#' @param ... Conditions that use the `"."` symbol to refer to the object.
+#' @param message Optional message to print on error.
+#' @param envir Environment to evaluate the condition.
+#' @examples
+#' crew_assert(1 < 2)
+#' crew_assert("object", !anyNA(.), nzchar(.))
+#' tryCatch(
+#'   crew_assert(2 < 1),
+#'   crew_error = function(condition) message("false")
+#' )
+crew_assert <- function(
   value = NULL,
   ...,
   message = NULL,
@@ -38,12 +54,16 @@ crew_expire <- function(message = NULL) {
 }
 
 crew_stop <- function(message, class) {
-  withr::local_options(list(rlang_backtrace_on_error = "none"))
+  old <- getOption("rlang_backtrace_on_error")
+  on.exit(options(rlang_backtrace_on_error = old))
+  options(rlang_backtrace_on_error = "none")
   rlang::abort(message = message, class = class, call = emptyenv())
 }
 
 crew_message <- function(message) {
-  withr::local_options(list(rlang_backtrace_on_error = "none"))
+  old <- getOption("rlang_backtrace_on_error")
+  on.exit(options(rlang_backtrace_on_error = old))
+  options(rlang_backtrace_on_error = "none")
   rlang::inform(message = message, class = c("crew_message", "crew"))
 }
 

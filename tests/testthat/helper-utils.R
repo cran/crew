@@ -7,7 +7,13 @@ crew_test <- function(label, code) {
 }
 
 crew_test_sleep <- function() {
-  Sys.sleep(2.25)
+  on_windows <- identical(tolower(Sys.info()[["sysname"]]), "windows")
+  on_cran <- !identical(Sys.getenv("NOT_CRAN"), "true")
+  on_ci <- isTRUE(as.logical(Sys.getenv("CI")))
+  if (on_windows || on_cran || on_ci) {
+    Sys.sleep(2.25)
+  }
+  invisible()
 }
 
 expect_crew_error <- function(object) {

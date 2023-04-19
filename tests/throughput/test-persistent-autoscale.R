@@ -1,6 +1,5 @@
 library(crew)
-crew_session_start()
-controller <- crew_controller_callr(
+controller <- crew_controller_local(
   seconds_idle = 2L,
   workers = 2L
 )
@@ -14,7 +13,7 @@ for (index in seq_len(100L)) {
 # Wait for the tasks to complete.
 controller$wait()
 # Wait for the workers to idle out and exit on their own.
-crew_wait(
+crew_retry(
   ~all(controller$summary()$worker_connected == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
@@ -26,7 +25,7 @@ for (index in (seq_len(100L) + 100L)) {
   message(paste("push", name))
 }
 controller$wait()
-crew_wait(
+crew_retry(
   ~all(controller$summary()$worker_connected == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
@@ -41,7 +40,7 @@ while (!is.null(out <- controller$pop(scale = FALSE))) {
 # Check the results
 all(sort(unlist(results$result)) == seq_len(200L))
 #> [1] TRUE
-length(unique(results$socket_session))
+length(unique(results$instance))
 #> [1] 4
 # View worker and task summaries.
 View(controller$summary())

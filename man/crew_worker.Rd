@@ -4,17 +4,19 @@
 \alias{crew_worker}
 \title{Crew worker.}
 \usage{
-crew_worker(settings, host, port, token)
+crew_worker(settings, launcher, worker, instance)
 }
 \arguments{
 \item{settings}{Named list of arguments to \code{mirai::server()}.}
 
-\item{host}{IP address of the host to connect to.}
+\item{launcher}{Character of length 1, name of the launcher.}
 
-\item{port}{TCP port to register a successful connection to the host.}
+\item{worker}{Positive integer of length 1, index of the worker.
+This worker index remains the same even when the current instance
+of the worker exits and a new instance launches.}
 
-\item{token}{Character of length 1 to identify the instance of the
-process connected to the socket.}
+\item{instance}{Character of length 1 to uniquely identify
+the current instance of the worker.}
 }
 \value{
 \code{NULL} (invisibly)
@@ -24,7 +26,9 @@ Launch a \code{crew} worker which runs a \code{mirai} server.
 }
 \seealso{
 Other utilities: 
+\code{\link{crew_assert}()},
 \code{\link{crew_eval}()},
-\code{\link{crew_wait}()}
+\code{\link{crew_random_name}()},
+\code{\link{crew_retry}()}
 }
 \concept{utilities}

@@ -1,5 +1,6 @@
-random_name <- function() {
-  nanonext::sha224(nanonext::random(n = 100))
+parse_instance <- function(socket) {
+  split <- strsplit(socket, split = "/", fixed = TRUE)[[1]]
+  split[length(split)]
 }
 
 is_named <- function(x) {
@@ -22,7 +23,7 @@ eval_tidyselect <- function(expr, choices) {
     strict = FALSE
   )
   out <- names(out)
-  true(
+  crew_assert(
     is.character(out),
     message = paste(
       "tidyselect failed. Please supply a valid tidyselect expression",

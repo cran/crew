@@ -7,15 +7,17 @@
 crew_launcher(
   name = NULL,
   seconds_launch = 30,
-  seconds_interval = 0.001,
+  seconds_interval = 0.01,
   seconds_timeout = 10,
   seconds_idle = Inf,
   seconds_wall = Inf,
   seconds_exit = 0.1,
   tasks_max = Inf,
   tasks_timers = 0L,
-  async_dial = TRUE,
-  cleanup = FALSE
+  reset_globals = TRUE,
+  reset_packages = FALSE,
+  reset_options = FALSE,
+  garbage_collection = FALSE
 )
 }
 \arguments{
@@ -63,28 +65,35 @@ the assignment of tasks to workers, it is recommended to set
 the timers for \code{seconds_idle} and \code{seconds_wall}.
 See the \code{timerlaunch} argument of \code{mirai::server()}.}
 
-\item{async_dial}{Logical, whether the \code{mirai} workers should dial in
-asynchronously. See the \code{asyncdial} argument of \code{mirai::server()}.}
+\item{reset_globals}{\code{TRUE} to reset global environment
+variables between tasks, \code{FALSE} to leave them alone.}
 
-\item{cleanup}{Logical, whether to clean up global options and the
-global environment after every task.
-See the \code{cleanup} argument of \code{mirai::server()}.}
+\item{reset_packages}{\code{TRUE} to unload any packages loaded during
+a task (runs between each task), \code{FALSE} to leave packages alone.}
+
+\item{reset_options}{\code{TRUE} to reset global options to their original
+state between each task, \code{FALSE} otherwise. It is recommended to
+only set \code{reset_options = TRUE} if \code{reset_packages} is also \code{TRUE}
+because packages sometimes rely on options they set at loading time.}
+
+\item{garbage_collection}{\code{TRUE} to run garbage collection between
+tasks, \code{FALSE} to skip.}
 }
 \description{
 This function is useful for inheriting argument documentation
 in functions that create custom third-party launchers. See
 \verb{@inheritParams crew::crew_launcher} in the source code file of
-\code{\link[=crew_launcher_callr]{crew_launcher_callr()}}.
+\code{\link[=crew_launcher_local]{crew_launcher_local()}}.
 }
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
 router <- crew_router()
-router$listen()
-launcher <- crew_launcher_callr()
+router$start()
+launcher <- crew_launcher_local()
 launcher$populate(sockets = router$sockets)
 launcher$launch()
-m <- mirai::mirai("result")
+m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
@@ -93,9 +102,9 @@ crew_session_terminate()
 }
 \seealso{
 Other launchers: 
-\code{\link{crew_class_launcher_callr}},
+\code{\link{crew_class_launcher_local}},
 \code{\link{crew_class_launcher}},
-\code{\link{crew_launcher_callr}()}
+\code{\link{crew_launcher_local}()}
 }
 \concept{launchers}
 \keyword{internal}

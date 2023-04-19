@@ -12,8 +12,8 @@ See \code{\link[=crew_controller_group]{crew_controller_group()}}.
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
-persistent <- crew_controller_callr(name = "persistent")
-transient <- crew_controller_callr(
+persistent <- crew_controller_local(name = "persistent")
+transient <- crew_controller_local(
   name = "transient",
   max_tasks = 1L
 )
@@ -34,8 +34,8 @@ crew_session_terminate()
 
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
-persistent <- crew_controller_callr(name = "persistent")
-transient <- crew_controller_callr(
+persistent <- crew_controller_local(name = "persistent")
+transient <- crew_controller_local(
   name = "transient",
   max_tasks = 1L
 )
@@ -53,8 +53,8 @@ crew_session_terminate()
 \seealso{
 Other controllers: 
 \code{\link{crew_class_controller}},
-\code{\link{crew_controller_callr}()},
 \code{\link{crew_controller_group}()},
+\code{\link{crew_controller_local}()},
 \code{\link{crew_controller}()}
 }
 \concept{controllers}
@@ -70,16 +70,16 @@ Other controllers:
 \itemize{
 \item \href{#method-crew_class_controller_group-new}{\code{crew_class_controller_group$new()}}
 \item \href{#method-crew_class_controller_group-validate}{\code{crew_class_controller_group$validate()}}
+\item \href{#method-crew_class_controller_group-empty}{\code{crew_class_controller_group$empty()}}
 \item \href{#method-crew_class_controller_group-start}{\code{crew_class_controller_group$start()}}
 \item \href{#method-crew_class_controller_group-launch}{\code{crew_class_controller_group$launch()}}
 \item \href{#method-crew_class_controller_group-scale}{\code{crew_class_controller_group$scale()}}
-\item \href{#method-crew_class_controller_group-collect}{\code{crew_class_controller_group$collect()}}
 \item \href{#method-crew_class_controller_group-push}{\code{crew_class_controller_group$push()}}
+\item \href{#method-crew_class_controller_group-collect}{\code{crew_class_controller_group$collect()}}
 \item \href{#method-crew_class_controller_group-pop}{\code{crew_class_controller_group$pop()}}
 \item \href{#method-crew_class_controller_group-wait}{\code{crew_class_controller_group$wait()}}
 \item \href{#method-crew_class_controller_group-summary}{\code{crew_class_controller_group$summary()}}
 \item \href{#method-crew_class_controller_group-terminate}{\code{crew_class_controller_group$terminate()}}
-\item \href{#method-crew_class_controller_group-clone}{\code{crew_class_controller_group$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -105,8 +105,8 @@ An \code{R6} object with the controller group object.
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 crew_session_start()
-persistent <- crew_controller_callr(name = "persistent")
-transient <- crew_controller_callr(
+persistent <- crew_controller_local(name = "persistent")
+transient <- crew_controller_local(
   name = "transient",
   max_tasks = 1L
 )
@@ -137,6 +137,33 @@ Validate the router.
 
 \subsection{Returns}{
 \code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller_group-empty"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller_group-empty}{}}}
+\subsection{Method \code{empty()}}{
+See if the controllers are empty.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$empty(controllers = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{controllers}}{Character vector of controller names.
+Set to \code{NULL} to select all controllers.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+A controller is empty if it has no running tasks
+or completed tasks waiting to be retrieved with \code{push()}.
+}
+
+\subsection{Returns}{
+\code{TRUE} if all the selected controllers are empty,
+\code{FALSE} otherwise.
 }
 }
 \if{html}{\out{<hr>}}
@@ -210,6 +237,81 @@ See the \code{scale()} method in individual controller classes.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller_group-push"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller_group-push}{}}}
+\subsection{Method \code{push()}}{
+Push a task to the head of the task list.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$push(
+  command,
+  data = list(),
+  globals = list(),
+  substitute = TRUE,
+  seed = sample.int(n = 1000000000L, size = 1L),
+  packages = character(0),
+  library = NULL,
+  seconds_timeout = NULL,
+  scale = TRUE,
+  name = NULL,
+  controller = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{command}}{Language object with R code to run.}
+
+\item{\code{data}}{Named list of local data objects in the
+evaluation environment.}
+
+\item{\code{globals}}{Named list of objects to temporarily assign to the
+global environment for the task. See the \code{reset_globals}
+argument of \code{\link[=crew_controller_local]{crew_controller_local()}}.}
+
+\item{\code{substitute}}{Logical of length 1, whether to call
+\code{base::substitute()} on the supplied value of the
+\code{command} argument. If \code{TRUE} (default) then \code{command} is quoted
+literally as you write it, e.g.
+\code{push(command = your_function_call())}. If \code{FALSE}, then \code{crew}
+assumes \code{command} is a language object and you are passing its
+value, e.g. \code{push(command = quote(your_function_call()))}.
+\code{substitute = TRUE} is appropriate for interactive use,
+whereas \code{substitute = FALSE} is meant for automated R programs
+that invoke \code{crew} controllers.}
+
+\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
+seed to temporarily set for the evaluation of the task.
+At the end of the task, the seed is restored.}
+
+\item{\code{packages}}{Character vector of packages to load for the task.}
+
+\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
+argument of \code{require()}.}
+
+\item{\code{seconds_timeout}}{Optional task timeout passed to the \code{.timeout}
+argument of \code{mirai::mirai()} (after converting to milliseconds).}
+
+\item{\code{scale}}{Logical, whether to automatically scale workers to meet
+demand. If \code{TRUE}, then \code{collect()} runs first
+so demand can be properly assessed before scaling and the number
+of workers is not too high.}
+
+\item{\code{name}}{Optional name of the task. Replaced with a random name
+if \code{NULL} or in conflict with an existing name in the task list.}
+
+\item{\code{controller}}{Character of length 1,
+name of the controller to submit the task.
+If \code{NULL}, the controller defaults to the
+first controller in the list.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller_group-collect"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller_group-collect}{}}}
 \subsection{Method \code{collect()}}{
@@ -233,73 +335,6 @@ list as applicable and moves them to the \code{results} list.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller_group-push"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller_group-push}{}}}
-\subsection{Method \code{push()}}{
-Push a task to the head of the task list.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$push(
-  command,
-  data = list(),
-  globals = list(),
-  seed = sample.int(n = 1000000000L, size = 1L),
-  garbage_collection = FALSE,
-  packages = character(0),
-  library = NULL,
-  seconds_timeout = NULL,
-  name = NULL,
-  scale = TRUE,
-  controller = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{command}}{Language object with R code to run.}
-
-\item{\code{data}}{Named list of local data objects in the
-evaluation environment.}
-
-\item{\code{globals}}{Named list of objects to temporarily assign to the
-global environment for the task. At the end of the task,
-these values are reset to their previous values.}
-
-\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
-seed to temporarily set for the evaluation of the task.
-At the end of the task, the seed is restored.}
-
-\item{\code{garbage_collection}}{Logical, whether to run garbage collection
-with \code{gc()} before running the task.}
-
-\item{\code{packages}}{Character vector of packages to load for the task.}
-
-\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
-argument of \code{require()}.}
-
-\item{\code{seconds_timeout}}{Optional task timeout passed to the \code{.timeout}
-argument of \code{mirai::mirai()} (after converting to milliseconds).}
-
-\item{\code{name}}{Optional name of the task. Replaced with a random name
-if \code{NULL} or in conflict with an existing name in the task list.}
-
-\item{\code{scale}}{Logical, whether to automatically scale workers to meet
-demand. If \code{TRUE}, then \code{clean()} and \code{collect()} run first
-so demand can be properly assessed before scaling and the number
-of workers is not too high.}
-
-\item{\code{controller}}{Character of length 1,
-name of the controller to submit the task.
-If \code{NULL}, the controller defaults to the
-first controller in the list.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller_group-pop"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller_group-pop}{}}}
 \subsection{Method \code{pop()}}{
@@ -312,7 +347,7 @@ Pop a completed task from the results data frame.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{scale}}{Logical, whether to automatically scale workers to meet
-demand. If \code{TRUE}, then \code{clean()} and \code{collect()} run first
+demand. If \code{TRUE}, then \code{collect()} runs first
 so demand can be properly assessed before scaling and the number
 of workers is not too high. Scaling up on \code{pop()} may be important
 for transient or nearly transient workers that tend to drop off
@@ -427,23 +462,6 @@ Set to \code{NULL} to select all controllers.}
 }
 \subsection{Returns}{
 \code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller_group-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller_group-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
 }
 }
 }

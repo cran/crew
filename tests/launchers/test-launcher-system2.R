@@ -2,10 +2,9 @@ system2_launcher_class <- R6::R6Class(
   classname = "system2_launcher_class",
   inherit = crew::crew_class_launcher,
   public = list(
-    launch_worker = function(socket, host, port, token, name) {
-      call <- self$call(socket, host, port, token, name)
+    launch_worker = function(call, launcher, worker, instance) {
       system2(
-        command = "R",
+        command = file.path(R.home("bin"), "R"),
         args = c("-e", shQuote(call)),
         wait = FALSE,
         stdout = FALSE,
@@ -17,21 +16,23 @@ system2_launcher_class <- R6::R6Class(
 )
 
 crew_controller_system2 <- function(
-    name = "system2",
-    workers = 1L,
-    host = NULL,
-    port = NULL,
-    seconds_launch = 30,
-    seconds_interval = 0.001,
-    seconds_timeout = 5,
-    seconds_idle = Inf,
-    seconds_wall = Inf,
-    seconds_exit = 0.1,
-    tasks_max = Inf,
-    tasks_timers = 0L,
-    async_dial = TRUE,
-    cleanup = FALSE,
-    auto_scale = "demand"
+  name = "system2",
+  workers = 1L,
+  host = NULL,
+  port = NULL,
+  seconds_launch = 30,
+  seconds_interval = 0.01,
+  seconds_timeout = 5,
+  seconds_idle = Inf,
+  seconds_wall = Inf,
+  seconds_exit = 0.1,
+  tasks_max = Inf,
+  tasks_timers = 0L,
+  reset_globals = TRUE,
+  reset_packages = FALSE,
+  reset_options = FALSE,
+  garbage_collection = FALSE,
+  auto_scale = "demand"
 ) {
   router <- crew::crew_router(
     name = name,
@@ -51,8 +52,10 @@ crew_controller_system2 <- function(
     seconds_exit = seconds_exit,
     tasks_max = tasks_max,
     tasks_timers = tasks_timers,
-    async_dial = async_dial,
-    cleanup = cleanup
+    reset_globals = reset_globals,
+    reset_packages = reset_packages,
+    reset_options = reset_options,
+    garbage_collection = garbage_collection
   )
   controller <- crew::crew_controller(
     router = router,
@@ -64,7 +67,6 @@ crew_controller_system2 <- function(
 }
 
 library(crew)
-crew_session_start()
 controller <- crew_controller_system2(
   seconds_idle = 2L,
   workers = 2L
@@ -79,7 +81,7 @@ for (index in seq_len(100L)) {
 # Wait for the tasks to complete.
 controller$wait()
 # Wait for the workers to idle out and exit on their own.
-crew_wait(
+crew_retry(
   ~all(controller$summary()$worker_connected == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
@@ -91,7 +93,7 @@ for (index in (seq_len(100L) + 100L)) {
   message(paste("push", name))
 }
 controller$wait()
-crew_wait(
+crew_retry(
   ~all(controller$summary()$worker_connected == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
@@ -106,7 +108,7 @@ while (!is.null(out <- controller$pop(scale = FALSE))) {
 # Check the results
 all(sort(unlist(results$result)) == seq_len(200L))
 #> [1] TRUE
-length(unique(results$socket_session))
+length(unique(results$instance))
 #> [1] 4
 # View worker and task summaries.
 View(controller$summary())

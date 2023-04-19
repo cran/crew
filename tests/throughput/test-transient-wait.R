@@ -1,6 +1,5 @@
 library(crew)
-crew_session_start()
-x <- crew_controller_callr(
+x <- crew_controller_local(
   name = "test",
   tasks_max = 1L,
   workers = 4L
@@ -27,8 +26,8 @@ length(x$results) # 0
 x$wait(mode = "one")
 
 # Pop just one of the tasks
-length(x$queue) # 99
-length(x$results) # 1
+length(x$queue) # 96
+length(x$results) # 4
 x$pop(scale = FALSE) # monad data frame
 length(x$queue) # 96
 length(x$results) # 3
@@ -36,4 +35,3 @@ length(x$results) # 3
 # Clean up.
 View(x$summary())
 x$terminate()
-crew_session_terminate()

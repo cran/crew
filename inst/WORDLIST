@@ -24,8 +24,11 @@ writeable
 YAML
 RJ
 ZeroMQ
+globals
 NNG
 Fargate
+monad
+tibble
 validator
 websocket
 Bengtsson
@@ -37,6 +40,9 @@ callr
 Edmondson
 GCP
 instantiable
+Hadley
+Wickham
+
 subclass
 github
 TBD
@@ -45,7 +51,6 @@ sendable
 arg
 args
 Sys
-traceback
 io
 Gábor
 Csárdi
@@ -92,3 +97,5 @@ Tidyselect
 Bischel
 Surmann
 Kubernetes
+namespaced
+unencrypted

@@ -12,7 +12,7 @@ See \code{\link[=crew_router]{crew_router()}}.
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 router <- crew_router()
-router$listen()
+router$start()
 router$daemons
 router$terminate()
 }
@@ -23,7 +23,7 @@ router$terminate()
 
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 router <- crew_router()
-router$listen()
+router$start()
 router$daemons
 router$terminate()
 }
@@ -48,9 +48,14 @@ Other routers:
 
 \item{\code{seconds_timeout}}{See \code{\link[=crew_router]{crew_router()}}.}
 
+\item{\code{started}}{Whether the router is started.}
+
 \item{\code{dispatcher}}{Process ID of the \code{mirai} dispatcher}
 
 \item{\code{daemons}}{Data frame of information from \code{mirai::daemons()}.}
+
+\item{\code{rotations}}{Logical vector to keep track of rotated
+worker websockets.}
 }
 \if{html}{\out{</div>}}
 }
@@ -60,8 +65,10 @@ Other routers:
 \item \href{#method-crew_class_router-new}{\code{crew_class_router$new()}}
 \item \href{#method-crew_class_router-validate}{\code{crew_class_router$validate()}}
 \item \href{#method-crew_class_router-listening}{\code{crew_class_router$listening()}}
-\item \href{#method-crew_class_router-listen}{\code{crew_class_router$listen()}}
+\item \href{#method-crew_class_router-start}{\code{crew_class_router$start()}}
+\item \href{#method-crew_class_router-route}{\code{crew_class_router$route()}}
 \item \href{#method-crew_class_router-poll}{\code{crew_class_router$poll()}}
+\item \href{#method-crew_class_router-log}{\code{crew_class_router$log()}}
 \item \href{#method-crew_class_router-terminate}{\code{crew_class_router$terminate()}}
 }
 }
@@ -105,7 +112,7 @@ An \code{R6} object with the router.
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 router <- crew_router()
-router$listen()
+router$start()
 router$daemons
 router$terminate()
 }
@@ -140,9 +147,12 @@ to worker websockets.
 
 \subsection{Details}{
 This method may stall and time out if there are
-tasks in the queue. Methods \code{listen()} and \code{terminate()}
+tasks in the queue. Methods \code{start()} and \code{terminate()}
 call \code{listening()} to manage the connection before
 and after the entire workload, respectively.
+In addition, a false negative result is possible
+if there is a momentary connection issue. (\code{listening()}
+does not retry the connection.)
 }
 
 \subsection{Returns}{
@@ -151,16 +161,47 @@ and after the entire workload, respectively.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_router-listen"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_router-listen}{}}}
-\subsection{Method \code{listen()}}{
+\if{html}{\out{<a id="method-crew_class_router-start"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_router-start}{}}}
+\subsection{Method \code{start()}}{
 Start listening for workers on the available sockets.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$listen()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$start()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
 \code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_router-route"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_router-route}{}}}
+\subsection{Method \code{route()}}{
+Choose the websocket path for the next instance
+of the worker at a given index.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$route(index, force = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{index}}{Integer of length 1, worker index.}
+
+\item{\code{force}}{\code{TRUE} to force a rotation even if e.g. tasks are underway,
+\code{FALSE} otherwise.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The first call to \code{route()} at a given index
+uses the original websocket path provided by \code{mirai::daemons()}.
+Subsequent calls to \code{route()} at the same index rotate
+the websocket path for robustness.
+}
+
+\subsection{Returns}{
+Character of length 1, new websocket path of the worker.
 }
 }
 \if{html}{\out{<hr>}}
@@ -170,19 +211,64 @@ Start listening for workers on the available sockets.
 Update the \code{daemons} field with
 information on the \code{mirai} daemons.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$poll()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$poll(
+  seconds_interval = NULL,
+  seconds_timeout = NULL,
+  max_tries = Inf,
+  error = FALSE
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{seconds_interval}}{Number of seconds to wait between retries
+polling the \code{mirai} dispatcher for worker information.
+Defaults to the \code{seconds_interval} field of the router object.}
+
+\item{\code{seconds_timeout}}{Number of seconds to time out
+polling the \code{mirai} dispatcher for worker information.
+Defaults to the \code{seconds_timeout} field of the router object.}
+
+\item{\code{max_tries}}{Maximum number of attempts to poll the
+mirai dispatcher.}
+
+\item{\code{error}}{\code{TRUE} to throw an error if the \code{mirai} dispatcher
+cannot be reached, \code{FALSE} otherwise.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Details}{
 Call \code{mirai::daemons()} to get information about the workers.
 If the workers cannot be reached or the router has not started,
 then do not modify the \code{daemons} field. Otherwise, if the workers
 are reachable, populate the \code{daemons} field with a data frame
-of high-level worker-specific statistics.
+of high-level worker-specific statistics. \code{poll()} retries
+and times out with \code{\link[=crew_retry]{crew_retry()}} using the values in arguments
+\code{seconds_interval} and \code{seconds_timeout}.
 }
 
 \subsection{Returns}{
 \code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_router-log"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_router-log}{}}}
+\subsection{Method \code{log()}}{
+Show an informative worker log.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_router$log()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+This method tries once to update the worker information
+using \code{poll()}. If unsuccessful the first time, it just uses
+the existing information in the \code{daemons} field.
+}
+
+\subsection{Returns}{
+A \code{tibble} with information on the workers.
 }
 }
 \if{html}{\out{<hr>}}

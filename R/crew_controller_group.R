@@ -10,8 +10,8 @@
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' crew_session_start()
-#' persistent <- crew_controller_callr(name = "persistent")
-#' transient <- crew_controller_callr(
+#' persistent <- crew_controller_local(name = "persistent")
+#' transient <- crew_controller_local(
 #'   name = "transient",
 #'   max_tasks = 1L
 #' )
@@ -41,8 +41,8 @@ crew_controller_group <- function(...) {
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' crew_session_start()
-#' persistent <- crew_controller_callr(name = "persistent")
-#' transient <- crew_controller_callr(
+#' persistent <- crew_controller_local(name = "persistent")
+#' transient <- crew_controller_local(
 #'   name = "transient",
 #'   max_tasks = 1L
 #' )
@@ -58,13 +58,14 @@ crew_controller_group <- function(...) {
 #' }
 crew_class_controller_group <- R6::R6Class(
   classname = "crew_class_controller_group",
+  cloneable = FALSE,
   private = list(
     select_controllers = function(names) {
       if (is.null(names)) {
         return(self$controllers)
       }
       message <- "'controllers' must be a valid nonempty character vector."
-      true(
+      crew_assert(
         names,
         length(.) > 0L,
         is.character(.),
@@ -73,7 +74,7 @@ crew_class_controller_group <- R6::R6Class(
         message = message
       )
       invalid <- setdiff(names, names(self$controllers))
-      true(
+      crew_assert(
         !length(invalid),
         message = sprintf(
           "controllers not found: %s",
@@ -92,8 +93,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @examples
     #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
     #' crew_session_start()
-    #' persistent <- crew_controller_callr(name = "persistent")
-    #' transient <- crew_controller_callr(
+    #' persistent <- crew_controller_local(name = "persistent")
+    #' transient <- crew_controller_local(
     #'   name = "transient",
     #'   max_tasks = 1L
     #' )
@@ -116,14 +117,25 @@ crew_class_controller_group <- R6::R6Class(
     #' @description Validate the router.
     #' @return `NULL` (invisibly).
     validate = function() {
-      true(
+      crew_assert(
         map_lgl(self$controllers, ~inherits(.x, "crew_class_controller")),
         message = "All objects in a controller group must be controllers."
       )
       out <- unname(map_chr(self$controllers, ~.x$router$name))
       exp <- names(self$controllers)
-      true(identical(out, exp), message = "bad controller names")
+      crew_assert(identical(out, exp), message = "bad controller names")
       invisible()
+    },
+    #' @description See if the controllers are empty.
+    #' @details A controller is empty if it has no running tasks
+    #'   or completed tasks waiting to be retrieved with `push()`.
+    #' @return `TRUE` if all the selected controllers are empty,
+    #'   `FALSE` otherwise.
+    #' @param controllers Character vector of controller names.
+    #'   Set to `NULL` to select all controllers.
+    empty = function(controllers = NULL) {
+      control <- private$select_controllers(controllers)
+      all(map_lgl(control, ~.x$empty()))
     },
     #' @description Start one or more controllers.
     #' @return `NULL` (invisibly).
@@ -152,6 +164,80 @@ crew_class_controller_group <- R6::R6Class(
       control <- private$select_controllers(controllers)
       walk(control, ~.x$scale())
     },
+    #' @description Push a task to the head of the task list.
+    #' @return `NULL` (invisibly).
+    #' @param command Language object with R code to run.
+    #' @param data Named list of local data objects in the
+    #'   evaluation environment.
+    #' @param globals Named list of objects to temporarily assign to the
+    #'   global environment for the task. See the `reset_globals`
+    #'   argument of [crew_controller_local()].
+    #' @param substitute Logical of length 1, whether to call
+    #'   `base::substitute()` on the supplied value of the
+    #'   `command` argument. If `TRUE` (default) then `command` is quoted
+    #'   literally as you write it, e.g.
+    #'   `push(command = your_function_call())`. If `FALSE`, then `crew`
+    #'   assumes `command` is a language object and you are passing its
+    #'   value, e.g. `push(command = quote(your_function_call()))`.
+    #'   `substitute = TRUE` is appropriate for interactive use,
+    #'   whereas `substitute = FALSE` is meant for automated R programs
+    #'   that invoke `crew` controllers.
+    #' @param seed Integer of length 1 with the pseudo-random number generator
+    #'   seed to temporarily set for the evaluation of the task.
+    #'   At the end of the task, the seed is restored.
+    #' @param packages Character vector of packages to load for the task.
+    #' @param library Library path to load the packages. See the `lib.loc`
+    #'   argument of `require()`.
+    #' @param seconds_timeout Optional task timeout passed to the `.timeout`
+    #'   argument of `mirai::mirai()` (after converting to milliseconds).
+    #' @param scale Logical, whether to automatically scale workers to meet
+    #'   demand. If `TRUE`, then `collect()` runs first
+    #'   so demand can be properly assessed before scaling and the number
+    #'   of workers is not too high.
+    #' @param name Optional name of the task. Replaced with a random name
+    #'   if `NULL` or in conflict with an existing name in the task list.
+    #' @param controller Character of length 1,
+    #'   name of the controller to submit the task.
+    #'   If `NULL`, the controller defaults to the
+    #'   first controller in the list.
+    push = function(
+      command,
+      data = list(),
+      globals = list(),
+      substitute = TRUE,
+      seed = sample.int(n = 1e9L, size = 1L),
+      packages = character(0),
+      library = NULL,
+      seconds_timeout = NULL,
+      scale = TRUE,
+      name = NULL,
+      controller = NULL
+    ) {
+      controller <- controller %|||%
+        utils::head(names(self$controllers), n = 1L)
+      crew_assert(
+        length(controller) == 1L,
+        message = "controller argument of push() must have length 1."
+      )
+      crew_assert(
+        controller %in% names(self$controllers),
+        message = sprintf("controller \"%s\" not found", controller)
+      )
+      if (substitute) command <- substitute(command)
+      args <- list(
+        command = command,
+        data = data,
+        globals = globals,
+        substitute = TRUE,
+        seed = seed,
+        packages = packages,
+        library = library,
+        seconds_timeout = seconds_timeout,
+        name = name,
+        scale = scale
+      )
+      do.call(what = self$controllers[[controller]]$push, args = args)
+    },
     #' @description Check for done tasks and move the results to
     #'   the results list.
     #' @return `NULL` (invisibly). Removes elements from the `queue`
@@ -162,78 +248,13 @@ crew_class_controller_group <- R6::R6Class(
       control <- private$select_controllers(controllers)
       walk(control, ~.x$collect())
     },
-    #' @description Push a task to the head of the task list.
-    #' @return `NULL` (invisibly).
-    #' @param command Language object with R code to run.
-    #' @param data Named list of local data objects in the
-    #'   evaluation environment.
-    #' @param globals Named list of objects to temporarily assign to the
-    #'   global environment for the task. At the end of the task,
-    #'   these values are reset to their previous values.
-    #' @param seed Integer of length 1 with the pseudo-random number generator
-    #'   seed to temporarily set for the evaluation of the task.
-    #'   At the end of the task, the seed is restored.
-    #' @param garbage_collection Logical, whether to run garbage collection
-    #'   with `gc()` before running the task.
-    #' @param packages Character vector of packages to load for the task.
-    #' @param library Library path to load the packages. See the `lib.loc`
-    #'   argument of `require()`.
-    #' @param name Optional name of the task. Replaced with a random name
-    #'   if `NULL` or in conflict with an existing name in the task list.
-    #' @param seconds_timeout Optional task timeout passed to the `.timeout`
-    #'   argument of `mirai::mirai()` (after converting to milliseconds).
-    #' @param scale Logical, whether to automatically scale workers to meet
-    #'   demand. If `TRUE`, then `clean()` and `collect()` run first
-    #'   so demand can be properly assessed before scaling and the number
-    #'   of workers is not too high.
-    #' @param controller Character of length 1,
-    #'   name of the controller to submit the task.
-    #'   If `NULL`, the controller defaults to the
-    #'   first controller in the list.
-    push = function(
-      command,
-      data = list(),
-      globals = list(),
-      seed = sample.int(n = 1e9L, size = 1L),
-      garbage_collection = FALSE,
-      packages = character(0),
-      library = NULL,
-      seconds_timeout = NULL,
-      name = NULL,
-      scale = TRUE,
-      controller = NULL
-    ) {
-      controller <- controller %|||%
-        utils::head(names(self$controllers), n = 1L)
-      true(
-        length(controller) == 1L,
-        message = "controller argument of push() must have length 1."
-      )
-      true(
-        controller %in% names(self$controllers),
-        message = sprintf("controller \"%s\" not found", controller)
-      )
-      args <- list(
-        command = substitute(command),
-        data = data,
-        globals = globals,
-        seed = seed,
-        garbage_collection = garbage_collection,
-        packages = packages,
-        library = library,
-        seconds_timeout = seconds_timeout,
-        name = name,
-        scale = scale
-      )
-      do.call(what = self$controllers[[controller]]$push, args = args)
-    },
     #' @description Pop a completed task from the results data frame.
     #' @return If there is a completed task available to collect, the return
     #'   value is a one-row data frame with the results, warnings, and errors.
     #'   Otherwise, if there are no results available to collect,
     #'   the return value is `NULL`.
     #' @param scale Logical, whether to automatically scale workers to meet
-    #'   demand. If `TRUE`, then `clean()` and `collect()` run first
+    #'   demand. If `TRUE`, then `collect()` runs first
     #'   so demand can be properly assessed before scaling and the number
     #'   of workers is not too high. Scaling up on `pop()` may be important
     #'   for transient or nearly transient workers that tend to drop off
@@ -274,24 +295,28 @@ crew_class_controller_group <- R6::R6Class(
       controllers = NULL
     ) {
       mode <- as.character(mode)
-      true(mode, identical(., "all") || identical(., "one"))
+      crew_assert(mode, identical(., "all") || identical(., "one"))
       control <- private$select_controllers(controllers)
       tryCatch(
-        crew_wait(
+        crew_retry(
           fun = ~{
+            empty <- TRUE
             for (controller in control) {
               controller$collect()
-              controller$clean()
               controller$scale()
-              done <- length(controller$results) > 0L
-              if (identical(mode, "all")) {
-                done <- done && (length(controller$queue) < 1L)
-              }
+              empty_queue <- length(controller$queue) < 1L
+              empty_results <- length(controller$results) < 1L
+              done <- if_any(
+                identical(mode, "all"),
+                empty_queue && (!empty_results),
+                empty_queue || (!empty_results)
+              )
               if (done) {
                 return(TRUE)
               }
+              empty <- empty && empty_queue && empty_results
             }
-            FALSE
+            empty
           },
           seconds_interval = seconds_interval,
           seconds_timeout = seconds_timeout

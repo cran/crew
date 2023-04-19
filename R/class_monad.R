@@ -5,24 +5,25 @@ monad_init <- function(
   seconds = NA_real_,
   seed = NA_integer_,
   error = NA_character_,
-  traceback = NA_character_,
+  trace = NA_character_,
   warnings = NA_character_,
-  socket_data = NA_character_,
-  socket_session = NA_character_
+  launcher = NA_character_,
+  worker = NA_integer_,
+  instance = NA_character_
 ) {
   out <- monad_new(
-    name = name %|||% NA_character_,
-    command = command %|||% NA_character_,
-    result = result %|||% NA,
-    seconds = seconds %|||% NA_real_,
-    seed = seed %|||% NA_integer_,
-    error = error %|||% NA_character_,
-    traceback = traceback %|||% NA_character_,
-    warnings = warnings %|||% NA_character_,
-    socket_data = socket_data %|||% NA_character_,
-    socket_session = socket_session %|||% NA_character_
+    name = name,
+    command = command,
+    result = list(result),
+    seconds = seconds,
+    seed = seed,
+    error = error,
+    trace = trace,
+    warnings = warnings,
+    launcher = launcher,
+    worker = worker,
+    instance = instance
   )
-  monad_validate(out)
   out
 }
 
@@ -33,46 +34,50 @@ monad_new <- function(
   seconds = NULL,
   seed = NULL,
   error = NULL,
-  traceback = NULL,
+  trace = NULL,
   warnings = NULL,
-  socket_data = NULL,
-  socket_session = NULL
+  launcher = NULL,
+  worker = NULL,
+  instance = NULL
 ) {
-  out <- list(
-    name = name,
-    command = command,
-    result = list(result),
-    seconds = seconds,
-    seed = seed,
-    error = error,
-    traceback = traceback,
-    warnings = warnings,
-    socket_data = socket_data,
-    socket_session = socket_session
-  )
-  tibble::new_tibble(x = out, class = "crew_monad")
+  force(name)
+  force(command)
+  force(result)
+  force(seconds)
+  force(seed)
+  force(error)
+  force(trace)
+  force(warnings)
+  force(launcher)
+  force(worker)
+  force(instance)
+  as_class(environment(), "crew_monad")
 }
 
 monad_validate <- function(monad) {
-  true(inherits(monad, "crew_monad"))
-  true(tibble::is_tibble(monad))
-  true(nrow(monad), 1L)
-  true(identical(colnames(monad), names(formals(monad_new))))
+  crew_assert(inherits(monad, "crew_monad"))
+  crew_assert(identical(names(monad), names(formals(monad_new))))
   cols <- c(
     "name",
     "command",
     "error",
-    "traceback",
+    "trace",
     "warnings",
-    "socket_data",
-    "socket_session"
+    "launcher",
+    "instance"
   )
   for (col in cols) {
-    true(is.character(monad[[col]]))
+    crew_assert(monad[[col]], is.character(.), length(.) == 1L)
   }
   for (col in c("seconds", "seed")) {
-    true(is.numeric(monad[[col]]))
+    crew_assert(monad[[col]], is.numeric(.), length(.) == 1L)
   }
-  true(is.list(monad$result))
+  crew_assert(monad$worker, is.integer(.), length(.) == 1L)
+  crew_assert(monad$result, is.list(.), length(.) == 1L)
   invisible()
+}
+
+#' @export
+print.crew_monad <- function(x, ...) {
+  cat("<crew_monad>\n ", paste0(paste_list(as.list(x)), collapse = "\n  "))
 }
