@@ -1,7 +1,7 @@
-92b953dee504c38fc76c336136ef9827 *DESCRIPTION
+7640f3223147c36efce57993ec704aa6 *DESCRIPTION
 b218ea0b66a403e0a89f18a6ae83d998 *LICENSE
 b80a1819cb51454be8b9e4b8514a6cd1 *NAMESPACE
-76a58eb8a1c0743f76850bdbbbd47c23 *NEWS.md
+b4dfae617f74a6d62f1593f4f7184ad0 *NEWS.md
 f4e9b0fe0e30db5a80644c590bfedbea *R/class_monad.R
 7b14edc1a5bd1d389349d47df44d3596 *R/crew_assert.R
 308c25a1c7865ea893ae707e6affbb2f *R/crew_controller.R
@@ -59,12 +59,12 @@ c2eee64160a4ff521783e6147899f4ae *tests/launchers/test-launcher-system2.R
 b357684c615c575970fc0fd5dd6ccd47 *tests/testthat/test-crew_assert.R
 e479bcabfb7177fdead3632bf18d7448 *tests/testthat/test-crew_controller.R
 7014f5daeac39883968162633292d4b7 *tests/testthat/test-crew_controller_group.R
-feed3617ff2681911926283b7d7ba3e1 *tests/testthat/test-crew_controller_local.R
+8cb36ae8b757f8a6f107c9e8887848de *tests/testthat/test-crew_controller_local.R
 66f1eaff4d392eebcc94ec768c2f3d41 *tests/testthat/test-crew_eval.R
-a436ca57fade25638db5a5bc26d8c05b *tests/testthat/test-crew_launcher.R
-23afc6b936da9027031bc0445d5a6112 *tests/testthat/test-crew_launcher_local.R
+0f516e03c82b726a345863fbe34bd9da *tests/testthat/test-crew_launcher.R
+52607370b1a6f6cac87187a6a08e68c9 *tests/testthat/test-crew_launcher_local.R
 f9d78f224cdb81280e3f9a64554ef801 *tests/testthat/test-crew_random_name.R
-147fbb9e07e53336030e757178fca3f2 *tests/testthat/test-crew_retry.R
+cc1b21d2863cebbf4ee92bed9feb3ec0 *tests/testthat/test-crew_retry.R
 5f8b46ab312f8d33628621dacf503b85 *tests/testthat/test-crew_router.R
 1ece32317c75171c07cb5387c92c392e *tests/testthat/test-crew_worker.R
 a847b6f1b313cb4e3366932df1ef5ca3 *tests/testthat/test-utils_files.R
