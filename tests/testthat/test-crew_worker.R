@@ -1,4 +1,5 @@
 crew_test("crew_worker() can run mirai tasks and assigns env vars", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   envvars <- c("CREW_LAUNCHER", "CREW_WORKER", "CREW_INSTANCE")
@@ -29,7 +30,7 @@ crew_test("crew_worker() can run mirai tasks and assigns env vars", {
       )
       daemons_valid(envir$daemons)
     },
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   url <- rownames(envir$daemons)[1]
@@ -48,7 +49,7 @@ crew_test("crew_worker() can run mirai tasks and assigns env vars", {
   )
   crew_retry(
     ~!nanonext::.unresolved(m$data),
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   expect_equal(m$data$launcher, "my_launcher")

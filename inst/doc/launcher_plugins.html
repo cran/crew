@@ -386,13 +386,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-4"><a href="#cb1-4"></a>  <span class="dt">public =</span> <span class="kw">list</span>(</span>
 <span id="cb1-5"><a href="#cb1-5"></a>    <span class="dt">launch_worker =</span> <span class="cf">function</span>(call, launcher, worker, instance) {</span>
 <span id="cb1-6"><a href="#cb1-6"></a>      bin &lt;-<span class="st"> </span><span class="kw">file.path</span>(<span class="kw">R.home</span>(<span class="st">&quot;bin&quot;</span>), <span class="st">&quot;R&quot;</span>)</span>
-<span id="cb1-7"><a href="#cb1-7"></a>      processx<span class="op">::</span>process<span class="op">$</span><span class="kw">new</span>(<span class="dt">command =</span> bin, <span class="dt">args =</span> <span class="kw">c</span>(<span class="st">&quot;-e&quot;</span>, call))</span>
-<span id="cb1-8"><a href="#cb1-8"></a>    },</span>
-<span id="cb1-9"><a href="#cb1-9"></a>    <span class="dt">terminate_worker =</span> <span class="cf">function</span>(handle) {</span>
-<span id="cb1-10"><a href="#cb1-10"></a>      handle<span class="op">$</span><span class="kw">kill</span>()</span>
-<span id="cb1-11"><a href="#cb1-11"></a>    }</span>
-<span id="cb1-12"><a href="#cb1-12"></a>  )</span>
-<span id="cb1-13"><a href="#cb1-13"></a>)</span></code></pre></div>
+<span id="cb1-7"><a href="#cb1-7"></a>      processx<span class="op">::</span>process<span class="op">$</span><span class="kw">new</span>(</span>
+<span id="cb1-8"><a href="#cb1-8"></a>        <span class="dt">command =</span> bin,</span>
+<span id="cb1-9"><a href="#cb1-9"></a>        <span class="dt">args =</span> <span class="kw">c</span>(<span class="st">&quot;-e&quot;</span>, call),</span>
+<span id="cb1-10"><a href="#cb1-10"></a>        <span class="dt">cleanup =</span> <span class="ot">FALSE</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>      )</span>
+<span id="cb1-12"><a href="#cb1-12"></a>    },</span>
+<span id="cb1-13"><a href="#cb1-13"></a>    <span class="dt">terminate_worker =</span> <span class="cf">function</span>(handle) {</span>
+<span id="cb1-14"><a href="#cb1-14"></a>      handle<span class="op">$</span><span class="kw">kill</span>()</span>
+<span id="cb1-15"><a href="#cb1-15"></a>    }</span>
+<span id="cb1-16"><a href="#cb1-16"></a>  )</span>
+<span id="cb1-17"><a href="#cb1-17"></a>)</span></code></pre></div>
 <p>Inside <code>launch_worker()</code>, the <code>processx::process$new(command = bin, args = c(&quot;-e&quot;, call))</code> line runs the <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a> call in an external R process. This process runs in the background, connects back to <code>crew</code> and <code>mirai</code> over the local network, and accepts the tasks you push to the controller. <code>processx::process$new()</code> also returns a handle which the <code>terminate_worker()</code> method can use to force-terminate the process if appropriate. <code>mirai</code> has its own way to terminate workers, so a <code>terminate_worker()</code> method is not strictly required, but it is a useful safeguard in case a worker hangs in a crashed state before it establishes a connection.</p>
 <p>Every <code>launch_worker()</code> method must accept arguments <code>call</code>, <code>launcher</code>, <code>worker</code>, and <code>instance</code>. The method does not actually need to use all these arguments, but they must be present in the function signature.</p>
 <ul>
@@ -433,9 +437,9 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb3-8"><a href="#cb3-8"></a>  <span class="dt">workers =</span> 1L,</span>
 <span id="cb3-9"><a href="#cb3-9"></a>  <span class="dt">host =</span> <span class="ot">NULL</span>,</span>
 <span id="cb3-10"><a href="#cb3-10"></a>  <span class="dt">port =</span> <span class="ot">NULL</span>,</span>
-<span id="cb3-11"><a href="#cb3-11"></a>  <span class="dt">seconds_launch =</span> <span class="dv">30</span>,</span>
-<span id="cb3-12"><a href="#cb3-12"></a>  <span class="dt">seconds_interval =</span> <span class="fl">0.01</span>,</span>
-<span id="cb3-13"><a href="#cb3-13"></a>  <span class="dt">seconds_timeout =</span> <span class="dv">5</span>,</span>
+<span id="cb3-11"><a href="#cb3-11"></a>  <span class="dt">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-12"><a href="#cb3-12"></a>  <span class="dt">seconds_timeout =</span> <span class="dv">10</span>,</span>
+<span id="cb3-13"><a href="#cb3-13"></a>  <span class="dt">seconds_launch =</span> <span class="dv">30</span>,</span>
 <span id="cb3-14"><a href="#cb3-14"></a>  <span class="dt">seconds_idle =</span> <span class="ot">Inf</span>,</span>
 <span id="cb3-15"><a href="#cb3-15"></a>  <span class="dt">seconds_wall =</span> <span class="ot">Inf</span>,</span>
 <span id="cb3-16"><a href="#cb3-16"></a>  <span class="dt">seconds_exit =</span> <span class="dv">1</span>,</span>
@@ -444,40 +448,33 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb3-19"><a href="#cb3-19"></a>  <span class="dt">reset_globals =</span> <span class="ot">TRUE</span>,</span>
 <span id="cb3-20"><a href="#cb3-20"></a>  <span class="dt">reset_packages =</span> <span class="ot">FALSE</span>,</span>
 <span id="cb3-21"><a href="#cb3-21"></a>  <span class="dt">reset_options =</span> <span class="ot">FALSE</span>,</span>
-<span id="cb3-22"><a href="#cb3-22"></a>  <span class="dt">garbage_collection =</span> <span class="ot">FALSE</span>,</span>
-<span id="cb3-23"><a href="#cb3-23"></a>  <span class="dt">auto_scale =</span> <span class="st">&quot;demand&quot;</span></span>
-<span id="cb3-24"><a href="#cb3-24"></a>) {</span>
-<span id="cb3-25"><a href="#cb3-25"></a>  router &lt;-<span class="st"> </span>crew<span class="op">::</span><span class="kw">crew_router</span>(</span>
-<span id="cb3-26"><a href="#cb3-26"></a>    <span class="dt">name =</span> name,</span>
-<span id="cb3-27"><a href="#cb3-27"></a>    <span class="dt">workers =</span> workers,</span>
-<span id="cb3-28"><a href="#cb3-28"></a>    <span class="dt">host =</span> host,</span>
-<span id="cb3-29"><a href="#cb3-29"></a>    <span class="dt">port =</span> port,</span>
-<span id="cb3-30"><a href="#cb3-30"></a>    <span class="dt">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-31"><a href="#cb3-31"></a>    <span class="dt">seconds_timeout =</span> seconds_timeout</span>
-<span id="cb3-32"><a href="#cb3-32"></a>  )</span>
-<span id="cb3-33"><a href="#cb3-33"></a>  launcher &lt;-<span class="st"> </span>custom_launcher_class<span class="op">$</span><span class="kw">new</span>(</span>
-<span id="cb3-34"><a href="#cb3-34"></a>    <span class="dt">name =</span> name,</span>
-<span id="cb3-35"><a href="#cb3-35"></a>    <span class="dt">seconds_launch =</span> seconds_launch,</span>
-<span id="cb3-36"><a href="#cb3-36"></a>    <span class="dt">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-37"><a href="#cb3-37"></a>    <span class="dt">seconds_timeout =</span> seconds_timeout,</span>
-<span id="cb3-38"><a href="#cb3-38"></a>    <span class="dt">seconds_idle =</span> seconds_idle,</span>
-<span id="cb3-39"><a href="#cb3-39"></a>    <span class="dt">seconds_wall =</span> seconds_wall,</span>
-<span id="cb3-40"><a href="#cb3-40"></a>    <span class="dt">seconds_exit =</span> seconds_exit,</span>
-<span id="cb3-41"><a href="#cb3-41"></a>    <span class="dt">tasks_max =</span> tasks_max,</span>
-<span id="cb3-42"><a href="#cb3-42"></a>    <span class="dt">tasks_timers =</span> tasks_timers,</span>
-<span id="cb3-43"><a href="#cb3-43"></a>    <span class="dt">reset_globals =</span> reset_globals,</span>
-<span id="cb3-44"><a href="#cb3-44"></a>    <span class="dt">reset_packages =</span> reset_packages,</span>
-<span id="cb3-45"><a href="#cb3-45"></a>    <span class="dt">reset_options =</span> reset_options,</span>
-<span id="cb3-46"><a href="#cb3-46"></a>    <span class="dt">garbage_collection =</span> garbage_collection</span>
-<span id="cb3-47"><a href="#cb3-47"></a>  )</span>
-<span id="cb3-48"><a href="#cb3-48"></a>  controller &lt;-<span class="st"> </span>crew<span class="op">::</span><span class="kw">crew_controller</span>(</span>
-<span id="cb3-49"><a href="#cb3-49"></a>    <span class="dt">router =</span> router,</span>
-<span id="cb3-50"><a href="#cb3-50"></a>    <span class="dt">launcher =</span> launcher,</span>
-<span id="cb3-51"><a href="#cb3-51"></a>    <span class="dt">auto_scale =</span> auto_scale</span>
-<span id="cb3-52"><a href="#cb3-52"></a>  )</span>
-<span id="cb3-53"><a href="#cb3-53"></a>  controller<span class="op">$</span><span class="kw">validate</span>()</span>
-<span id="cb3-54"><a href="#cb3-54"></a>  controller</span>
-<span id="cb3-55"><a href="#cb3-55"></a>}</span></code></pre></div>
+<span id="cb3-22"><a href="#cb3-22"></a>  <span class="dt">garbage_collection =</span> <span class="ot">FALSE</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>) {</span>
+<span id="cb3-24"><a href="#cb3-24"></a>  router &lt;-<span class="st"> </span>crew<span class="op">::</span><span class="kw">crew_router</span>(</span>
+<span id="cb3-25"><a href="#cb3-25"></a>    <span class="dt">name =</span> name,</span>
+<span id="cb3-26"><a href="#cb3-26"></a>    <span class="dt">workers =</span> workers,</span>
+<span id="cb3-27"><a href="#cb3-27"></a>    <span class="dt">host =</span> host,</span>
+<span id="cb3-28"><a href="#cb3-28"></a>    <span class="dt">port =</span> port,</span>
+<span id="cb3-29"><a href="#cb3-29"></a>    <span class="dt">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-30"><a href="#cb3-30"></a>    <span class="dt">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb3-31"><a href="#cb3-31"></a>  )</span>
+<span id="cb3-32"><a href="#cb3-32"></a>  launcher &lt;-<span class="st"> </span>custom_launcher_class<span class="op">$</span><span class="kw">new</span>(</span>
+<span id="cb3-33"><a href="#cb3-33"></a>    <span class="dt">name =</span> name,</span>
+<span id="cb3-34"><a href="#cb3-34"></a>    <span class="dt">seconds_launch =</span> seconds_launch,</span>
+<span id="cb3-35"><a href="#cb3-35"></a>    <span class="dt">seconds_idle =</span> seconds_idle,</span>
+<span id="cb3-36"><a href="#cb3-36"></a>    <span class="dt">seconds_wall =</span> seconds_wall,</span>
+<span id="cb3-37"><a href="#cb3-37"></a>    <span class="dt">seconds_exit =</span> seconds_exit,</span>
+<span id="cb3-38"><a href="#cb3-38"></a>    <span class="dt">tasks_max =</span> tasks_max,</span>
+<span id="cb3-39"><a href="#cb3-39"></a>    <span class="dt">tasks_timers =</span> tasks_timers,</span>
+<span id="cb3-40"><a href="#cb3-40"></a>    <span class="dt">reset_globals =</span> reset_globals,</span>
+<span id="cb3-41"><a href="#cb3-41"></a>    <span class="dt">reset_packages =</span> reset_packages,</span>
+<span id="cb3-42"><a href="#cb3-42"></a>    <span class="dt">reset_options =</span> reset_options,</span>
+<span id="cb3-43"><a href="#cb3-43"></a>    <span class="dt">garbage_collection =</span> garbage_collection</span>
+<span id="cb3-44"><a href="#cb3-44"></a>  )</span>
+<span id="cb3-45"><a href="#cb3-45"></a>  controller &lt;-<span class="st"> </span>crew<span class="op">::</span><span class="kw">crew_controller</span>(<span class="dt">router =</span> router, <span class="dt">launcher =</span> launcher)</span>
+<span id="cb3-46"><a href="#cb3-46"></a>  controller<span class="op">$</span><span class="kw">validate</span>()</span>
+<span id="cb3-47"><a href="#cb3-47"></a>  controller</span>
+<span id="cb3-48"><a href="#cb3-48"></a>}</span></code></pre></div>
 </div>
 <div id="informal-testing" class="section level2">
 <h2>Informal testing</h2>

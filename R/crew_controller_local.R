@@ -20,19 +20,18 @@ crew_controller_local <- function(
   workers = 1L,
   host = NULL,
   port = NULL,
+  seconds_interval = 0.25,
+  seconds_timeout = 10,
   seconds_launch = 30,
-  seconds_interval = 0.01,
-  seconds_timeout = 5,
   seconds_idle = Inf,
   seconds_wall = Inf,
-  seconds_exit = 0.1,
+  seconds_exit = 1,
   tasks_max = Inf,
   tasks_timers = 0L,
   reset_globals = TRUE,
   reset_packages = FALSE,
   reset_options = FALSE,
-  garbage_collection = FALSE,
-  auto_scale = "demand"
+  garbage_collection = FALSE
 ) {
   router <- crew_router(
     name = name,
@@ -45,8 +44,6 @@ crew_controller_local <- function(
   launcher <- crew_launcher_local(
     name = name,
     seconds_launch = seconds_launch,
-    seconds_interval = seconds_interval,
-    seconds_timeout = seconds_timeout,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
     seconds_exit = seconds_exit,
@@ -57,11 +54,7 @@ crew_controller_local <- function(
     reset_options = reset_options,
     garbage_collection = garbage_collection
   )
-  controller <- crew_controller(
-    router = router,
-    launcher = launcher,
-    auto_scale = auto_scale
-  )
+  controller <- crew_controller(router = router, launcher = launcher)
   controller$validate()
   controller
 }

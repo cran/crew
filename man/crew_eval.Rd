@@ -22,8 +22,9 @@ crew_eval(
 global environment for the task.}
 
 \item{seed}{Integer of length 1 with the pseudo-random number generator
-seed to temporarily set for the evaluation of the task.
-At the end of the task, the seed is restored.}
+seed to set for the evaluation of the task. Does not restore
+the original seed, but this is okay because \code{crew_eval()}
+should only run in a non-interactive worker process.}
 
 \item{packages}{Character vector of packages to load for the task.}
 
@@ -49,6 +50,7 @@ crew_eval(quote(1 + 1))
 \seealso{
 Other utilities: 
 \code{\link{crew_assert}()},
+\code{\link{crew_deprecate}()},
 \code{\link{crew_random_name}()},
 \code{\link{crew_retry}()},
 \code{\link{crew_worker}()}

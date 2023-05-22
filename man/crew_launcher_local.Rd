@@ -7,8 +7,6 @@
 crew_launcher_local(
   name = NULL,
   seconds_launch = 30,
-  seconds_interval = 0.001,
-  seconds_timeout = 10,
   seconds_idle = Inf,
   seconds_wall = Inf,
   seconds_exit = 1,
@@ -29,13 +27,6 @@ from the moment of its launch until \code{seconds_launch} seconds later.
 After \code{seconds_launch} seconds, the worker is only
 considered alive if it is actively connected to its assign websocket.}
 
-\item{seconds_interval}{Number of seconds between
-polling intervals waiting for certain internal
-synchronous operations to complete.}
-
-\item{seconds_timeout}{Number of seconds until timing
-out while waiting for certain synchronous operations to complete.}
-
 \item{seconds_idle}{Maximum number of seconds that a worker can idle
 since the completion of the last task. If exceeded, the worker exits.
 But the timer does not launch until \code{tasks_timers} tasks
@@ -51,7 +42,8 @@ have completed.
 See the \code{walltime} argument of \code{mirai::server()}.}
 
 \item{seconds_exit}{Number of seconds to wait for NNG websockets
-to finish sending large data (in case an exit signal is received).
+to finish sending large data (when a worker exits after reaching a
+timeout or having completed a certain number of tasks).
 See the \code{exitlinger} argument of \code{mirai::server()}.}
 
 \item{tasks_max}{Maximum number of tasks that a worker will do before
@@ -63,7 +55,7 @@ the assignment of tasks to workers, it is recommended to set
 
 \item{tasks_timers}{Number of tasks to do before activating
 the timers for \code{seconds_idle} and \code{seconds_wall}.
-See the \code{timerlaunch} argument of \code{mirai::server()}.}
+See the \code{timerstart} argument of \code{mirai::server()}.}
 
 \item{reset_globals}{\code{TRUE} to reset global environment
 variables between tasks, \code{FALSE} to leave them alone.}
@@ -85,17 +77,15 @@ local process workers.
 }
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-crew_session_start()
 router <- crew_router()
 router$start()
 launcher <- crew_launcher_local()
-launcher$populate(sockets = router$sockets)
-launcher$launch()
+launcher$start(workers = router$workers)
+launcher$launch(index = 1L, socket = rownames(router$daemons))
 m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
-crew_session_terminate()
 }
 }
 \seealso{

@@ -1,7 +1,10 @@
 crew_test("crew_launcher_local() can run a task on a worker", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
-  router <- crew_router(workers = 4L)
+  router <- crew_router(
+    workers = 4L
+  )
   launcher <- crew_launcher_local(seconds_idle = 360)
   on.exit({
     router$terminate()
@@ -23,7 +26,7 @@ crew_test("crew_launcher_local() can run a task on a worker", {
   expect_silent(launcher$validate())
   crew::crew_retry(
     ~launcher$workers$handle[[2L]]$is_alive(),
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   crew::crew_retry(
@@ -38,15 +41,15 @@ crew_test("crew_launcher_local() can run a task on a worker", {
       status <- unname(daemons[, "online", drop = TRUE])[2L]
       length(status) == 1L && status > 0L
     },
-    seconds_interval = 0.001,
-    seconds_timeout = 5
+    seconds_interval = 0.5,
+    seconds_timeout = 10
   )
   expect_equal(launcher$workers$launches, c(0L, 1L, 0L, 0L))
   m <- mirai::mirai(ps::ps_pid(), .compute = router$name)
   crew_retry(
     ~!anyNA(m$data),
-    seconds_interval = 0.001,
-    seconds_timeout = 5
+    seconds_interval = 0.5,
+    seconds_timeout = 10
   )
   expect_equal(m$data, launcher$workers$handle[[2L]]$get_pid())
   router$terminate()
@@ -56,7 +59,7 @@ crew_test("crew_launcher_local() can run a task on a worker", {
         handle <- launcher$workers$handle[[2L]]
         is_crew_null(handle) || !handle$is_alive()
       },
-      seconds_interval = 0.001,
+      seconds_interval = 0.1,
       seconds_timeout = 5
     ),
     crew_expire = function(condition) {
@@ -66,6 +69,7 @@ crew_test("crew_launcher_local() can run a task on a worker", {
 })
 
 crew_test("crew_launcher_local() okay to not have sockets to launch", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   launcher <- crew_launcher_local(seconds_idle = 360)
@@ -90,9 +94,12 @@ crew_test("crew_launcher_local() okay to not have sockets to launch", {
 })
 
 crew_test("crew_launcher_local() can run a task and time out a worker", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
-  router <- crew_router(workers = 1L)
+  router <- crew_router(
+    workers = 1L
+  )
   launcher <- crew_launcher_local(tasks_max = 1L, seconds_idle = 360)
   on.exit({
     router$terminate()
@@ -112,13 +119,13 @@ crew_test("crew_launcher_local() can run a task and time out a worker", {
       handle <- launcher$workers$handle[[1]]
       !is_crew_null(handle) && handle$is_alive()
     },
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   m <- mirai::mirai(ps::ps_pid(), .compute = router$name)
   crew::crew_retry(
     ~!anyNA(m$data),
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   expect_equal(m$data, launcher$workers$handle[[1]]$get_pid())
@@ -127,7 +134,7 @@ crew_test("crew_launcher_local() can run a task and time out a worker", {
       handle <- launcher$workers$handle[[1]]
       is_crew_null(handle) || !handle$is_alive()
     },
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   crew::crew_retry(
@@ -139,15 +146,18 @@ crew_test("crew_launcher_local() can run a task and time out a worker", {
       status <- unname(daemons[, "online", drop = TRUE])
       length(status) != 1L || status < 1L
     },
-    seconds_interval = 0.001,
-    seconds_timeout = 5
+    seconds_interval = 0.5,
+    seconds_timeout = 10
   )
 })
 
 crew_test("crew_launcher_local() can run a task and end a worker", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
-  router <- crew_router(workers = 1L)
+  router <- crew_router(
+    workers = 1L
+  )
   launcher <- crew_launcher_local(tasks_max = 1L, seconds_idle = 360)
   on.exit({
     router$terminate()
@@ -170,15 +180,15 @@ crew_test("crew_launcher_local() can run a task and end a worker", {
       status <- unname(daemons[, "online", drop = TRUE])
       length(status) == 1L && status > 0L
     },
-    seconds_interval = 0.001,
-    seconds_timeout = 5
+    seconds_interval = 0.5,
+    seconds_timeout = 10
   )
   crew::crew_retry(
     ~{
       handle <- launcher$workers$handle[[1]]
       !is_crew_null(handle) && handle$is_alive()
     },
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   expect_silent(launcher$terminate())
@@ -191,15 +201,15 @@ crew_test("crew_launcher_local() can run a task and end a worker", {
       status <- unname(daemons[, "online", drop = TRUE])
       length(status) != 1L || status < 1L
     },
-    seconds_interval = 0.001,
-    seconds_timeout = 5
+    seconds_interval = 0.5,
+    seconds_timeout = 10
   )
   crew::crew_retry(
     ~{
       handle <- launcher$workers$handle[[1]]
       is_crew_null(handle) || !handle$is_alive()
     },
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
 })

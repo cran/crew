@@ -9,17 +9,15 @@ which launch and manage workers.
 }
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-crew_session_start()
 router <- crew_router()
 router$start()
 launcher <- crew_launcher_local()
-launcher$populate(sockets = router$sockets)
-launcher$launch()
+launcher$start(workers = router$workers)
+launcher$launch(index = 1L, socket = rownames(router$daemons))
 m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
-crew_session_terminate()
 }
 
 ## ------------------------------------------------
@@ -27,17 +25,15 @@ crew_session_terminate()
 ## ------------------------------------------------
 
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-crew_session_start()
 router <- crew_router()
 router$start()
 launcher <- crew_launcher_local()
-launcher$populate(sockets = router$sockets)
-launcher$launch()
+launcher$start(workers = router$workers)
+launcher$launch(index = 1L, socket = rownames(router$daemons))
 m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
-crew_session_terminate()
 }
 
 ## ------------------------------------------------
@@ -68,10 +64,6 @@ Other launchers:
 
 \item{\code{seconds_launch}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{seconds_interval}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
-\item{\code{seconds_timeout}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
 \item{\code{seconds_idle}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_wall}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
@@ -101,7 +93,6 @@ Other launchers:
 \item \href{#method-crew_class_launcher-call}{\code{crew_class_launcher$call()}}
 \item \href{#method-crew_class_launcher-start}{\code{crew_class_launcher$start()}}
 \item \href{#method-crew_class_launcher-launch}{\code{crew_class_launcher$launch()}}
-\item \href{#method-crew_class_launcher-expected}{\code{crew_class_launcher$expected()}}
 \item \href{#method-crew_class_launcher-launching}{\code{crew_class_launcher$launching()}}
 \item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
 \item \href{#method-crew_class_launcher-terminate_worker}{\code{crew_class_launcher$terminate_worker()}}
@@ -116,8 +107,6 @@ Launcher constructor.
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$new(
   name = NULL,
   seconds_launch = NULL,
-  seconds_interval = NULL,
-  seconds_timeout = NULL,
   seconds_idle = NULL,
   seconds_wall = NULL,
   seconds_exit = NULL,
@@ -136,10 +125,6 @@ Launcher constructor.
 \item{\code{name}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_launch}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
-\item{\code{seconds_interval}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
-\item{\code{seconds_timeout}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_idle}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
@@ -167,17 +152,15 @@ An \code{R6} object with the launcher.
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-crew_session_start()
 router <- crew_router()
 router$start()
 launcher <- crew_launcher_local()
-launcher$populate(sockets = router$sockets)
-launcher$launch()
+launcher$start(workers = router$workers)
+launcher$launch(index = 1L, socket = rownames(router$daemons))
 m <- mirai::mirai("result", .compute = router$name)
 Sys.sleep(0.25)
 m$data
 router$terminate()
-crew_session_terminate()
 }
 }
 \if{html}{\out{</div>}}
@@ -311,20 +294,6 @@ to launch.}
 }
 \subsection{Returns}{
 \code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-expected"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-expected}{}}}
-\subsection{Method \code{expected()}}{
-Show which workers are expected to launch.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$expected()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-A logical vector indicating which workers are expected
-to launch.
 }
 }
 \if{html}{\out{<hr>}}

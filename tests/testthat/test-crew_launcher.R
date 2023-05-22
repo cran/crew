@@ -115,9 +115,7 @@ crew_test("launcher call", {
     reset_globals = TRUE,
     reset_packages = FALSE,
     reset_options = FALSE,
-    garbage_collection = FALSE,
-    seconds_interval = 0.1,
-    seconds_timeout = 0.25
+    garbage_collection = FALSE
   )
   out <- launcher$call(
     socket = "ws://127.0.0.1:5000/3/cba033e58",
@@ -135,6 +133,7 @@ crew_test("launcher call", {
 })
 
 crew_test("launcher start()", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   launcher <- crew_class_launcher$new()
@@ -154,6 +153,7 @@ crew_test("launcher start()", {
 })
 
 crew_test("launcher launching()", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   launcher <- crew_class_launcher$new(seconds_launch = 60)
   launcher$start(workers = 3L)
@@ -162,6 +162,7 @@ crew_test("launcher launching()", {
 })
 
 crew_test("custom launcher", {
+  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   skip_if_not_installed("processx")
@@ -188,9 +189,9 @@ crew_test("custom launcher", {
     workers = 1L,
     host = NULL,
     port = NULL,
-    seconds_launch = 30,
-    seconds_interval = 0.01,
+    seconds_interval = 0.5,
     seconds_timeout = 5,
+    seconds_launch = 30,
     seconds_idle = Inf,
     seconds_wall = Inf,
     seconds_exit = 1,
@@ -199,8 +200,7 @@ crew_test("custom launcher", {
     reset_globals = TRUE,
     reset_packages = FALSE,
     reset_options = FALSE,
-    garbage_collection = FALSE,
-    auto_scale = "demand"
+    garbage_collection = FALSE
   ) {
     router <- crew::crew_router(
       name = name,
@@ -213,8 +213,6 @@ crew_test("custom launcher", {
     launcher <- custom_launcher_class$new(
       name = name,
       seconds_launch = seconds_launch,
-      seconds_interval = seconds_interval,
-      seconds_timeout = seconds_timeout,
       seconds_idle = seconds_idle,
       seconds_wall = seconds_wall,
       seconds_exit = seconds_exit,
@@ -227,8 +225,7 @@ crew_test("custom launcher", {
     )
     controller <- crew::crew_controller(
       router = router,
-      launcher = launcher,
-      auto_scale = auto_scale
+      launcher = launcher
     )
     controller$validate()
     controller
@@ -242,7 +239,7 @@ crew_test("custom launcher", {
     crew_test_sleep()
   })
   controller$push(name = "pid", command = ps::ps_pid())
-  controller$wait()
+  controller$wait(seconds_timeout = 10, seconds_interval = 0.5)
   out <- controller$pop()$result[[1]]
   handle <- controller$launcher$workers$handle[[1]]
   exp <- handle$get_pid()
@@ -251,7 +248,7 @@ crew_test("custom launcher", {
   controller$launcher$terminate()
   crew_retry(
     ~!handle$is_alive(),
-    seconds_interval = 0.001,
+    seconds_interval = 0.1,
     seconds_timeout = 5
   )
   expect_false(handle$is_alive())

@@ -6,23 +6,19 @@
 #' @inheritParams crew_launcher
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-#' crew_session_start()
 #' router <- crew_router()
 #' router$start()
 #' launcher <- crew_launcher_local()
-#' launcher$populate(sockets = router$sockets)
-#' launcher$launch()
+#' launcher$start(workers = router$workers)
+#' launcher$launch(index = 1L, socket = rownames(router$daemons))
 #' m <- mirai::mirai("result", .compute = router$name)
 #' Sys.sleep(0.25)
 #' m$data
 #' router$terminate()
-#' crew_session_terminate()
 #' }
 crew_launcher_local <- function(
   name = NULL,
   seconds_launch = 30,
-  seconds_interval = 0.001,
-  seconds_timeout = 10,
   seconds_idle = Inf,
   seconds_wall = Inf,
   seconds_exit = 1,
@@ -37,8 +33,6 @@ crew_launcher_local <- function(
   launcher <- crew_class_launcher_local$new(
     name = name,
     seconds_launch = seconds_launch,
-    seconds_interval = seconds_interval,
-    seconds_timeout = seconds_timeout,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
     seconds_exit = seconds_exit,
@@ -60,17 +54,15 @@ crew_launcher_local <- function(
 #' @details See [crew_launcher_local()].
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-#' crew_session_start()
 #' router <- crew_router()
 #' router$start()
 #' launcher <- crew_launcher_local()
-#' launcher$populate(sockets = router$sockets)
-#' launcher$launch()
+#' launcher$start(workers = router$workers)
+#' launcher$launch(index = 1L, socket = rownames(router$daemons))
 #' m <- mirai::mirai("result", .compute = router$name)
 #' Sys.sleep(0.25)
 #' m$data
 #' router$terminate()
-#' crew_session_terminate()
 #' }
 crew_class_launcher_local <- R6::R6Class(
   classname = "crew_class_launcher_local",
@@ -97,7 +89,11 @@ crew_class_launcher_local <- R6::R6Class(
     launch_worker = function(call, launcher, worker, instance) {
       bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
       path <- file.path(R.home("bin"), bin)
-      processx::process$new(command = path, args = c("-e", call))
+      processx::process$new(
+        command = path,
+        args = c("-e", call),
+        cleanup = FALSE
+      )
     },
     #' @description Terminate a local process worker.
     #' @return `NULL` (invisibly).

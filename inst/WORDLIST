@@ -42,7 +42,7 @@ GCP
 instantiable
 Hadley
 Wickham
-
+shinyapps
 subclass
 github
 TBD
@@ -99,3 +99,6 @@ Surmann
 Kubernetes
 namespaced
 unencrypted
+phyllotaxis
+scalable
+UI

@@ -25,8 +25,8 @@ time <- system.time({
   }
 })
 message(time["elapsed"])
-View(x$summary())
 x$terminate()
 results <- tibble::as_tibble(do.call(rbind, results))
 results$result <- as.integer(results$result)
 table(results$result) # 200 total tasks should be about evenly distributed.
+testthat::expect_equal(sum(table(results$result)), 200)

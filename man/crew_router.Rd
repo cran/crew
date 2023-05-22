@@ -9,8 +9,8 @@ crew_router(
   workers = 1L,
   host = NULL,
   port = NULL,
-  seconds_interval = 0.01,
-  seconds_timeout = 5
+  seconds_interval = 0.25,
+  seconds_timeout = 10
 )
 }
 \arguments{
@@ -27,7 +27,9 @@ then an available ephemeral port is automatically chosen.}
 
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
-synchronous operations to complete.}
+synchronous operations to complete. If \code{space_poll} is \code{TRUE}, then
+this is also the minimum number of seconds between calls to
+\code{mirai::daemons()} for the purposes of checking worker status.}
 
 \item{seconds_timeout}{Number of seconds until timing
 out while waiting for certain synchronous operations to complete.}

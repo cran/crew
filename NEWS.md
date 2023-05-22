@@ -1,3 +1,24 @@
+# crew 0.2.1
+
+* Use `packageStartupMessage()`.
+
+# crew 0.2.0
+
+* Use `.args` instead of `...` in `mirai::mirai()`.
+* Use `set.seed()` instead of `withr::local_seed()` (#67, @shikokuchuo).
+* Add a vignette to showcase integration with Shiny, co-authored with @dwoodie and with helpful suggestions by @shikokuchuo.
+* Drop `rlang::duplicate()` (#72, @shikokuchuo).
+* Do not poll dispatcher availability when starting router objects (@shikokuchuo).
+* Implement a `saturated()` controller method to support `targets`.
+* Add a `worker_index` column to controller summaries.
+* When relaunching workers, prioritize those with unresolved tasks stuck at the NNG level (#75, @shikokuchuo).
+* Always relaunch backlogged inactive workers (#79).
+* Deprecate the `auto_scale` argument/field of controllers in favor of the `scale` argument of `push()`, `pop()`, and `wait()`.
+* Throttle auto-scaling with interval `self$router$seconds_interval` (#76).
+* Remove `clean()` and instead terminate lost workers on launch.
+* Fix examples.
+* Add a `collect` argument to `pop()`.
+
 # crew 0.1.1
 
 * Ensure checks pass on CRAN.

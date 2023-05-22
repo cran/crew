@@ -36,8 +36,8 @@ message(time["elapsed"])
 # Call wait() on the controller to cycle through the rest of the tasks.
 # Watch htop to see it complete.
 x$wait(mode = "all")
-length(x$queue) # 0
-length(x$results) # 200
+testthat::expect_equal(length(x$queue), 0L)
+testthat::expect_equal(length(x$results), 200L)
 
 # All results should now be available.
 results <- list()
@@ -51,8 +51,9 @@ time <- system.time({
   }
 })
 message(time["elapsed"])
-View(x$summary())
+sum <- x$summary()
+testthat::expect_equal(sum(sum$worker_launches), 2 * n)
 x$terminate()
 results <- tibble::as_tibble(do.call(rbind, results))
 results$result <- as.integer(results$result)
-length(unique(results$result)) # Should be 200, one per transient worker.
+testthat::expect_equal(length(unique(results$result)), 2 * n)

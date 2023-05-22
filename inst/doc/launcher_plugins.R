@@ -13,7 +13,11 @@ knitr::opts_chunk$set(
 #    public = list(
 #      launch_worker = function(call, launcher, worker, instance) {
 #        bin <- file.path(R.home("bin"), "R")
-#        processx::process$new(command = bin, args = c("-e", call))
+#        processx::process$new(
+#          command = bin,
+#          args = c("-e", call),
+#          cleanup = FALSE
+#        )
 #      },
 #      terminate_worker = function(handle) {
 #        handle$kill()
@@ -43,9 +47,9 @@ knitr::opts_chunk$set(
 #    workers = 1L,
 #    host = NULL,
 #    port = NULL,
+#    seconds_interval = 0.5,
+#    seconds_timeout = 10,
 #    seconds_launch = 30,
-#    seconds_interval = 0.01,
-#    seconds_timeout = 5,
 #    seconds_idle = Inf,
 #    seconds_wall = Inf,
 #    seconds_exit = 1,
@@ -54,8 +58,7 @@ knitr::opts_chunk$set(
 #    reset_globals = TRUE,
 #    reset_packages = FALSE,
 #    reset_options = FALSE,
-#    garbage_collection = FALSE,
-#    auto_scale = "demand"
+#    garbage_collection = FALSE
 #  ) {
 #    router <- crew::crew_router(
 #      name = name,
@@ -68,8 +71,6 @@ knitr::opts_chunk$set(
 #    launcher <- custom_launcher_class$new(
 #      name = name,
 #      seconds_launch = seconds_launch,
-#      seconds_interval = seconds_interval,
-#      seconds_timeout = seconds_timeout,
 #      seconds_idle = seconds_idle,
 #      seconds_wall = seconds_wall,
 #      seconds_exit = seconds_exit,
@@ -80,11 +81,7 @@ knitr::opts_chunk$set(
 #      reset_options = reset_options,
 #      garbage_collection = garbage_collection
 #    )
-#    controller <- crew::crew_controller(
-#      router = router,
-#      launcher = launcher,
-#      auto_scale = auto_scale
-#    )
+#    controller <- crew::crew_controller(router = router, launcher = launcher)
 #    controller$validate()
 #    controller
 #  }

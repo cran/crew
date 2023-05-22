@@ -1,4 +1,4 @@
-#' crew: a distributed worker launcher
+#' crew: a distributed worker launcher framework
 #' @docType package
 #' @name crew-package
 #' @description In computationally demanding analysis projects,
@@ -25,13 +25,12 @@
 #' @importFrom processx process
 #' @importFrom ps ps_handle ps_is_running ps_kill
 #' @importFrom R6 R6Class
-#' @importFrom rlang abort as_function duplicate enquo quo_squash
+#' @importFrom rlang abort as_function enquo is_installed quo_squash
 #' @importFrom stats runif
-#' @importFrom tibble tibble
+#' @importFrom tibble as_tibble new_tibble tibble
 #' @importFrom tidyselect all_of any_of contains ends_with eval_select
 #'   everything last_col matches num_range one_of starts_with
 #' @importFrom utils globalVariables head
-#' @importFrom withr local_seed
 NULL
 
 utils::globalVariables(".")
