@@ -10,7 +10,6 @@ crew_test("crew_controller_group() method and signature compatibility", {
 })
 
 crew_test("crew_controller_group()", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(
@@ -31,7 +30,7 @@ crew_test("crew_controller_group()", {
   })
   expect_silent(x$validate())
   for (index in seq_len(2)) {
-    expect_null(x$controllers[[index]]$router$started)
+    expect_null(x$controllers[[index]]$client$started)
   }
   x$start()
   expect_true(x$empty())
@@ -39,7 +38,7 @@ crew_test("crew_controller_group()", {
   expect_true(x$empty(controllers = "a"))
   expect_true(x$empty(controllers = "b"))
   for (index in seq_len(2)) {
-    expect_true(x$controllers[[index]]$router$started)
+    expect_true(x$controllers[[index]]$client$started)
   }
   crew_retry(
     ~{
@@ -57,39 +56,26 @@ crew_test("crew_controller_group()", {
     sort(
       c(
         "controller",
-        "worker_index",
-        "worker_socket",
-        "worker_connected",
-        "worker_launches",
-        "worker_instances",
-        "tasks_assigned",
-        "tasks_complete",
-        "popped_tasks",
-        "popped_seconds",
-        "popped_errors",
-        "popped_warnings"
-      )
-    )
-  )
-  s2 <- x$summary(columns = tidyselect::starts_with("popped"))
-  expect_equal(
-    sort(colnames(s2)),
-    sort(
-      c(
-        "popped_tasks",
-        "popped_seconds",
-        "popped_errors",
-        "popped_warnings"
+        "worker",
+        "tasks",
+        "seconds",
+        "errors",
+        "warnings"
       )
     )
   )
   expect_null(x$pop())
   # substitute = TRUE # nolint
-  x$push(command = ps::ps_pid(), name = "task_pid", controller = "b")
+  x$push(
+    command = ps::ps_pid(),
+    name = "task_pid",
+    controller = "b",
+    save_command = TRUE
+  )
   expect_false(x$empty())
   expect_true(x$empty(controllers = "a"))
   expect_false(x$empty(controllers = "b"))
-  x$wait(seconds_timeout = 5)
+  x$wait(mode = "all", seconds_timeout = 5)
   expect_false(x$empty())
   expect_true(x$empty(controllers = "a"))
   expect_false(x$empty(controllers = "b"))
@@ -114,7 +100,8 @@ crew_test("crew_controller_group()", {
     command = quote(ps::ps_pid()),
     substitute = FALSE,
     name = "task_pid2",
-    controller = "a"
+    controller = "a",
+    save_command = FALSE
   )
   x$wait(seconds_timeout = 5)
   envir <- new.env(parent = emptyenv())
@@ -129,7 +116,7 @@ crew_test("crew_controller_group()", {
   out <- envir$out
   expect_false(is.null(out))
   expect_equal(out$name, "task_pid2")
-  expect_equal(out$command, "ps::ps_pid()")
+  expect_true(anyNA(out$command))
   expect_true(is.numeric(out$seconds))
   expect_false(anyNA(out$seconds))
   expect_true(out$seconds >= 0)
@@ -143,7 +130,7 @@ crew_test("crew_controller_group()", {
   handle <- x$controllers[[2]]$launcher$workers$handle[[1]]
   x$terminate()
   for (index in seq_len(2)) {
-    expect_false(x$controllers[[index]]$router$started)
+    expect_false(x$controllers[[index]]$client$started)
     crew_retry(
       ~!handle$is_alive(),
       seconds_interval = 0.1,
@@ -153,7 +140,6 @@ crew_test("crew_controller_group()", {
 })
 
 crew_test("crew_controller_group() select", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(
@@ -171,19 +157,18 @@ crew_test("crew_controller_group() select", {
     gc()
     crew_test_sleep()
   })
-  expect_null(a$router$started)
-  expect_null(b$router$started)
+  expect_null(a$client$started)
+  expect_null(b$client$started)
   name <- "b"
   x$start(controllers = name)
-  expect_null(a$router$started)
-  expect_true(b$router$started)
+  expect_null(a$client$started)
+  expect_true(b$client$started)
   x$terminate(controllers = name)
-  expect_null(a$router$started)
-  expect_false(b$router$started)
+  expect_null(a$client$started)
+  expect_false(b$client$started)
 })
 
 crew_test("crew_controller_group() collect", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(
@@ -202,8 +187,8 @@ crew_test("crew_controller_group() collect", {
     crew_test_sleep()
   })
   expect_silent(x$validate())
-  expect_null(x$controllers[[1]]$router$started)
-  expect_null(x$controllers[[2]]$router$started)
+  expect_null(x$controllers[[1]]$client$started)
+  expect_null(x$controllers[[2]]$client$started)
   x$start()
   expect_null(x$pop())
   x$push(command = ps::ps_pid(), name = "task_pid")
@@ -211,7 +196,7 @@ crew_test("crew_controller_group() collect", {
     fun = ~{
       x$scale()
       x$collect()
-      length(x$controllers[[1]]$results) > 0L
+      length(x$controllers[[1]]$schedule$collected) > 0L
     },
     seconds_interval = 0.5,
     seconds_timeout = 10
@@ -225,7 +210,6 @@ crew_test("crew_controller_group() collect", {
 })
 
 crew_test("crew_controller_group() launch method", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(
@@ -272,7 +256,6 @@ crew_test("crew_controller_group() launch method", {
 })
 
 crew_test("crew_controller_group() scale method", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(

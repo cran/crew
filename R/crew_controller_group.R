@@ -1,7 +1,6 @@
 #' @title Create a controller group.
 #' @export
-#' @keywords internal
-#' @family controllers
+#' @family user
 #' @description Create an `R6` object to submit tasks and launch workers
 #'   through multiple `crew` controllers.
 #' @param ... `R6` controller objects or lists of `R6` controller objects.
@@ -23,7 +22,7 @@
 #' }
 crew_controller_group <- function(...) {
   controllers <- unlist(list(...), recursive = TRUE)
-  names(controllers) <- map_chr(controllers, ~.x$router$name)
+  names(controllers) <- map_chr(controllers, ~.x$client$name)
   out <- crew_class_controller_group$new(controllers = controllers)
   out$validate()
   out
@@ -31,7 +30,7 @@ crew_controller_group <- function(...) {
 
 #' @title Controller group class
 #' @export
-#' @family controllers
+#' @family class
 #' @description `R6` class for controller groups.
 #' @details See [crew_controller_group()].
 #' @examples
@@ -111,14 +110,14 @@ crew_class_controller_group <- R6::R6Class(
       self$controllers <- controllers
       invisible()
     },
-    #' @description Validate the router.
+    #' @description Validate the client.
     #' @return `NULL` (invisibly).
     validate = function() {
       crew_assert(
         map_lgl(self$controllers, ~inherits(.x, "crew_class_controller")),
         message = "All objects in a controller group must be controllers."
       )
-      out <- unname(map_chr(self$controllers, ~.x$router$name))
+      out <- unname(map_chr(self$controllers, ~.x$client$name))
       exp <- names(self$controllers)
       crew_assert(identical(out, exp), message = "bad controller names")
       invisible()
@@ -146,7 +145,7 @@ crew_class_controller_group <- R6::R6Class(
     #' @param collect Logical of length 1, whether to collect the results
     #'   of any newly resolved tasks before determining saturation.
     #' @param throttle Logical of length 1, whether to delay task collection
-    #'   until the next request at least `self$router$seconds_interval`
+    #'   until the next request at least `self$client$seconds_interval`
     #'   seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
@@ -181,7 +180,7 @@ crew_class_controller_group <- R6::R6Class(
     #' @return `NULL` (invisibly).
     #' @param throttle Logical of length 1, whether to delay auto-scaling
     #'   until the next auto-scaling request at least
-    #'  `self$router$seconds_interval` seconds from the original request.
+    #'  `self$client$seconds_interval` seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
     #'   and efficiency.
@@ -224,7 +223,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   of workers is not too high.
     #' @param throttle If `scale` is `TRUE`, whether to defer auto-scaling
     #'   until the next auto-scaling request at least
-    #'   `self$router$seconds_interval` seconds from the original request.
+    #'   `self$client$seconds_interval` seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
     #'   and efficiency.
@@ -234,6 +233,10 @@ crew_class_controller_group <- R6::R6Class(
     #'   name of the controller to submit the task.
     #'   If `NULL`, the controller defaults to the
     #'   first controller in the list.
+    #' @param save_command Logical of length 1. If `TRUE`, the controller
+    #'   deparses the command and returns it with the output on `pop()`.
+    #'   If `FALSE` (default), the controller skips this step to
+    #'   increase speed.
     push = function(
       command,
       data = list(),
@@ -246,13 +249,17 @@ crew_class_controller_group <- R6::R6Class(
       scale = TRUE,
       throttle = TRUE,
       name = NULL,
+      save_command = FALSE,
       controller = NULL
     ) {
       if (substitute) {
         command <- substitute(command)
       }
-      control <- private$select_single_controller(name = controller)
-      control$push(
+      control <- .subset2(
+        private,
+        "select_single_controller"
+      )(name = controller)
+      .subset2(control, "push")(
         command = command,
         data = data,
         globals = globals,
@@ -263,7 +270,8 @@ crew_class_controller_group <- R6::R6Class(
         seconds_timeout = seconds_timeout,
         scale = scale,
         throttle = throttle,
-        name = name
+        name = name,
+        save_command = save_command
       )
     },
     #' @description Check for done tasks and move the results to
@@ -272,7 +280,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   list as applicable and moves them to the `results` list.
     #' @param throttle whether to defer task collection
     #'   until the next task collection request at least
-    #'   `self$router$seconds_interval` seconds from the original request.
+    #'   `self$client$seconds_interval` seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
     #'   and efficiency.
@@ -300,7 +308,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   step always happens (with throttling) when `scale` is `TRUE`.
     #' @param throttle If `scale` is `TRUE`, whether to defer auto-scaling
     #'   until the next auto-scaling request at least
-    #'   `self$router$seconds_interval` seconds from the original request.
+    #'   `self$client$seconds_interval` seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
     #'   and efficiency.
@@ -346,7 +354,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   every iteration if `throttle` is `TRUE`.
     #' @param throttle If `scale` is `TRUE`, whether to defer auto-scaling
     #'   and task collection until the next request at least
-    #'   `self$router$seconds_interval` seconds from the original request.
+    #'   `self$client$seconds_interval` seconds from the original request.
     #'   The idea is similar to `shiny::throttle()` except that `crew` does not
     #'   accumulate a backlog of requests. The technique improves robustness
     #'   and efficiency.
@@ -370,22 +378,16 @@ crew_class_controller_group <- R6::R6Class(
           fun = ~{
             empty <- TRUE
             for (controller in control) {
-              if_any(
-                scale,
-                controller$scale(throttle = throttle),
-                controller$collect(throttle = throttle)
-              )
-              empty_queue <- length(controller$queue) < 1L
-              empty_results <- length(controller$results) < 1L
-              done <- if_any(
-                identical(mode, "all"),
-                empty_queue && (!empty_results),
-                empty_queue || (!empty_results)
-              )
-              if (done) {
+              controller$schedule$collect(throttle = throttle)
+              if (scale) {
+                controller$scale(throttle = throttle)
+              }
+              done <- controller$schedule$collected_mode(mode = mode)
+              empty <- controller$schedule$empty()
+              if (done && !empty) {
                 return(TRUE)
               }
-              empty <- empty && empty_queue && empty_results
+              empty <- empty && controller$schedule$empty()
             }
             empty
           },
@@ -398,31 +400,21 @@ crew_class_controller_group <- R6::R6Class(
     },
     #' @description Summarize the workers of one or more controllers.
     #' @return A data frame of aggregated worker summary statistics
-    #'   of all the selected controllers. It has one row per worker
-    #'   websocket, and the rows are grouped by controller.
+    #'   of all the selected controllers. It has one row per worker,
+    #'   and the rows are grouped by controller.
     #'   See the documentation of the `summary()` method of the controller
     #'   class for specific information about the columns in the output.
-    #' @param columns Tidyselect expression to select a subset of columns.
-    #'   Examples include `columns = contains("worker")` and
-    #'   `columns = starts_with("tasks")`.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
-    summary = function(
-      columns = tidyselect::everything(),
-      controllers = NULL
-    ) {
+    summary = function(controllers = NULL) {
       control <- private$select_controllers(controllers)
-      columns <- rlang::enquo(columns)
-      out <- map(
-        control,
-        ~do.call(what = .x$summary, args = list(columns = columns))
-      )
+      out <- map(control, ~.x$summary())
       if (all(map_lgl(out, is.null))) {
-        return(NULL)
+        return(NULL) # nocov
       }
       tibble::as_tibble(do.call(what = rbind, args = out))
     },
-    #' @description Terminate the workers and disconnect the router
+    #' @description Terminate the workers and disconnect the client
     #'   for one or more controllers.
     #' @return `NULL` (invisibly).
     #' @param controllers Character vector of controller names.

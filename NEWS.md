@@ -1,3 +1,21 @@
+# crew 0.3.0
+
+* Track warnings properly (#81, @brendanf).
+* Optimize heavily (#81, #83, @shikokuchuo, @brendanf).
+* Use CRAN `nanonext` 0.9.0.
+* Delegate the task pushing and collection logic to a new `R6` schedule class (#84).
+* Delegate auto-scaling to the launcher (#84).
+* Drastically simplify internal logic (#84).
+* Rename "router" to "client" and change the function signature of `launch_worker()` (#84). Unfortunately neither of these changes is back-compatible for third-party launcher plugins. However, the controller interface is still back-compatible, so `targets` remains unaffected.
+* Terminate "lost" workers on websocket rotation.
+* Allow `NULL` result in `pop()$result[[1L]]`.
+* Delegate summaries among the controller, schedule, launcher, and client.
+* Default to the loopback address for the local controller.
+* Use already cumulative `assigned` and `complete` stats from `mirai` 0.8.7.9029.
+* Reorganize `pkgdown` reference and `Rd` families to clarify which parts are for end-users and which parts are for launcher plugin developers.
+* Add `controller$shove()` and `schedule$list()` to support fast extensions for functional programming.
+* Depend on `mirai` 0.9.0 or greater.
+
 # crew 0.2.1
 
 * Use `packageStartupMessage()`.

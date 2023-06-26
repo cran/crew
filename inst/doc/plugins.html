@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Launcher plugins</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Launcher plugins</h1>
+
+
+
+<div id="about" class="section level2">
+<h2>About</h2>
+<p><code>crew</code> lets you write custom <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launchers</a>
+for different types of workers that connect over the local network. This
+flexibility can extend <code>crew</code> to platforms like <a href="https://slurm.schedmd.com/">SLURM</a>, <a href="https://aws.amazon.com/batch/">AWS Batch</a>, and <a href="https://kubernetes.io/">Kubernetes</a>.</p>
+</div>
+<div id="vision" class="section level2">
+<h2>Vision</h2>
+<p>These <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launcher</a>
+plugins need not become part of the <code>crew</code> package itself.
+You can write your plugin in a simple R script, or you write it in a
+custom R package that <a href="https://r-pkgs.org/dependencies-in-practice.html">depends on</a>
+<code>crew</code>. Published packages with <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launcher</a>
+plugins are powerful extensions that enhance <code>crew</code> for the
+entire open-source community. See <a href="https://r-pkgs.org/">R
+Packages</a> by <a href="https://hadley.nz/">Hadley Wickham</a> and <a href="https://jennybryan.org/">Jenny Bryan</a> for how to write an R
+package.</p>
+</div>
+<div id="scope" class="section level2">
+<h2>Scope</h2>
+<p>This vignette demonstrates how to write a <code>crew</code> launcher
+plugin. It assumes prior familiarity with <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code>
+classes</a> and the computing platform of your plugin.</p>
+</div>
+<div id="how-it-works" class="section level2">
+<h2>How it works</h2>
+<p>To create your own launcher plugin, write an <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code></a>
+subclass of <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html"><code>crew_class_launcher</code></a>
+with a <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-launch-worker-"><code>launch_worker()</code></a>
+method analogous the one in the <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html">local
+process launcher</a>. <code>launch_worker()</code> must accept the same
+arguments as the <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-launch-worker-">local
+process <code>launch_worker()</code> method</a>, generate a call to <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a>,
+and then submit a new job or process to run that call.</p>
+</div>
+<div id="network" class="section level2">
+<h2>Network</h2>
+<p>Each worker that launches must be able to dial into the client over
+the local network. The <code>host</code> argument of
+<code>crew_client()</code> provides the local IP address, and the
+<code>port</code> argument provides the TCP port. The controller helper
+function (see below) should expose arguments <code>host</code> and
+<code>port</code> in order to solve potential network problems like <a href="https://github.com/wlandau/crew.cluster/issues/1#issuecomment-1546024163">this
+one</a>.</p>
+<p>By default, <code>host</code> is the local IP address.
+<code>crew</code> assumes the local network is secure. Please take the
+time to assess the network security risks of your computing environment.
+Use at your own risk.</p>
+</div>
+<div id="termination" class="section level2">
+<h2>Termination</h2>
+<p>We recommend you implement an optional <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
+method. Although <code>mirai</code> has its own way of terminating
+workers, it only works if the worker already connected, and it cannot
+reach workers that fail to connect and hang in a crashed state. An
+optional <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
+method in your <code>crew</code> launcher plugin is extra assurance that
+these workers will exit.</p>
+<p>If you implement a custom <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
+method, it must not throw an error (and should not throw a warning or
+message) if the worker is already terminated. In addition, it must
+accept a handle that identifies the worker, and this handle must be the
+return value of the previous call to <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-launch-worker-"><code>launch_worker()</code></a>.
+A handle can be any kind of R object: a process ID, a job name, an
+<code>R6</code> object returned by <code>callr::r_bg()</code>, etc.</p>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>The following is a custom custom launcher class whose workers are
+local R processes on Unix-like systems.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>custom_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;custom_launcher_class&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">inherit =</span> crew<span class="sc">::</span>crew_class_launcher,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>    <span class="at">launch_worker =</span> <span class="cf">function</span>(call, name, launcher, worker, instance) {</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>      bin <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">&quot;bin&quot;</span>), <span class="st">&quot;R&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>      processx<span class="sc">::</span>process<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>        <span class="at">command =</span> bin,</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>        <span class="at">args =</span> <span class="fu">c</span>(<span class="st">&quot;-e&quot;</span>, call),</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>        <span class="at">cleanup =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>      )</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>    },</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>    <span class="at">terminate_worker =</span> <span class="cf">function</span>(handle) {</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>      handle<span class="sc">$</span><span class="fu">kill</span>()</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>    }</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>  )</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>)</span></code></pre></div>
+<p>Inside <code>launch_worker()</code>, the
+<code>processx::process$new(command = bin, args = c(&quot;-e&quot;, call))</code>
+line runs the <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a>
+call in an external R process. This process runs in the background,
+connects back to <code>crew</code> and <code>mirai</code> over the local
+network, and accepts the tasks you push to the controller.
+<code>processx::process$new()</code> also returns a handle which the
+<code>terminate_worker()</code> method can use to force-terminate the
+process if appropriate. <code>mirai</code> has its own way to terminate
+workers, so a <code>terminate_worker()</code> method is not strictly
+required, but it is a useful safeguard in case a worker hangs in a
+crashed state before it establishes a connection.</p>
+<p>Every <code>launch_worker()</code> method must accept arguments
+<code>call</code>, <code>launcher</code>, <code>worker</code>, and
+<code>instance</code>. The method does not actually need to use all
+these arguments, but they must be present in the function signature.</p>
+<ul>
+<li><code>call</code>: text string with a call to <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a>.</li>
+<li><code>name</code>: text string with an informative name for the
+worker instance.</li>
+<li><code>launcher</code>: text string with the name of the
+launcher.</li>
+<li><code>worker</code>: positive integer index of the worker. Ranges
+from 1 to the maximum number of simultaneous workers configured for the
+controller.</li>
+<li><code>instance</code>: text string with the instance of the worker
+in the launcher at the given worker index.</li>
+</ul>
+<p>To see what the <code>call</code> object looks like, create a new
+launcher and run the <code>call()</code> method.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>launcher <span class="ot">&lt;-</span> <span class="fu">crew_launcher_local</span>()</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>launcher<span class="sc">$</span><span class="fu">call</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">socket =</span> <span class="st">&quot;ws://127.0.0.1:5000/3/aa9c59ea&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">launcher =</span> <span class="st">&quot;my_launcher&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">worker =</span> 3L,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">instance =</span> <span class="st">&quot;aa9c59ea&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, asyncdial = FALSE), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;)&quot;</span></span></code></pre></div>
+</div>
+<div id="helper" class="section level2">
+<h2>Helper</h2>
+<p>It is useful to have a helper function that creates controllers with
+your custom launcher. It should:</p>
+<ol style="list-style-type: decimal">
+<li>Accept all the same arguments as <a href="https://wlandau.github.io/crew/reference/crew_controller_local.html"><code>crew_controller_local()</code></a>.</li>
+<li>Create a client object using <a href="https://wlandau.github.io/crew/reference/crew_client.html"><code>crew_client()</code></a>.</li>
+<li>Create a launcher object with the <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html#method-crew_class_launcher-new"><code>new()</code>
+method</a> of your custom launcher class.</li>
+<li>Create a new controller using <a href="https://wlandau.github.io/crew/reference/crew_controller.html"><code>crew_controller()</code></a>.</li>
+<li>Scan the controller for obvious errors using the <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-validate"><code>validate()</code></a>
+method of the controller.</li>
+</ol>
+<p>Feel free to borrow from the <a href="https://github.com/wlandau/crew/blob/main/R/crew_controller_local.R"><code>crew_controller_local()</code>
+source code</a>. For packages, you can use the
+<code>@inheritParams</code> <a href="https://roxygen2.r-lib.org/"><code>roxygen2</code></a> tag to
+inherit the documentation of all the arguments instead of writing it by
+hand. You may want to adjust the default arguments based on the
+specifics of your platform, especially <code>seconds_launch</code> if
+workers take a long time to launch.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co">#&#39; @title Create a controller with the custom launcher.</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&#39; @description Create an `R6` object to submit tasks and</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&#39;   launch workers.</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&#39; @inheritParams crew::crew_controller_local</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>crew_controller_custom <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;custom controller name&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">host =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">10</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_exit =</span> <span class="dv">1</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>) {</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>  )</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_exit =</span> seconds_exit,</span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection</span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>  )</span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>  controller</span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="informal-testing" class="section level2">
+<h2>Informal testing</h2>
+<p>Before you begin testing, please begin monitoring local processes and
+remote jobs on your platform. In the case of the above <code>crew</code>
+launcher which only creates local processes, it is sufficient to start
+<a href="https://htop.dev/"><code>htop</code></a> and filter for R
+processes, or launch a new R session to monitor the process table from
+<a href="https://ps.r-lib.org/reference/ps.html"><code>ps::ps()</code></a>.
+However, for more ambitious launchers that submit workers to e.g. <a href="https://aws.amazon.com/batch/">AWS Batch</a>, you may need to open
+the <a href="https://aws.amazon.com/cloudwatch/">CloudWatch</a>
+dashboard, then view the AWS billing dashboard after testing.</p>
+<p>When you are ready to begin testing, try out the example in the <a href="https://wlandau.github.io/crew/index.html#usage">README</a>, but
+use your your custom controller helper instead of <a href="https://wlandau.github.io/crew/reference/crew_controller_local.html"><code>crew_controller_local()</code></a>.</p>
+<p>First, create and start a controller. You may wish to monitor local
+processes on your computer to make sure the <code>mirai</code>
+dispatcher starts.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(<span class="at">workers =</span> <span class="dv">2</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
+<p>Try pushing a task that gets the local IP address and process ID of
+the worker instance.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;get worker IP address and process ID&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">command =</span> <span class="fu">paste</span>(getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>), ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>)</span></code></pre></div>
+<p>Wait for the task to complete and look at the result.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>()</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>result<span class="sc">$</span>result[[<span class="dv">1</span>]]</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;192.168.0.2 27336&quot;</span></span></code></pre></div>
+<p>Please use the result to verify that the task really ran on a worker
+as intended. The process ID above should agree with the one from the
+handle (<a href="https://github.com/r-lib/processx/issues/364">except on
+Windows</a> because the actual R process may be different from the
+<code>R.exe</code> process created first). In addition, if the worker is
+running on a different computer, the worker IP address should be
+different than the local IP address. Since our custom launcher creates
+local processes, the IP addresses are the same in this case, but they
+should be different for a <a href="https://slurm.schedmd.com/">SLURM</a>
+or <a href="https://aws.amazon.com/batch/">AWS Batch</a> launcher.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; &quot;192.168.0.2&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span>workers<span class="sc">$</span>handle[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">get_pid</span>()</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] 27336</span></span></code></pre></div>
+<p>If you did not set any timeouts or task limits, the worker that ran
+the task should still be online. The other worker had no tasks, so it
+did not need to launch.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 1      1 TRUE           1        1        1 ws://10.0.0.32:50258/1/571bcda7…</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          0        0        0 ws://10.0.0.32:50258/2/daf88d6e…</span></span></code></pre></div>
+<p>When you are done, terminate the controller. This terminates the
+<code>mirai</code> dispatcher process and the <code>crew</code>
+workers.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<p>Finally, use the process monitoring interface of your computing
+platform or operating system to verify that all <code>mirai</code>
+dispatchers and <code>crew</code> workers are terminated.</p>
+</div>
+<div id="load-testing" class="section level2">
+<h2>Load testing</h2>
+<p>If the informal testing succeeded, we recommend you scale up testing
+to more ambitious scenarios. As one example, you can test that your
+workers can auto-scale and quickly churn through a large number of
+tasks.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">seconds_idle =</span> 2L,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">workers =</span> 2L</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co"># Push 100 tasks</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> <span class="fu">seq_len</span>(100L)) {</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>}</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co"># Wait for the tasks to complete.</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Wait for the workers to idle out and exit on their own.</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="fu">crew_retry</span>(</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  <span class="sc">~</span><span class="fu">all</span>(controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()<span class="sc">$</span>online <span class="sc">==</span> <span class="cn">FALSE</span>),</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="dv">1</span>,</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">60</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>)</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co"># Do the same for 100 more tasks.</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> (<span class="fu">seq_len</span>(100L) <span class="sc">+</span> 100L)) {</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>}</span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="fu">crew_retry</span>(</span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>  <span class="sc">~</span><span class="fu">all</span>(controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()<span class="sc">$</span>online <span class="sc">==</span> <span class="cn">FALSE</span>),</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="dv">1</span>,</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">60</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a>)</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co"># Collect the results.</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="cf">while</span> (<span class="sc">!</span><span class="fu">is.null</span>(result <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>(<span class="at">scale =</span> <span class="cn">FALSE</span>))) {</span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(result)) {</span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a>    results <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(results, result)</span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a>  }</span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a>}</span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co"># Check the results</span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">sort</span>(<span class="fu">unlist</span>(results<span class="sc">$</span>result)) <span class="sc">==</span> <span class="fu">seq_len</span>(200L))</span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="co"># View worker and task summaries.</span></span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a>controller<span class="sc">$</span>schedule<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a>controller<span class="sc">$</span>schedule<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a><span class="co"># Terminate the controller.</span></span>
+<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span>
+<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="co"># Now outside crew, verify that the mirai dispatcher</span></span>
+<span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a><span class="co"># and crew workers successfully terminated.</span></span></code></pre></div>
+</div>
+<div id="tips" class="section level2">
+<h2>Tips</h2>
+<ul>
+<li>The <a href="https://github.com/wlandau/crew/blob/main/R/crew_launcher_local.R">source
+code of the built-in local process launcher</a> is a helpful reference
+for writing your own launcher plugins.</li>
+<li>For efficiency, every launch can happen asynchronously. There is no
+need to wait for the worker to start. When it starts, it will connect
+back to the <code>mirai</code> dispatcher over the local network and
+start accepting tasks.</li>
+<li>If you implement a <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
+method, each worker termination may also happen asynchronously. In rare
+cases when you do not trust the platform to terminate the worker on the
+first request, you can use <a href="https://wlandau.github.io/crew/reference/crew_retry.html"><code>crew_retry()</code></a>
+to wait for the job to exit, but this may reduce efficiency.</li>
+</ul>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>See <a href="https://github.com/wlandau/crew/blob/main/tests/launchers/test-launcher-system2.R"><code>tests/launchers/test-launcher-system2.R</code></a>
+for an example launcher without a <code>termiante_worker()</code>
+method.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

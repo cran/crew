@@ -1,3 +1,7 @@
+name_worker <- function(launcher, worker, instance) {
+  paste("crew", launcher, worker, instance, sep = "-")
+}
+
 parse_instance <- function(socket) {
   split <- strsplit(socket, split = "/", fixed = TRUE)[[1]]
   split[length(split)]

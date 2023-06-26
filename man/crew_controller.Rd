@@ -2,12 +2,12 @@
 % Please edit documentation in R/crew_controller.R
 \name{crew_controller}
 \alias{crew_controller}
-\title{Create a controller.}
+\title{Create a controller object from a client and launcher.}
 \usage{
-crew_controller(router, launcher, auto_scale = NULL)
+crew_controller(client, launcher, auto_scale = NULL)
 }
 \arguments{
-\item{router}{An \code{R6} router object created by \code{\link[=crew_router]{crew_router()}}.}
+\item{client}{An \code{R6} client object created by \code{\link[=crew_client]{crew_client()}}.}
 
 \item{launcher}{An \code{R6} launcher object created by one of the
 \verb{crew_launcher_*()} functions such as \code{\link[=crew_launcher_local]{crew_launcher_local()}}.}
@@ -16,13 +16,15 @@ crew_controller(router, launcher, auto_scale = NULL)
 \code{pop()}, and \code{wait()} instead.}
 }
 \description{
-Create an \code{R6} object to submit tasks and launch workers.
+This function is for developers of \code{crew} launcher plugins.
+Users should use a specific controller helper such as
+\code{\link[=crew_controller_local]{crew_controller_local()}}.
 }
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-router <- crew_router()
+client <- crew_client()
 launcher <- crew_launcher_local()
-controller <- crew_controller(router = router, launcher = launcher)
+controller <- crew_controller(client = client, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
 controller$wait()
@@ -31,11 +33,9 @@ controller$terminate()
 }
 }
 \seealso{
-Other controllers: 
-\code{\link{crew_class_controller_group}},
-\code{\link{crew_class_controller}},
-\code{\link{crew_controller_group}()},
-\code{\link{crew_controller_local}()}
+Other developer: 
+\code{\link{crew_client}()},
+\code{\link{crew_launcher}()},
+\code{\link{crew_schedule}()}
 }
-\concept{controllers}
-\keyword{internal}
+\concept{developer}

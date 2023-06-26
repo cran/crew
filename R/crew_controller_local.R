@@ -1,9 +1,9 @@
 #' @title Create a controller with a local process launcher.
 #' @export
-#' @family controllers
+#' @family user
 #' @description Create an `R6` object to submit tasks and
 #'   launch workers on local processes.
-#' @inheritParams crew_router
+#' @inheritParams crew_client
 #' @inheritParams crew_launcher_local
 #' @inheritParams crew_controller
 #' @examples
@@ -18,7 +18,7 @@
 crew_controller_local <- function(
   name = NULL,
   workers = 1L,
-  host = NULL,
+  host = "127.0.0.1",
   port = NULL,
   seconds_interval = 0.25,
   seconds_timeout = 10,
@@ -33,7 +33,7 @@ crew_controller_local <- function(
   reset_options = FALSE,
   garbage_collection = FALSE
 ) {
-  router <- crew_router(
+  client <- crew_client(
     name = name,
     workers = workers,
     host = host,
@@ -43,6 +43,7 @@ crew_controller_local <- function(
   )
   launcher <- crew_launcher_local(
     name = name,
+    seconds_interval = seconds_interval,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
@@ -54,7 +55,7 @@ crew_controller_local <- function(
     reset_options = reset_options,
     garbage_collection = garbage_collection
   )
-  controller <- crew_controller(router = router, launcher = launcher)
+  controller <- crew_controller(client = client, launcher = launcher)
   controller$validate()
   controller
 }

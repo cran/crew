@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 #    classname = "custom_launcher_class",
 #    inherit = crew::crew_class_launcher,
 #    public = list(
-#      launch_worker = function(call, launcher, worker, instance) {
+#      launch_worker = function(call, name, launcher, worker, instance) {
 #        bin <- file.path(R.home("bin"), "R")
 #        processx::process$new(
 #          command = bin,
@@ -25,16 +25,15 @@ knitr::opts_chunk$set(
 #    )
 #  )
 
-## -----------------------------------------------------------------------------
-#  library(crew)
-#  launcher <- crew_launcher_local()
-#  launcher$call(
-#    socket = "ws://127.0.0.1:5000/3/aa9c59ea",
-#    launcher = "my_launcher",
-#    worker = 3L,
-#    instance = "aa9c59ea"
-#  )
-#  #> [1] "crew::crew_worker(settings = list(url = \"ws://127.0.0.1:5000/3/aa9c59ea\", maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, asyncdial = FALSE), launcher = \"my_launcher\", worker = 3L, instance = \"aa9c59ea\")"
+## ---- eval = TRUE-------------------------------------------------------------
+library(crew)
+launcher <- crew_launcher_local()
+launcher$call(
+  socket = "ws://127.0.0.1:5000/3/aa9c59ea",
+  launcher = "my_launcher",
+  worker = 3L,
+  instance = "aa9c59ea"
+)
 
 ## -----------------------------------------------------------------------------
 #  #' @title Create a controller with the custom launcher.
@@ -60,7 +59,7 @@ knitr::opts_chunk$set(
 #    reset_options = FALSE,
 #    garbage_collection = FALSE
 #  ) {
-#    router <- crew::crew_router(
+#    client <- crew::crew_client(
 #      name = name,
 #      workers = workers,
 #      host = host,
@@ -70,6 +69,7 @@ knitr::opts_chunk$set(
 #    )
 #    launcher <- custom_launcher_class$new(
 #      name = name,
+#      seconds_interval = seconds_interval,
 #      seconds_launch = seconds_launch,
 #      seconds_idle = seconds_idle,
 #      seconds_wall = seconds_wall,
@@ -81,7 +81,7 @@ knitr::opts_chunk$set(
 #      reset_options = reset_options,
 #      garbage_collection = garbage_collection
 #    )
-#    controller <- crew::crew_controller(router = router, launcher = launcher)
+#    controller <- crew::crew_controller(client = client, launcher = launcher)
 #    controller$validate()
 #    controller
 #  }
@@ -110,12 +110,12 @@ knitr::opts_chunk$set(
 #  #> [1] 27336
 
 ## -----------------------------------------------------------------------------
-#  controller$summary(columns = starts_with("worker"))
-#  #> # A tibble: 2 × 5
-#  #>   worker_connected worker_launches worker_instances worker_socket
-#  #>   <lgl>                      <int>            <int> <chr>
-#  #> 1 TRUE                           1                1 ws://10.0.0.9:49612/1/bbc1a2241dd8…
-#  #> 2 FALSE                          0                0 ws://10.0.0.9:49612/2/c488c874a07e…
+#  controller$client$summary()
+#  #> # A tibble: 2 × 6
+#  #>   worker online instances assigned complete socket
+#  #>    <int> <lgl>      <int>    <int>    <int> <chr>
+#  #> 1      1 TRUE           1        1        1 ws://10.0.0.32:50258/1/571bcda7…
+#  #> 2      2 FALSE          0        0        0 ws://10.0.0.32:50258/2/daf88d6e…
 
 ## -----------------------------------------------------------------------------
 #  controller$terminate()
@@ -137,7 +137,7 @@ knitr::opts_chunk$set(
 #  controller$wait()
 #  # Wait for the workers to idle out and exit on their own.
 #  crew_retry(
-#    ~all(controller$summary()$worker_connected == FALSE),
+#    ~all(controller$client$summary()$online == FALSE),
 #    seconds_interval = 1,
 #    seconds_timeout = 60
 #  )
@@ -149,7 +149,7 @@ knitr::opts_chunk$set(
 #  }
 #  controller$wait()
 #  crew_retry(
-#    ~all(controller$summary()$worker_connected == FALSE),
+#    ~all(controller$client$summary()$online == FALSE),
 #    seconds_interval = 1,
 #    seconds_timeout = 60
 #  )
@@ -163,10 +163,11 @@ knitr::opts_chunk$set(
 #  # Check the results
 #  all(sort(unlist(results$result)) == seq_len(200L))
 #  #> [1] TRUE
-#  length(unique(results$instance))
-#  #> [1] 4
 #  # View worker and task summaries.
-#  View(controller$summary())
+#  controller$summary()
+#  controller$schedule$summary()
+#  controller$launcher$summary()
+#  controller$schedule$summary()
 #  # Terminate the controller.
 #  controller$terminate()
 #  # Now outside crew, verify that the mirai dispatcher

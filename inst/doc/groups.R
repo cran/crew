@@ -25,19 +25,18 @@ knitr::opts_chunk$set(
 #  group$wait(controllers = "semi-persistent")
 #  group$pop()
 #  #> # A tibble: 1 × 11
-#  #>   name    command result seconds   seed error trace warni…¹ launc…² worker
-#  #>   <chr>   <chr>   <list>   <dbl>  <int> <chr> <chr> <chr>   <chr>    <int>
-#  #> 1 my task sqrt(4) <dbl>        0 5.11e8 NA    NA    NA      semi-p…      1
-#  #> # … with 1 more variable: instance <chr>, and abbreviated variable names
-#  #> #   ¹​warnings, ²​launcher
+#  #>   name    command result seconds   seed error trace warnings launcher worker
+#  #>   <chr>   <chr>   <list>   <dbl>  <int> <chr> <chr> <chr>    <chr>     <int>
+#  #> 1 my task NA      <dbl>        0 6.30e8 NA    NA    NA       semi-pe…      1
+#  #> # ℹ 1 more variable: instance <chr>
 
 ## -----------------------------------------------------------------------------
-#  group$summary(columns = starts_with(c("controller", "tasks")))
-#  #> # A tibble: 2 × 3
-#  #>   controller     tasks_assigned tasks_complete
-#  #>   <chr>                   <int>          <int>
-#  #> 1 persistent                  0              0
-#  #> 2 semi-persistent             1              1
+#  group$summary()
+#  #> # A tibble: 2 × 6
+#  #>   controller      worker tasks seconds errors warnings
+#  #>   <chr>            <int> <int>   <dbl>  <int>    <int>
+#  #> 1 persistent           1     0       0      0        0
+#  #> 2 semi-persistent      1     1       0      0        0
 
 ## -----------------------------------------------------------------------------
 #  group$terminate()

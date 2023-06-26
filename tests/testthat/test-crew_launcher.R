@@ -1,6 +1,6 @@
 crew_test("abstract launcher class", {
-  expect_silent(crew_launcher()$validate)
-  expect_crew_error(crew_launcher(reset_options = -1)$validate())
+  out <- crew_launcher(reset_options = -1)
+  expect_crew_error(out$validate())
 })
 
 crew_test("default terminate_launcher() method", {
@@ -133,44 +133,140 @@ crew_test("launcher call", {
 })
 
 crew_test("launcher start()", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   launcher <- crew_class_launcher$new()
   workers <- launcher$workers
   expect_equal(workers, NULL)
-  launcher$start(workers = 2L)
+  launcher$start(sockets = c("a", "b"))
   workers <- launcher$workers
-  expect_equal(dim(workers), c(2L, 4L))
+  expect_equal(nrow(workers), 2L)
   expect_equal(
     colnames(workers),
-    c("handle", "socket", "start", "launches")
+    cols <- c(
+      "handle",
+      "socket",
+      "start",
+      "launches",
+      "launched",
+      "assigned",
+      "complete"
+    )
   )
   expect_equal(workers$handle, list(crew_null, crew_null))
-  expect_equal(workers$socket, c(NA_character_, NA_character_))
+  expect_equal(workers$socket, c("a", "b"))
   expect_equal(workers$start, c(NA_real_, NA_real_))
   expect_equal(workers$launches, rep(0L, 2L))
+  expect_equal(workers$launched, rep(FALSE, 2L))
+  expect_equal(workers$assigned, rep(0L, 2L))
+  expect_equal(workers$complete, rep(0L, 2L))
 })
 
-crew_test("launcher launching()", {
-  skip_if_low_dep_versions()
-  skip_on_cran()
-  launcher <- crew_class_launcher$new(seconds_launch = 60)
-  launcher$start(workers = 3L)
-  launcher$workers$start <- c(NA_real_, -Inf, Inf)
-  expect_equal(launcher$launching(), c(FALSE, FALSE, TRUE))
+crew_test("launcher done()", {
+  grid <- expand.grid(
+    complete = c(3L, 7L),
+    start = c(NA_real_, -Inf, Inf),
+    instance = c(0L, 1L),
+    online = c(0L, 1L)
+  )
+  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher$start(sockets = rep("x", nrow(grid)))
+  launcher$workers$start <- grid$start
+  socket <- sprintf(
+    "ws://127.0.0.1:5000/%s/token",
+    seq_len(nrow(grid))
+  )
+  launcher$workers$socket <- socket
+  launcher$workers$launched <- rep(TRUE, nrow(grid))
+  daemons <- cbind(
+    online = grid$online,
+    instance = grid$instance,
+    assigned = rep(7L, nrow(grid)),
+    complete = grid$complete
+  )
+  expect_equal(launcher$workers$assigned, rep(0L, nrow(grid)))
+  expect_equal(launcher$workers$complete, rep(0L, nrow(grid)))
+  out <- launcher$done(daemons = daemons)
+  exp <- c(1L, 2L, 3L, 4L, 7L, 8L, 9L, 10L, 11L, 12L)
+  expect_equal(out, exp)
+  launcher$workers$launched <- rep(FALSE, nrow(grid))
+  expect_equal(launcher$done(daemons = daemons), integer(0L))
+})
+
+crew_test("launcher tally()", {
+  grid <- expand.grid(complete = c(3L, 7L), launched = c(TRUE, FALSE))
+  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher$start(sockets = rep("x", nrow(grid)))
+  launcher$workers$launched <- grid$launched
+  daemons <- cbind(assigned = rep(7L, nrow(grid)), complete = grid$complete)
+  expect_equal(launcher$workers$assigned, rep(0L, nrow(grid)))
+  expect_equal(launcher$workers$complete, rep(0L, nrow(grid)))
+  launcher$tally(daemons = daemons)
+  expect_equal(launcher$workers$assigned, c(0L, 0L, 7L, 7L))
+  expect_equal(launcher$workers$complete, c(0L, 0L, 3L, 7L))
+  launcher$workers$launched[1L] <- FALSE
+  launcher$workers$launched[4L] <- TRUE
+  launcher$tally(daemons = daemons)
+  expect_equal(launcher$workers$assigned, c(7L, 0L, 7L, 7L))
+  expect_equal(launcher$workers$complete, c(3L, 0L, 3L, 7L))
+  launcher$workers$launched <- !(launcher$workers$launched)
+  launcher$tally(daemons = daemons)
+  expect_equal(launcher$workers$assigned, c(7L, 7L, 7L, 7L))
+  expect_equal(launcher$workers$complete, c(3L, 7L, 3L, 7L))
+})
+
+crew_test("launcher unlaunched()", {
+  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher$start(sockets = rep("x", 5L))
+  launcher$workers$launched <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
+  expect_equal(launcher$unlaunched(), c(2L, 3L, 4L))
+  expect_equal(launcher$unlaunched(n = 2L), c(2L, 3L))
+})
+
+crew_test("launcher backlogged() and resolved()", {
+  grid <- expand.grid(
+    launched = c(TRUE, FALSE),
+    assigned = c(7L, 7L),
+    complete = c(3L, 7L)
+  )
+  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher$start(sockets = rep("x", nrow(grid)))
+  for (field in colnames(grid)) {
+    launcher$workers[[field]] <- grid[[field]]
+  }
+  expect_equal(launcher$backlogged(), c(2L, 4L))
+  expect_equal(launcher$resolved(), c(6L, 8L))
+})
+
+crew_test("launcher summary", {
+  x <- crew_launcher()
+  expect_null(x$summary())
+  x$start(sockets = c("a", "b"))
+  out <- x$summary()
+  expect_true(tibble::is_tibble(out))
+  expect_equal(nrow(out), 2L)
+  expect_equal(
+    sort(colnames(out)),
+    sort(c("worker", "launches", "assigned", "complete"))
+  )
+  expect_equal(out$worker, c(1L, 2L))
+  for (field in c("launches", "assigned", "complete")) {
+    expect_equal(out[[field]], c(0L, 0L))
+  }
 })
 
 crew_test("custom launcher", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   skip_if_not_installed("processx")
+  if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
+    skip_on_os("mac")
+  }
   custom_launcher_class <- R6::R6Class(
     classname = "custom_launcher_class",
     inherit = crew::crew_class_launcher,
     public = list(
-      launch_worker = function(call, launcher, worker, instance) {
+      launch_worker = function(call, name, launcher, worker, instance) {
         bin <- if_any(
           tolower(Sys.info()[["sysname"]]) == "windows",
           "R.exe",
@@ -187,7 +283,7 @@ crew_test("custom launcher", {
   crew_controller_custom <- function(
     name = "custom controller name",
     workers = 1L,
-    host = NULL,
+    host = "127.0.0.1",
     port = NULL,
     seconds_interval = 0.5,
     seconds_timeout = 5,
@@ -202,7 +298,7 @@ crew_test("custom launcher", {
     reset_options = FALSE,
     garbage_collection = FALSE
   ) {
-    router <- crew::crew_router(
+    client <- crew::crew_client(
       name = name,
       workers = workers,
       host = host,
@@ -212,6 +308,7 @@ crew_test("custom launcher", {
     )
     launcher <- custom_launcher_class$new(
       name = name,
+      seconds_interval = seconds_interval,
       seconds_launch = seconds_launch,
       seconds_idle = seconds_idle,
       seconds_wall = seconds_wall,
@@ -224,7 +321,7 @@ crew_test("custom launcher", {
       garbage_collection = garbage_collection
     )
     controller <- crew::crew_controller(
-      router = router,
+      client = client,
       launcher = launcher
     )
     controller$validate()
@@ -252,4 +349,11 @@ crew_test("custom launcher", {
     seconds_timeout = 5
   )
   expect_false(handle$is_alive())
+  walk(x = controller$launcher$done(), f = controller$launcher$rotate)
+  controller$launcher$tally()
+  out <- controller$launcher$summary()
+  for (field in colnames(out)) {
+    expect_equal(out[[field]], 1L)
+  }
+  controller$terminate()
 })

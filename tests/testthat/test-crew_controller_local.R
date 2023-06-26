@@ -1,5 +1,4 @@
 crew_test("crew_controller_local()", {
-  skip_if_low_dep_versions()
   skip_on_os("windows")
   x <- crew_controller_local(
     workers = 1L,
@@ -12,7 +11,7 @@ crew_test("crew_controller_local()", {
     crew_test_sleep()
   })
   expect_silent(x$validate())
-  expect_null(x$router$started)
+  expect_null(x$client$started)
   expect_null(x$summary())
   x$start()
   expect_true(x$empty())
@@ -33,40 +32,27 @@ crew_test("crew_controller_local()", {
     sort(
       c(
         "controller",
-        "popped_tasks",
-        "popped_seconds",
-        "popped_errors",
-        "popped_warnings",
-        "tasks_assigned",
-        "tasks_complete",
-        "worker_index",
-        "worker_connected",
-        "worker_launches",
-        "worker_instances",
-        "worker_socket"
+        "worker",
+        "tasks",
+        "seconds",
+        "errors",
+        "warnings"
       )
     )
   )
-  s2 <- x$summary(columns = tidyselect::starts_with("popped"))
-  expect_equal(
-    sort(colnames(s2)),
-    sort(
-      c(
-        "popped_tasks",
-        "popped_seconds",
-        "popped_errors",
-        "popped_warnings"
-      )
-    )
+  expect_equal(s$tasks, 0L)
+  expect_true(x$client$started)
+  # first task
+  x$push(
+    command = Sys.getenv("CREW_INSTANCE"),
+    name = "task",
+    save_command = TRUE
   )
-  expect_equal(s$popped_tasks, 0L)
-  expect_true(x$router$started)
-  instance <- parse_instance(rownames(x$router$daemons))
-  x$push(command = Sys.getenv("CREW_INSTANCE"), name = "task")
   expect_false(x$empty())
+  expect_true(x$nonempty())
   x$wait(seconds_timeout = 5)
   expect_false(x$empty())
-  # first task
+  expect_true(x$nonempty())
   envir <- new.env(parent = emptyenv())
   crew_retry(
     ~{
@@ -78,9 +64,11 @@ crew_test("crew_controller_local()", {
   )
   out <- envir$out
   expect_true(x$empty())
-  expect_equal(x$summary()$popped_tasks, 1L)
-  expect_equal(x$summary()$popped_errors, 0L)
-  expect_equal(x$summary()$popped_warnings, 0L)
+  expect_false(x$nonempty())
+  expect_equal(x$summary()$tasks, 1L)
+  expect_equal(x$summary()$errors, 0L)
+  expect_equal(x$summary()$warnings, 0L)
+  instance <- parse_instance(x$client$summary()$socket)
   expect_equal(out$name, "task")
   expect_equal(out$command, "Sys.getenv(\"CREW_INSTANCE\")")
   expect_equal(out$result[[1]], instance)
@@ -100,12 +88,15 @@ crew_test("crew_controller_local()", {
       command = paste0("a", x, .crew_y, sample.int(n = 1e9L, size = 1L)),
       data = list(x = "b"),
       globals = list(.crew_y = "c"),
-      seed = 0L
+      seed = 0L,
+      save_command = FALSE,
+      seconds_timeout = 100
     )
     x$wait(seconds_timeout = 5)
     out <- x$pop()
     set.seed(0L)
     exp <- paste0("abc", sample.int(n = 1e9L, size = 1L))
+    expect_true(anyNA(out$command))
     expect_equal(out$result[[1]], exp)
     expect_equal(out$error, NA_character_)
     expect_false(exists(x = ".crew_y", envir = globalenv()))
@@ -122,7 +113,7 @@ crew_test("crew_controller_local()", {
   # terminate
   handle <- x$launcher$workers$handle[[1]]
   x$terminate()
-  expect_false(x$router$started)
+  expect_false(x$client$started)
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
@@ -130,8 +121,7 @@ crew_test("crew_controller_local()", {
   )
 })
 
-crew_test("crew_controller_local() substitute = FALSE", {
-  skip_if_low_dep_versions()
+crew_test("crew_controller_local() substitute = FALSE and quick push", {
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
@@ -144,13 +134,37 @@ crew_test("crew_controller_local() substitute = FALSE", {
     crew_test_sleep()
   })
   expect_silent(x$validate())
-  expect_null(x$router$started)
+  expect_null(x$client$started)
   x$start()
-  expect_equal(x$summary()$popped_tasks, 0L)
-  expect_equal(x$summary()$popped_errors, 0L)
-  expect_equal(x$summary()$popped_warnings, 0L)
+  expect_equal(x$summary()$tasks, 0L)
+  expect_equal(x$summary()$errors, 0L)
+  expect_equal(x$summary()$warnings, 0L)
   command <- quote(sqrt(4L) + sqrt(9L))
+  # regular push
   x$push(command = command, substitute = FALSE, name = "substitute")
+  x$wait(seconds_timeout = 10)
+  # just list
+  out <- x$schedule$list()[[1L]]
+  expect_equal(out$result[[1L]], 5L)
+  expect_equal(out$name, "substitute")
+  expect_true(is.numeric(out$seconds))
+  expect_false(anyNA(out$seconds))
+  expect_true(out$seconds >= 0)
+  expect_true(anyNA(out$error))
+  expect_true(anyNA(out$warnings))
+  expect_true(anyNA(out$trace))
+  # full pop
+  out <- x$pop(scale = FALSE)
+  expect_equal(out$result[[1]], 5L)
+  expect_equal(out$name, "substitute")
+  expect_true(is.numeric(out$seconds))
+  expect_false(anyNA(out$seconds))
+  expect_true(out$seconds >= 0)
+  expect_true(anyNA(out$error))
+  expect_true(anyNA(out$warnings))
+  expect_true(anyNA(out$trace))
+  # quick push
+  x$shove(command = command, name = "substitute")
   x$wait(seconds_timeout = 10)
   out <- x$pop(scale = FALSE)
   expect_equal(out$result[[1]], 5L)
@@ -161,9 +175,10 @@ crew_test("crew_controller_local() substitute = FALSE", {
   expect_true(anyNA(out$error))
   expect_true(anyNA(out$warnings))
   expect_true(anyNA(out$trace))
+  # cleanup
   handle <- x$launcher$workers$handle[[1]]
   x$terminate()
-  expect_false(x$router$started)
+  expect_false(x$client$started)
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
@@ -172,7 +187,6 @@ crew_test("crew_controller_local() substitute = FALSE", {
 })
 
 crew_test("crew_controller_local() warnings and errors", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
@@ -185,20 +199,20 @@ crew_test("crew_controller_local() warnings and errors", {
     crew_test_sleep()
   })
   expect_silent(x$validate())
-  expect_null(x$router$started)
+  expect_null(x$client$started)
   x$start()
-  expect_equal(x$summary()$popped_tasks, 0L)
-  expect_equal(x$summary()$popped_errors, 0L)
-  expect_equal(x$summary()$popped_warnings, 0L)
+  expect_equal(x$summary()$tasks, 0L)
+  expect_equal(x$summary()$errors, 0L)
+  expect_equal(x$summary()$warnings, 0L)
   x$push(command = {
     warning("this is a warning")
     stop("this is an error")
   }, name = "warnings_and_errors")
   x$wait(seconds_timeout = 5)
   out <- x$pop(scale = FALSE)
-  expect_equal(x$summary()$popped_tasks, 1L)
-  expect_equal(x$summary()$popped_errors, 1L)
-  expect_equal(x$summary()$popped_warnings, 1L)
+  expect_equal(x$summary()$tasks, 1L)
+  expect_equal(x$summary()$errors, 1L)
+  expect_equal(x$summary()$warnings, 1L)
   expect_equal(out$name, "warnings_and_errors")
   expect_true(is.numeric(out$seconds))
   expect_false(anyNA(out$seconds))
@@ -208,7 +222,7 @@ crew_test("crew_controller_local() warnings and errors", {
   expect_false(anyNA(out$trace))
   handle <- x$launcher$workers$handle[[1]]
   x$terminate()
-  expect_false(x$router$started)
+  expect_false(x$client$started)
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
@@ -217,9 +231,11 @@ crew_test("crew_controller_local() warnings and errors", {
 })
 
 crew_test("crew_controller_local() can terminate a lost worker", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
+  if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
+    skip_on_os("mac")
+  }
   x <- crew_controller_local(
     workers = 1L,
     seconds_idle = 360,
@@ -243,21 +259,20 @@ crew_test("crew_controller_local() can terminate a lost worker", {
     seconds_timeout = 5
   )
   x$launcher$workers$handle[[1L]] <- handle
-  x$launcher$workers$socket[1L] <- rownames(x$router$daemons)
+  x$launcher$workers$socket[1L] <- x$client$summary()$socket
   x$launcher$workers$start[1L] <- - Inf
   x$launcher$workers$launches[1L] <- 1L
   expect_true(handle$is_alive())
-  x$launch()
+  x$launcher$rotate(index = 1L)
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
-    seconds_timeout = 5
+    seconds_timeout = 60
   )
   expect_false(handle$is_alive())
 })
 
 crew_test("crew_controller_local() launch method", {
-  skip_if_low_dep_versions()
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
@@ -285,4 +300,34 @@ crew_test("crew_controller_local() launch method", {
     seconds_timeout = 5
   )
   expect_false(handle$is_alive())
+})
+
+crew_test("task collection and results stack work", {
+  skip_on_cran()
+  x <- crew_controller_local(seconds_idle = 120)
+  x$start()
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  n <- 200L
+  for (i in seq_len(3L)) {
+    for (index in seq_len(n)) {
+      name <- paste0("task_", index)
+      x$push(name = name, command = index, data = list(index = index))
+    }
+    results <- list()
+    while (length(results) < n) {
+      out <- x$pop()
+      if (!is.null(out)) {
+        results[[length(results) + 1L]] <- out
+      }
+    }
+    results <- tibble::as_tibble(do.call(rbind, results))
+    results$result <- as.integer(results$result)
+    expect_equal(sort(results$result), seq_len(200L))
+  }
+  x$terminate()
 })

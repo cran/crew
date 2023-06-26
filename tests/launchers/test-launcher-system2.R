@@ -2,7 +2,7 @@ system2_launcher_class <- R6::R6Class(
   classname = "system2_launcher_class",
   inherit = crew::crew_class_launcher,
   public = list(
-    launch_worker = function(call, launcher, worker, instance) {
+    launch_worker = function(call, name, launcher, worker, instance) {
       system2(
         command = file.path(R.home("bin"), "R"),
         args = c("-e", shQuote(call)),
@@ -33,7 +33,7 @@ crew_controller_system2 <- function(
   reset_options = FALSE,
   garbage_collection = FALSE
 ) {
-  router <- crew::crew_router(
+  client <- crew::crew_client(
     name = name,
     workers = workers,
     host = host,
@@ -43,6 +43,7 @@ crew_controller_system2 <- function(
   )
   launcher <- system2_launcher_class$new(
     name = name,
+    seconds_interval = seconds_interval,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
@@ -54,7 +55,7 @@ crew_controller_system2 <- function(
     reset_options = reset_options,
     garbage_collection = garbage_collection
   )
-  controller <- crew::crew_controller(router = router, launcher = launcher)
+  controller <- crew::crew_controller(client = client, launcher = launcher)
   controller$validate()
   controller
 }
@@ -75,7 +76,7 @@ for (index in seq_len(100L)) {
 controller$wait()
 # Wait for the workers to idle out and exit on their own.
 crew_retry(
-  ~all(controller$summary()$worker_connected == FALSE),
+  ~all(controller$client$summary()$online == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
 )
@@ -87,7 +88,7 @@ for (index in (seq_len(100L) + 100L)) {
 }
 controller$wait()
 crew_retry(
-  ~all(controller$summary()$worker_connected == FALSE),
+  ~all(controller$client$summary()$online == FALSE),
   seconds_interval = 1,
   seconds_timeout = 60
 )
@@ -100,7 +101,6 @@ while (!is.null(out <- controller$pop(scale = FALSE))) {
 }
 # Check the results
 testthat::expect_true(all(sort(unlist(results$result)) == seq_len(200L)))
-testthat::expect_equal(length(unique(results$instance)), 4L)
 # Terminate the controller.
 controller$terminate()
 # Now outside crew, verify that the mirai dispatcher

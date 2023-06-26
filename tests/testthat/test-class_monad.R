@@ -14,7 +14,8 @@ crew_test("bad field", {
   expect_crew_error(monad_validate(out))
 })
 
-crew_test("print monad", {
-  out <- utils::capture.output(print(monad_init()))
-  expect_true(any(grepl(pattern = "<crew_monad>", x = out, fixed = TRUE)))
+crew_test("monad_tibble()", {
+  out <- monad_tibble(monad_init(name = "x"))
+  expect_true(tibble::is_tibble(out))
+  expect_equal(nrow(out), 1L)
 })

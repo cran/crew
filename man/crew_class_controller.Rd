@@ -11,9 +11,9 @@ See \code{\link[=crew_controller]{crew_controller()}}.
 }
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-router <- crew_router()
+client <- crew_client()
 launcher <- crew_launcher_local()
-controller <- crew_controller(router = router, launcher = launcher)
+controller <- crew_controller(client = client, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
 controller$wait()
@@ -26,9 +26,9 @@ controller$terminate()
 ## ------------------------------------------------
 
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-router <- crew_router()
+client <- crew_client()
 launcher <- crew_launcher_local()
-controller <- crew_controller(router = router, launcher = launcher)
+controller <- crew_controller(client = client, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
 controller$wait()
@@ -37,30 +37,25 @@ controller$terminate()
 }
 }
 \seealso{
-Other controllers: 
+Other class: 
+\code{\link{crew_class_client}},
 \code{\link{crew_class_controller_group}},
-\code{\link{crew_controller_group}()},
-\code{\link{crew_controller_local}()},
-\code{\link{crew_controller}()}
+\code{\link{crew_class_launcher}},
+\code{\link{crew_class_schedule}}
 }
-\concept{controllers}
+\concept{class}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{router}}{Router object.}
+\item{\code{client}}{Router object.}
 
 \item{\code{launcher}}{Launcher object.}
 
-\item{\code{queue}}{List of tasks in the queue.}
+\item{\code{schedule}}{Schedule object.}
 
-\item{\code{results}}{List of finished tasks}
+\item{\code{log}}{Tibble with per-worker metadata about tasks.}
 
-\item{\code{log}}{Data frame task log of the workers.}
-
-\item{\code{until_collect}}{Numeric of length 1, time point when
-throttled task collection unlocks.}
-
-\item{\code{until_scale}}{Numeric of length 1, time point when
+\item{\code{until}}{Numeric of length 1, time point when
 throttled auto-scaling unlocks.}
 }
 \if{html}{\out{</div>}}
@@ -71,11 +66,13 @@ throttled auto-scaling unlocks.}
 \item \href{#method-crew_class_controller-new}{\code{crew_class_controller$new()}}
 \item \href{#method-crew_class_controller-validate}{\code{crew_class_controller$validate()}}
 \item \href{#method-crew_class_controller-empty}{\code{crew_class_controller$empty()}}
+\item \href{#method-crew_class_controller-nonempty}{\code{crew_class_controller$nonempty()}}
 \item \href{#method-crew_class_controller-saturated}{\code{crew_class_controller$saturated()}}
 \item \href{#method-crew_class_controller-start}{\code{crew_class_controller$start()}}
 \item \href{#method-crew_class_controller-launch}{\code{crew_class_controller$launch()}}
 \item \href{#method-crew_class_controller-scale}{\code{crew_class_controller$scale()}}
 \item \href{#method-crew_class_controller-push}{\code{crew_class_controller$push()}}
+\item \href{#method-crew_class_controller-shove}{\code{crew_class_controller$shove()}}
 \item \href{#method-crew_class_controller-collect}{\code{crew_class_controller$collect()}}
 \item \href{#method-crew_class_controller-pop}{\code{crew_class_controller$pop()}}
 \item \href{#method-crew_class_controller-wait}{\code{crew_class_controller$wait()}}
@@ -89,27 +86,29 @@ throttled auto-scaling unlocks.}
 \subsection{Method \code{new()}}{
 \code{mirai} controller constructor.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$new(router = NULL, launcher = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$new(client = NULL, launcher = NULL, schedule = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{router}}{Router object. See \code{\link[=crew_controller]{crew_controller()}}.}
+\item{\code{client}}{Router object. See \code{\link[=crew_controller]{crew_controller()}}.}
 
 \item{\code{launcher}}{Launcher object. See \code{\link[=crew_controller]{crew_controller()}}.}
+
+\item{\code{schedule}}{Schedule object from \code{\link[=crew_schedule]{crew_schedule()}}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-An \code{R6} object with the controller object.
+An \code{R6} controller object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
-router <- crew_router()
+client <- crew_client()
 launcher <- crew_launcher_local()
-controller <- crew_controller(router = router, launcher = launcher)
+controller <- crew_controller(client = client, launcher = launcher)
 controller$start()
 controller$push(name = "task", command = sqrt(4))
 controller$wait()
@@ -126,7 +125,7 @@ controller$terminate()
 \if{html}{\out{<a id="method-crew_class_controller-validate"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-validate}{}}}
 \subsection{Method \code{validate()}}{
-Validate the router.
+Validate the client.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$validate()}\if{html}{\out{</div>}}
 }
@@ -142,6 +141,32 @@ Validate the router.
 Check if the controller is empty.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$empty(controllers = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{controllers}}{Not used. Included to ensure the signature is
+compatible with the analogous method of controller groups.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+A controller is empty if it has no running tasks
+or completed tasks waiting to be retrieved with \code{push()}.
+}
+
+\subsection{Returns}{
+\code{TRUE} if the controller is empty, \code{FALSE} otherwise.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-nonempty"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-nonempty}{}}}
+\subsection{Method \code{nonempty()}}{
+Check if the controller is nonempty.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$nonempty(controllers = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -181,7 +206,7 @@ Check if the controller is saturated.
 of any newly resolved tasks before determining saturation.}
 
 \item{\code{throttle}}{Logical of length 1, whether to delay task collection
-until the next request at least \code{self$router$seconds_interval}
+until the next request at least \code{self$client$seconds_interval}
 seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
@@ -267,7 +292,7 @@ compatible with the analogous method of controller groups.}
 \if{html}{\out{<a id="method-crew_class_controller-scale"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-scale}{}}}
 \subsection{Method \code{scale()}}{
-Run auto-scaling.
+Auto-scale workers out to meet the demand of tasks.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$scale(throttle = FALSE, controllers = NULL)}\if{html}{\out{</div>}}
 }
@@ -277,7 +302,7 @@ Run auto-scaling.
 \describe{
 \item{\code{throttle}}{Logical of length 1, whether to delay auto-scaling
 until the next auto-scaling request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -290,8 +315,6 @@ compatible with the analogous method of controller groups.}
 \subsection{Details}{
 Methods \code{push()}, \code{pop()}, and \code{wait()} already invoke
 \code{scale()} if the \code{scale} argument is \code{TRUE}.
-If you call \code{scale()} manually, it is recommended to call \code{collect()}
-first so \code{scale()} can accurately assess the task load.
 For finer control of the number of workers launched,
 call \code{launch()} on the controller with the exact desired
 number of workers.
@@ -312,13 +335,14 @@ Push a task to the head of the task list.
   data = list(),
   globals = list(),
   substitute = TRUE,
-  seed = sample.int(n = 1000000000L, size = 1L),
+  seed = as.integer(nanonext::random()/2),
   packages = character(0),
   library = NULL,
   seconds_timeout = NULL,
   scale = TRUE,
   throttle = TRUE,
-  name = NULL,
+  name = NA_character_,
+  save_command = FALSE,
   controller = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -347,8 +371,7 @@ whereas \code{substitute = FALSE} is meant for automated R programs
 that invoke \code{crew} controllers.}
 
 \item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
-seed to temporarily set for the evaluation of the task.
-At the end of the task, the seed is restored.}
+seed to temporarily set for the evaluation of the task.}
 
 \item{\code{packages}}{Character vector of packages to load for the task.}
 
@@ -361,26 +384,98 @@ argument of \code{mirai::mirai()} (after converting to milliseconds).}
 \item{\code{scale}}{Logical, whether to automatically call \code{scale()}
 to auto-scale workers to meet the demand of the task load.
 By design, auto-scaling might not actually happen
-if \code{throttle = TRUE}.
-If \code{scale} is \code{TRUE}, then \code{collect()} runs first
-so demand can be properly assessed before scaling and the number
-of workers is not too high.}
+if \code{throttle = TRUE}.}
 
 \item{\code{throttle}}{If \code{scale} is \code{TRUE}, whether to defer auto-scaling
 until the next request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
 
-\item{\code{name}}{Optional name of the task. Replaced with a random name
-if \code{NULL} or in conflict with an existing name in the task list.}
+\item{\code{name}}{Optional name of the task.}
+
+\item{\code{save_command}}{Logical of length 1. If \code{TRUE}, the controller
+deparses the command and returns it with the output on \code{pop()}.
+If \code{FALSE} (default), the controller skips this step to
+increase speed.}
 
 \item{\code{controller}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-shove"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-shove}{}}}
+\subsection{Method \code{shove()}}{
+Quickly push a task to the head of the task list.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$shove(
+  command,
+  data = list(),
+  globals = list(),
+  seed = 0L,
+  packages = character(0),
+  library = NULL,
+  .timeout = NULL,
+  name = NA_character_
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{command}}{Language object with R code to run.}
+
+\item{\code{data}}{Named list of local data objects in the
+evaluation environment.}
+
+\item{\code{globals}}{Named list of objects to temporarily assign to the
+global environment for the task. See the \code{reset_globals} argument
+of \code{\link[=crew_controller_local]{crew_controller_local()}}.}
+
+\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
+seed to temporarily set for the evaluation of the task.}
+
+\item{\code{packages}}{Character vector of packages to load for the task.}
+
+\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
+argument of \code{require()}.}
+
+\item{\code{.timeout}}{Optional task timeout passed to the \code{.timeout}
+argument of \code{mirai::mirai()} (after converting to milliseconds).}
+
+\item{\code{name}}{Optional name of the task.}
+
+\item{\code{scale}}{Logical, whether to automatically call \code{scale()}
+to auto-scale workers to meet the demand of the task load.
+By design, auto-scaling might not actually happen
+if \code{throttle = TRUE}.}
+
+\item{\code{throttle}}{If \code{scale} is \code{TRUE}, whether to defer auto-scaling
+until the next request at least
+\code{self$client$seconds_interval} seconds from the original request.
+The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
+accumulate a backlog of requests. The technique improves robustness
+and efficiency.}
+
+\item{\code{controller}}{Not used. Included to ensure the signature is
+compatible with the analogous method of controller groups.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Exists to support extensions to \code{crew} for \code{purrr}-like
+functional programming. For developers only and not supported for
+controller groups. \code{shove()} skips some of the user
+options for \code{push()} to aggressively optimize performance.
+}
+
 \subsection{Returns}{
 \code{NULL} (invisibly).
 }
@@ -400,7 +495,7 @@ the results list.
 \describe{
 \item{\code{throttle}}{whether to defer task collection
 until the next task collection request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -436,20 +531,16 @@ Pop a completed task from the results data frame.
 whether to automatically call \code{scale()}
 to auto-scale workers to meet the demand of the task load.
 Auto-scaling might not actually happen if \code{throttle} is \code{TRUE}.
-If \code{TRUE}, then \code{collect()} runs first
-so demand can be properly assessed before scaling and the number
-of workers is not too high. Scaling up on \code{pop()} may be important
+Scaling up on \code{pop()} may be important
 for transient or nearly transient workers that tend to drop off
 quickly after doing little work.}
 
-\item{\code{collect}}{Logical of length 1. If \code{scale} is \code{FALSE},
-whether to call \code{collect()}
-to pick up the results of completed tasks. This task collection
-step always happens (with throttling) when \code{scale} is \code{TRUE}.}
+\item{\code{collect}}{Logical of length 1,
+whether to collect the results of completed tasks.}
 
 \item{\code{throttle}}{Whether to defer auto-scaling and task collection
 until the next request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -507,7 +598,7 @@ is \code{TRUE}.}
 
 \item{\code{throttle}}{Whether to defer auto-scaling
 and task collection until the next request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.
@@ -538,19 +629,12 @@ its stopping condition based on the \code{mode} argument.
 \subsection{Method \code{summary()}}{
 Summarize the workers and tasks of the controller.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$summary(
-  columns = tidyselect::everything(),
-  controllers = NULL
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$summary(controllers = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{columns}}{Tidyselect expression to select a subset of columns.
-Examples include \code{columns = contains("worker")} and
-\code{columns = starts_with("tasks")}.}
-
 \item{\code{controllers}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}
 }
@@ -561,55 +645,22 @@ A data frame of summary statistics on the workers and tasks.
 It has one row per worker websocket and the following columns:
 \itemize{
 \item \code{controller}: name of the controller.
-\item \code{popped_tasks}: number of tasks which were completed by
+.  * \code{worker}: integer index of the worker.
+\item \code{tasks}: number of tasks which were completed by
 a worker at the websocket and then returned by calling
 \code{pop()} on the controller object.
-\item \code{popped_seconds}: total number of runtime and seconds of
+\item \code{seconds}: total number of runtime and seconds of
 all the tasks that ran on a worker connected to this websocket
 and then were retrieved by calling \code{pop()} on the controller
 object.
-\item \code{popped_errors}: total number of tasks which ran on a worker
+\item \code{errors}: total number of tasks which ran on a worker
 at the website, encountered an error in R, and then retrieved
 with \code{pop()}.
-\item \code{popped_warnings}: total number of tasks which ran on a worker
+\item \code{warnings}: total number of tasks which ran on a worker
 at the website, encountered one or more warnings in R,
-and then retrieved with \code{pop()}. Note: \code{popped_warnings}
+and then retrieved with \code{pop()}. Note: \code{warnings}
 is actually the number of \emph{tasks}, not the number of warnings.
-(A task could throw more than one warning.)
-\item \code{tasks_assigned}: number of pushed tasks assigned to the
-current worker process at the websocket. The counter resets
-every time a new worker instance starts.
-So in the case of transient
-workers, this number may be much smaller than the number of
-popped tasks.
-\item \code{tasks_complete}: number of pushed tasks completed by the
-current worker process at the websocket. The counter resets
-every time a new worker instance starts.
-So in the case of transient
-workers, this number may be much smaller than the number of
-popped tasks.
-\item \code{worker_index}: Numeric index of the worker within the controller.
-\item \code{worker_connected}: \code{TRUE} if a worker is currently connected
-to the websocket, \code{FALSE} if not connected, or \code{NA}
-if the status cannot be determined because the \code{mirai}
-client is not running.
-\item \code{worker_launches}: number of attempts to launch a worker
-at the websocket since the controller started. If
-the number of launch attempts gets much higher than
-the number of popped tasks or worker instances, then this is a
-sign that something is wrong with the workers or platform,
-and it is recommended to quit the pipeline and troubleshoot.
-\item \code{worker_instances}: number of different worker processes
-that have connected to the websocket since the \code{start()}
-of the controller object. Should either be 0 or 1 unless
-something is wrong and more than one worker has connected
-to the current websocket.
-\item \code{worker_socket} full websocket address of the worker, including
-the protocol, IP address, TCP port, and path.
-This websocket rotates with every additional instance
-of a worker process.
-To identify specific pieces of the websocket address,
-call \code{nanonext::parse_url()}.
+(A task could throw more than one warning.
 }
 }
 }

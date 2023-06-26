@@ -43,13 +43,13 @@ group$terminate()
 }
 }
 \seealso{
-Other controllers: 
+Other class: 
+\code{\link{crew_class_client}},
 \code{\link{crew_class_controller}},
-\code{\link{crew_controller_group}()},
-\code{\link{crew_controller_local}()},
-\code{\link{crew_controller}()}
+\code{\link{crew_class_launcher}},
+\code{\link{crew_class_schedule}}
 }
-\concept{controllers}
+\concept{class}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -119,7 +119,7 @@ group$terminate()
 \if{html}{\out{<a id="method-crew_class_controller_group-validate"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller_group-validate}{}}}
 \subsection{Method \code{validate()}}{
-Validate the router.
+Validate the client.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$validate()}\if{html}{\out{</div>}}
 }
@@ -175,7 +175,7 @@ Check if a controller is saturated.
 of any newly resolved tasks before determining saturation.}
 
 \item{\code{throttle}}{Logical of length 1, whether to delay task collection
-until the next request at least \code{self$router$seconds_interval}
+until the next request at least \code{self$client$seconds_interval}
 seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
@@ -260,7 +260,7 @@ in one or more controller objects.
 \describe{
 \item{\code{throttle}}{Logical of length 1, whether to delay auto-scaling
 until the next auto-scaling request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -296,6 +296,7 @@ Push a task to the head of the task list.
   scale = TRUE,
   throttle = TRUE,
   name = NULL,
+  save_command = FALSE,
   controller = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -343,13 +344,18 @@ of workers is not too high.}
 
 \item{\code{throttle}}{If \code{scale} is \code{TRUE}, whether to defer auto-scaling
 until the next auto-scaling request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
 
 \item{\code{name}}{Optional name of the task. Replaced with a random name
 if \code{NULL} or in conflict with an existing name in the task list.}
+
+\item{\code{save_command}}{Logical of length 1. If \code{TRUE}, the controller
+deparses the command and returns it with the output on \code{pop()}.
+If \code{FALSE} (default), the controller skips this step to
+increase speed.}
 
 \item{\code{controller}}{Character of length 1,
 name of the controller to submit the task.
@@ -377,7 +383,7 @@ the results list.
 \describe{
 \item{\code{throttle}}{whether to defer task collection
 until the next task collection request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -424,7 +430,7 @@ step always happens (with throttling) when \code{scale} is \code{TRUE}.}
 
 \item{\code{throttle}}{If \code{scale} is \code{TRUE}, whether to defer auto-scaling
 until the next auto-scaling request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.}
@@ -477,7 +483,7 @@ every iteration if \code{throttle} is \code{TRUE}.}
 
 \item{\code{throttle}}{If \code{scale} is \code{TRUE}, whether to defer auto-scaling
 and task collection until the next request at least
-\code{self$router$seconds_interval} seconds from the original request.
+\code{self$client$seconds_interval} seconds from the original request.
 The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
 accumulate a backlog of requests. The technique improves robustness
 and efficiency.
@@ -508,19 +514,12 @@ based on the \code{mode} argument.
 \subsection{Method \code{summary()}}{
 Summarize the workers of one or more controllers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$summary(
-  columns = tidyselect::everything(),
-  controllers = NULL
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$summary(controllers = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{columns}}{Tidyselect expression to select a subset of columns.
-Examples include \code{columns = contains("worker")} and
-\code{columns = starts_with("tasks")}.}
-
 \item{\code{controllers}}{Character vector of controller names.
 Set to \code{NULL} to select all controllers.}
 }
@@ -528,8 +527,8 @@ Set to \code{NULL} to select all controllers.}
 }
 \subsection{Returns}{
 A data frame of aggregated worker summary statistics
-of all the selected controllers. It has one row per worker
-websocket, and the rows are grouped by controller.
+of all the selected controllers. It has one row per worker,
+and the rows are grouped by controller.
 See the documentation of the \code{summary()} method of the controller
 class for specific information about the columns in the output.
 }
@@ -538,7 +537,7 @@ class for specific information about the columns in the output.
 \if{html}{\out{<a id="method-crew_class_controller_group-terminate"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller_group-terminate}{}}}
 \subsection{Method \code{terminate()}}{
-Terminate the workers and disconnect the router
+Terminate the workers and disconnect the client
 for one or more controllers.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller_group$terminate(controllers = NULL)}\if{html}{\out{</div>}}

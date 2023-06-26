@@ -7,7 +7,7 @@
 crew_controller_local(
   name = NULL,
   workers = 1L,
-  host = NULL,
+  host = "127.0.0.1",
   port = NULL,
   seconds_interval = 0.25,
   seconds_timeout = 10,
@@ -24,7 +24,7 @@ crew_controller_local(
 )
 }
 \arguments{
-\item{name}{Name of the router object. If \code{NULL}, a name is automatically
+\item{name}{Name of the client object. If \code{NULL}, a name is automatically
 generated.}
 
 \item{workers}{Integer, maximum number of parallel workers to run.}
@@ -109,10 +109,8 @@ controller$terminate()
 }
 }
 \seealso{
-Other controllers: 
-\code{\link{crew_class_controller_group}},
-\code{\link{crew_class_controller}},
-\code{\link{crew_controller_group}()},
-\code{\link{crew_controller}()}
+Other user: 
+\code{\link{crew-package}},
+\code{\link{crew_controller_group}()}
 }
-\concept{controllers}
+\concept{user}

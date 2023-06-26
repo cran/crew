@@ -1,7 +1,6 @@
 #' @title Evaluate an R command and return results as a monad.
 #' @export
 #' @family utilities
-#' @keywords internal
 #' @description Not a user-side function. Do not call directly.
 #' @details The `crew_eval()` function evaluates an R expression
 #'   in an encapsulated environment and returns a monad with the results,
@@ -10,6 +9,8 @@
 #'   are restored to their original values on exit.
 #' @return A monad object with results and metadata.
 #' @param command Language object with R code to run.
+#' @param name Character of length 1, name of the task.
+#' @param string Character of length 1, string representation of the command.
 #' @param data Named list of local data objects in the evaluation environment.
 #' @param globals Named list of objects to temporarily assign to the
 #'   global environment for the task.
@@ -24,9 +25,11 @@
 #' crew_eval(quote(1 + 1))
 crew_eval <- function(
   command,
+  name = NA_character_,
+  string = NA_character_,
   data = list(),
   globals = list(),
-  seed = as.integer(stats::runif(n = 1L, min = 1, max = 1e9)),
+  seed = as.integer(nanonext::random() / 2),
   packages = character(0),
   library = NULL
 ) {
@@ -65,12 +68,13 @@ crew_eval <- function(
       error = capture_error,
       warning = capture_warning
     ),
-    error = function(condition) NULL
+    error = function(condition) NA
   )
   seconds <- (nanonext::mclock() - start) / 1000
   monad_init(
-    command = deparse_safe(command),
-    result = result %|||% NA,
+    name = name,
+    command = string,
+    result = result,
     seconds = seconds,
     seed = seed,
     error = state$error %|||% NA_character_,
