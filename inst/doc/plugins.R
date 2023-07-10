@@ -46,6 +46,8 @@ launcher$call(
 #    workers = 1L,
 #    host = NULL,
 #    port = NULL,
+#    tls_enable = FALSE,
+#    tls_config = NULL,
 #    seconds_interval = 0.5,
 #    seconds_timeout = 10,
 #    seconds_launch = 30,
@@ -64,6 +66,8 @@ launcher$call(
 #      workers = workers,
 #      host = host,
 #      port = port,
+#      tls_enable = tls_enable,
+#      tls_config = tls_config,
 #      seconds_interval = seconds_interval,
 #      seconds_timeout = seconds_timeout
 #    )

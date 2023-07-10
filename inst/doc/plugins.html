@@ -339,15 +339,45 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Launcher plugins</h1>
 
 
-
-<div id="about" class="section level2">
-<h2>About</h2>
-<p><code>crew</code> lets you write custom <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launchers</a>
-for different types of workers that connect over the local network. This
-flexibility can extend <code>crew</code> to platforms like <a href="https://slurm.schedmd.com/">SLURM</a>, <a href="https://aws.amazon.com/batch/">AWS Batch</a>, and <a href="https://kubernetes.io/">Kubernetes</a>.</p>
+<div id="TOC">
+<ul>
+<li><a href="#about" id="toc-about"><span class="toc-section-number">1</span> About</a></li>
+<li><a href="#request-for-community-contributions" id="toc-request-for-community-contributions"><span class="toc-section-number">2</span> 📣 Request for community
+contributions 📣</a></li>
+<li><a href="#how-it-works" id="toc-how-it-works"><span class="toc-section-number">3</span> How it works</a></li>
+<li><a href="#scope" id="toc-scope"><span class="toc-section-number">4</span> Scope</a></li>
+<li><a href="#implementation" id="toc-implementation"><span class="toc-section-number">5</span> Implementation</a></li>
+<li><a href="#network" id="toc-network"><span class="toc-section-number">6</span> Network</a></li>
+<li><a href="#termination" id="toc-termination"><span class="toc-section-number">7</span> Termination</a></li>
+<li><a href="#example" id="toc-example"><span class="toc-section-number">8</span> Example</a></li>
+<li><a href="#helper" id="toc-helper"><span class="toc-section-number">9</span> Helper</a></li>
+<li><a href="#informal-testing" id="toc-informal-testing"><span class="toc-section-number">10</span> Informal testing</a></li>
+<li><a href="#load-testing" id="toc-load-testing"><span class="toc-section-number">11</span> Load testing</a></li>
+<li><a href="#tips" id="toc-tips"><span class="toc-section-number">12</span> Tips</a></li>
+</ul>
 </div>
-<div id="vision" class="section level2">
-<h2>Vision</h2>
+
+<div id="about" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> About</h1>
+<p><code>crew</code> lets users write custom <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launchers</a>
+for different types of workers that connect over the local network. The
+<a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
+package already has plugins for traditional high-performance computing
+schedulers (<a href="https://slurm.schedmd.com/">SLURM</a>, SGE, LSF,
+and PBS/TORQUE).</p>
+</div>
+<div id="request-for-community-contributions" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> 📣 Request for
+community contributions 📣</h1>
+<p><span style="color: blue"><strong>The launcher plugin framework aims
+to extend <code>crew</code> to modern platforms and services like <a href="https://aws.amazon.com/batch/">AWS Batch</a>, <a href="https://cloud.google.com/run/">Google Cloud Run</a>, <a href="https://kubernetes.io/">Kubernetes</a>, and beyond. At the time of
+writing, plugins for cloud computing do not yet exist. So if you have
+access to these services and know how to use them, please consider
+contributing a package with plugins of your own. The maintainer of
+<code>crew</code> would love to work with you!</strong></span></p>
+</div>
+<div id="how-it-works" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> How it works</h1>
 <p>These <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launcher</a>
 plugins need not become part of the <code>crew</code> package itself.
 You can write your plugin in a simple R script, or you write it in a
@@ -358,14 +388,14 @@ entire open-source community. See <a href="https://r-pkgs.org/">R
 Packages</a> by <a href="https://hadley.nz/">Hadley Wickham</a> and <a href="https://jennybryan.org/">Jenny Bryan</a> for how to write an R
 package.</p>
 </div>
-<div id="scope" class="section level2">
-<h2>Scope</h2>
+<div id="scope" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Scope</h1>
 <p>This vignette demonstrates how to write a <code>crew</code> launcher
 plugin. It assumes prior familiarity with <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code>
 classes</a> and the computing platform of your plugin.</p>
 </div>
-<div id="how-it-works" class="section level2">
-<h2>How it works</h2>
+<div id="implementation" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Implementation</h1>
 <p>To create your own launcher plugin, write an <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code></a>
 subclass of <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html"><code>crew_class_launcher</code></a>
 with a <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-launch-worker-"><code>launch_worker()</code></a>
@@ -375,8 +405,8 @@ arguments as the <a href="https://wlandau.github.io/crew/reference/crew_class_la
 process <code>launch_worker()</code> method</a>, generate a call to <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a>,
 and then submit a new job or process to run that call.</p>
 </div>
-<div id="network" class="section level2">
-<h2>Network</h2>
+<div id="network" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Network</h1>
 <p>Each worker that launches must be able to dial into the client over
 the local network. The <code>host</code> argument of
 <code>crew_client()</code> provides the local IP address, and the
@@ -389,8 +419,8 @@ one</a>.</p>
 time to assess the network security risks of your computing environment.
 Use at your own risk.</p>
 </div>
-<div id="termination" class="section level2">
-<h2>Termination</h2>
+<div id="termination" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Termination</h1>
 <p>We recommend you implement an optional <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
 method. Although <code>mirai</code> has its own way of terminating
 workers, it only works if the worker already connected, and it cannot
@@ -406,8 +436,8 @@ return value of the previous call to <a href="https://wlandau.github.io/crew/ref
 A handle can be any kind of R object: a process ID, a job name, an
 <code>R6</code> object returned by <code>callr::r_bg()</code>, etc.</p>
 </div>
-<div id="example" class="section level2">
-<h2>Example</h2>
+<div id="example" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Example</h1>
 <p>The following is a custom custom launcher class whose workers are
 local R processes on Unix-like systems.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>custom_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
@@ -465,10 +495,10 @@ launcher and run the <code>call()</code> method.</p>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">worker =</span> 3L,</span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">instance =</span> <span class="st">&quot;aa9c59ea&quot;</span></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>)</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, asyncdial = FALSE), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;)&quot;</span></span></code></pre></div>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, asyncdial = FALSE, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, tls = NULL), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;)&quot;</span></span></code></pre></div>
 </div>
-<div id="helper" class="section level2">
-<h2>Helper</h2>
+<div id="helper" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> Helper</h1>
 <p>It is useful to have a helper function that creates controllers with
 your custom launcher. It should:</p>
 <ol style="list-style-type: decimal">
@@ -497,48 +527,52 @@ workers take a long time to launch.</p>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">host =</span> <span class="cn">NULL</span>,</span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">10</span>,</span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_exit =</span> <span class="dv">1</span>,</span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>) {</span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>  )</span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
-<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
-<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
-<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
-<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_exit =</span> seconds_exit,</span>
-<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
-<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
-<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
-<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
-<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
-<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection</span>
-<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>  )</span>
-<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
-<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
-<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>  controller</span>
-<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">tls_enable =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">tls_config =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">10</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">seconds_exit =</span> <span class="dv">1</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>) {</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    <span class="at">tls_enable =</span> tls_enable,</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    <span class="at">tls_config =</span> tls_config,</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  )</span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">seconds_exit =</span> seconds_exit,</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection</span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>  )</span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a>  controller</span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a>}</span></code></pre></div>
 </div>
-<div id="informal-testing" class="section level2">
-<h2>Informal testing</h2>
+<div id="informal-testing" class="section level1" number="10">
+<h1><span class="header-section-number">10</span> Informal testing</h1>
 <p>Before you begin testing, please begin monitoring local processes and
 remote jobs on your platform. In the case of the above <code>crew</code>
 launcher which only creates local processes, it is sufficient to start
@@ -598,8 +632,8 @@ workers.</p>
 platform or operating system to verify that all <code>mirai</code>
 dispatchers and <code>crew</code> workers are terminated.</p>
 </div>
-<div id="load-testing" class="section level2">
-<h2>Load testing</h2>
+<div id="load-testing" class="section level1" number="11">
+<h1><span class="header-section-number">11</span> Load testing</h1>
 <p>If the informal testing succeeded, we recommend you scale up testing
 to more ambitious scenarios. As one example, you can test that your
 workers can auto-scale and quickly churn through a large number of
@@ -656,8 +690,8 @@ tasks.</p>
 <span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="co"># Now outside crew, verify that the mirai dispatcher</span></span>
 <span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a><span class="co"># and crew workers successfully terminated.</span></span></code></pre></div>
 </div>
-<div id="tips" class="section level2">
-<h2>Tips</h2>
+<div id="tips" class="section level1" number="12">
+<h1><span class="header-section-number">12</span> Tips</h1>
 <ul>
 <li>The <a href="https://github.com/wlandau/crew/blob/main/R/crew_launcher_local.R">source
 code of the built-in local process launcher</a> is a helpful reference

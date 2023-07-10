@@ -9,6 +9,8 @@ http
 joss
 LFS
 ’
+PEM
+TLS
 README
 reproducibly
 rOpenSci
@@ -21,6 +23,7 @@ snapshotted
 useR
 walkthrough
 writeable
+errored
 YAML
 RJ
 ZeroMQ
@@ -103,3 +106,4 @@ phyllotaxis
 scalable
 UI
 LSF
+tracebacks

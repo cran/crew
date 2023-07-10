@@ -19,18 +19,19 @@
 #'   [`rrq`](https://mrc-ide.github.io/rrq/),
 #'   [`clustermq`](https://mschubert.github.io/clustermq/),
 #'   and [`batchtools`](https://mllg.github.io/batchtools/).
+#' @importFrom data.table rbindlist
 #' @importFrom getip getip
 #' @importFrom mirai daemons mirai saisei server
 #' @importFrom nanonext mclock msleep random sha1 .unresolved
 #' @importFrom processx process
-#' @importFrom ps ps_handle ps_is_running ps_kill
+#' @importFrom ps ps_cmdline ps_handle ps_is_running ps_kill ps_status
 #' @importFrom R6 R6Class
-#' @importFrom rlang abort as_function enquo is_installed quo_squash
+#' @importFrom rlang abort as_function enquo is_installed is_named quo_squash
 #' @importFrom stats runif
 #' @importFrom tibble as_tibble new_tibble tibble
 #' @importFrom tidyselect all_of any_of contains ends_with eval_select
 #'   everything last_col matches num_range one_of starts_with
-#' @importFrom utils globalVariables head
+#' @importFrom utils compareVersion globalVariables head packageVersion
 NULL
 
 utils::globalVariables(".")
