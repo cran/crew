@@ -21,8 +21,8 @@
 #'   and [`batchtools`](https://mllg.github.io/batchtools/).
 #' @importFrom data.table rbindlist
 #' @importFrom getip getip
-#' @importFrom mirai daemons mirai saisei server
-#' @importFrom nanonext mclock msleep random sha1 .unresolved
+#' @importFrom mirai daemon daemons mirai nextget nextstream saisei status
+#' @importFrom nanonext mclock msleep random sha1 .unresolved tls_config
 #' @importFrom processx process
 #' @importFrom ps ps_cmdline ps_handle ps_is_running ps_kill ps_status
 #' @importFrom R6 R6Class
@@ -31,7 +31,7 @@
 #' @importFrom tibble as_tibble new_tibble tibble
 #' @importFrom tidyselect all_of any_of contains ends_with eval_select
 #'   everything last_col matches num_range one_of starts_with
-#' @importFrom utils compareVersion globalVariables head packageVersion
+#' @importFrom utils globalVariables head
 NULL
 
 utils::globalVariables(".")

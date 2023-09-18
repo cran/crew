@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Introduction to crew</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Introduction to crew</h1>
+
+
+
+<p><code>crew</code> is a distributed computing framework with a
+centralized interface and auto-scaling. A <code>crew</code> controller
+is an object in R which accepts tasks, returns results, and launches
+workers. Workers can be local processes, jobs on traditional clusters
+such as SLURM, or jobs on cloud services such as AWS Batch, depending on
+the <a href="https://wlandau.github.io/crew/articles/plugins.html">launcher
+plugin</a> of the controller.</p>
+<div id="tasks-vs-workers" class="section level1">
+<h1>Tasks vs workers</h1>
+<p>A <em>task</em> is a piece of R code, such as an expression or a
+function call. A <em>worker</em> is a <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/interactive.html">non-interactive</a>
+R process that runs one or more tasks. When tasks run on workers, the
+local R session is free and responsive, and work gets done faster. For
+example, <a href="https://wlandau.github.io/crew/articles/shiny.html">this
+vignette</a> shows how <code>crew</code> and <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a> work
+together to speed up <a href="https://rstudio.github.io/shiny/">Shiny</a> apps.</p>
+</div>
+<div id="how-to-use-crew" class="section level1">
+<h1>How to use <code>crew</code></h1>
+<p>First, create a controller object to manage tasks and workers.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;example&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">2</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="dv">10</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>Next, start the controller to create the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+client. Later, when you are done with the controller, call
+<code>controller$terminate()</code> to clean up the workers and
+dispatcher.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
+<p>Use <code>push()</code> to submit a new task and <code>pop()</code>
+to return a completed task.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> <span class="st">&quot;get pid&quot;</span>, <span class="at">command =</span> ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span></code></pre></div>
+<p>Behind the scenes, <code>push()</code> and <code>pop()</code> also
+launch workers to run the tasks. This process is expensive, so
+<code>crew</code> uses <a href="https://css-tricks.com/debouncing-throttling-explained-examples/">throttling</a>.
+That means not every call to <code>push()</code> or <code>pop()</code>
+launches any workers. To ensure enough workers get launched, keep
+calling <code>pop()</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">pop</span>() <span class="co"># No workers started yet and the task is not done.</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>task <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>() <span class="co"># Worker started, task complete.</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>task</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 12</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;   name    command result seconds  seed algorithm error trace warnings</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;   &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1 get pid NA      &lt;int&gt;        0    NA NA        NA    NA    NA</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
+<p>Alternatively, <code>wait()</code> is a loop that repeatedly checks
+tasks and launches workers until all tasks complete.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span></code></pre></div>
+<p>The return value of the task is in the <code>result</code>
+column.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>task<span class="sc">$</span>result[[<span class="dv">1</span>]] <span class="co"># return value of the task</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] 69631</span></span></code></pre></div>
+<p>Here is the full list of output in the <code>task</code> object
+returned by <code>pop()</code>.</p>
+<ul>
+<li><code>name</code>: the task name if given.</li>
+<li><code>command</code>: a character string with the R command if
+<code>save_command</code> was set to <code>TRUE</code> in
+<code>push()</code>.</li>
+<li><code>result</code>: a list containing the return value of the R
+command.</li>
+<li><code>seconds</code>: number of seconds that the task ran.</li>
+<li><code>seed</code>: the single integer originally supplied to
+<code>push()</code>, <code>NA</code> if <code>seed</code> was supplied
+as <code>NULL</code>.</li>
+<li><code>algorithm</code>: name of the pseudo-random number generator
+algorithm originally supplied to <code>push()</code>, <code>NA</code> if
+<code>algorithm</code> was supplied as <code>NULL</code>.</li>
+<li><code>error</code>: the first 2048 characters of the error message
+if the task threw an error, <code>NA</code> otherwise.</li>
+<li><code>trace</code>: the first 2048 characters of the text of the
+traceback if the task threw an error, <code>NA</code> otherwise.</li>
+<li><code>warnings</code>: the first 2048 characters. of the text of
+warning messages that the task may have generated, <code>NA</code>
+otherwise.</li>
+<li><code>launcher</code>: name of the <code>crew</code> launcher where
+the task ran.</li>
+</ul>
+<p>If <code>seed</code> and <code>algorithm</code> are both non-missing
+in the output, then you can recover the pseudo-random number generator
+state of the task using
+<code>set.seed(seed = seed, kind = algorithm)</code>. However, it is
+recommended to supply <code>NULL</code> to these arguments in
+<code>push()</code>, in which case you will observe <code>NA</code> in
+the outputs. With <code>seed</code> and <code>algorithm</code> both
+<code>NULL</code>, the random number generator defaults to the
+recommended widely spaced worker-specific L’Ecuyer streams supported by
+<code>mirai::nextstream()</code>. See
+<code>vignette(&quot;parallel&quot;, package = &quot;parallel&quot;)</code> for details.</p>
+</div>
+<div id="functional-programming" class="section level1">
+<h1>Functional programming</h1>
+<p>The <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
+method of the controller supports functional programming similar to <a href="https://purrr.tidyverse.org/reference/map.html"><code>purrr::map()</code></a>
+and <a href="https://mschubert.github.io/clustermq/reference/Q.html"><code>clustermq::Q()</code></a>.
+The arguments of <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
+are mostly the same those of <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-push"><code>push()</code></a>,
+but there is a new <code>iterate</code> argument to define the inputs of
+individual tasks. <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
+submits a whole collection of tasks, auto-scales the workers, waits for
+all the tasks to finish, and returns the results in a
+<code>tibble</code>.</p>
+<p>Below, <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
+submits one task to compute <code>1 + 2 + 5 + 6</code> and another task
+to compute <code>3 + 4 + 5 + 6</code>. The lists and vectors inside
+<code>iterate</code> vary from task to task, while the elements of
+<code>data</code> and <code>globals</code> stay constant across
+tasks.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>results <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">map</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">command =</span> a <span class="sc">+</span> b <span class="sc">+</span> c <span class="sc">+</span> d,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">iterate =</span> <span class="fu">list</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">a =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  ),</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">data =</span> <span class="fu">list</span>(<span class="at">c =</span> <span class="dv">5</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">globals =</span> <span class="fu">list</span>(<span class="at">d =</span> <span class="dv">6</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>results</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 12</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds  seed algorithm error trace warnings</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="fu">as.numeric</span>(results<span class="sc">$</span>result)</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] 14 18</span></span></code></pre></div>
+<p>If at least one task in <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
+throws an error, the default behavior is to error out in the main
+session and not return the results, If that happens, the results are
+available in the <code>controller$error</code>. To return the results
+instead of setting <code>controller$error</code>, regardless of error
+status, set <code>error = &quot;warn&quot;</code> or <code>&quot;silent&quot;</code> in <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>.
+To conserve memory, consider setting
+<code>controller$error &lt;- NULL</code> when you are done
+troubleshooting.</p>
+</div>
+<div id="summaries" class="section level1">
+<h1>Summaries</h1>
+<p>The controller summary shows how many tasks each worker ran, how many
+total seconds it spent running tasks, and how many tasks threw warnings
+and errors.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;   controller worker tasks seconds errors warnings</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 1 example         1     2   0.001      0        0</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 2 example         2     1   0          0        0</span></span></code></pre></div>
+<p>The schedule summary counts “pushed” tasks which may not be complete
+and “collected” tasks which <code>pop()</code> can return.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span>schedule<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 2</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   pushed collected</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;     &lt;int&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; 1      0         0</span></span></code></pre></div>
+<p>The launcher summary counts the number of times each worker was
+launched, and it shows the total number of assigned and completed tasks
+from all past terminated instances of each worker.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 4</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   worker launches assigned complete</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt;    &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2        1        1</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1        0        0</span></span></code></pre></div>
+<p>Finally, the client summary shows up-to-date worker status from
+<code>mirai::daemons()</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
+</div>
+<div id="termination" class="section level1">
+<h1>Termination</h1>
+<p>Call <code>terminate()</code> on the controller after you finish
+using it. <code>terminate()</code> tries to close the the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+dispatcher and any workers that may still be running. It is important to
+free up these resources.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<p>The <code>mirai</code> dispatcher process should exit on its own, but
+if not, you can manually terminate the process ID at
+<code>controller$client$dispatcher</code> or call
+<code>crew_clean()</code> to terminate any dispatchers from current or
+previous R sessions.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
+</div>
+<div id="tuning-and-auto-scaling" class="section level1">
+<h1>Tuning and auto-scaling</h1>
+<p>As explained above, <code>push()</code>, <code>pop()</code>, and
+<code>wait()</code> launch new workers to run tasks. The number of new
+workers depends on the number of tasks at the time. In addition, workers
+can shut themselves down as work completes. In other words,
+<code>crew</code> automatically raises and lowers the number of workers
+in response to fluctuations in the task workload.</p>
+<p>The most useful arguments for down-scaling, in order of importance,
+are:</p>
+<ol style="list-style-type: decimal">
+<li><code>seconds_idle</code>: shut down a worker if it spends too long
+waiting for a task.</li>
+<li><code>tasks_max</code>: shut down a worker after it completes a
+certain number of tasks.</li>
+<li><code>seconds_wall</code>: soft wall time of a worker.</li>
+</ol>
+<p>Please tune these these arguments to achieve the desired balance for
+auto-scaling. The two extremes of auto-scaling are <a href="https://mschubert.github.io/clustermq/"><code>clustermq</code></a>-like
+<em>persistent workers</em> and <a href="https://future.futureverse.org/"><code>future</code></a>-like
+<em>transient workers</em>, and each is problematic in its own way.</p>
+<ol style="list-style-type: decimal">
+<li><em>Persistent workers</em>: a persistent worker launches once,
+typically runs many tasks, and stays running for the entire lifetime of
+the controller. Persistent workers minimize overhead and quickly
+complete large numbers of short tasks. However, they risk spending too
+much time in an idle state if there are no tasks to run. Excessive
+idling wastes resources, which could impact your colleagues on a shared
+cluster or drive up costs on Amazon Web Services.</li>
+<li><em>Transient workers</em>: a transient worker terminates as soon as
+it completes a single task. Each subsequent task requires a new
+transient worker to run it. Transient workers avoid excessive idling,
+but frequent worker launches cause significant overhead and slows down
+the computation as a whole.</li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

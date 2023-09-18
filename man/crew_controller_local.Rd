@@ -9,7 +9,8 @@ crew_controller_local(
   workers = 1L,
   host = "127.0.0.1",
   port = NULL,
-  tls_enable = FALSE,
+  tls = crew::crew_tls(),
+  tls_enable = NULL,
   tls_config = NULL,
   seconds_interval = 0.25,
   seconds_timeout = 10,
@@ -22,7 +23,8 @@ crew_controller_local(
   reset_globals = TRUE,
   reset_packages = FALSE,
   reset_options = FALSE,
-  garbage_collection = FALSE
+  garbage_collection = FALSE,
+  launch_max = 5L
 )
 }
 \arguments{
@@ -37,32 +39,13 @@ If \code{NULL}, the host defaults to the local IP address.}
 \item{port}{TCP port to listen for the workers. If \code{NULL},
 then an available ephemeral port is automatically chosen.}
 
-\item{tls_enable}{Logical of length 1, whether to use transport layer
-security (TLS) to secure connections between the client and workers.
-Only supported for \code{mirai} version 0.9.0.9020 and above and
-\code{nanonext} version 0.9.0.9034 and above.
-Uses an automatically generated one-time self-signed certificate by
-default. To guard against man-in-the-middle attacks, consider
-generating a one-time certificate yourself, requesting a trusted
-certificate authority (CA) to sign it, and then supplying the
-keys to the \code{tls_config} argument. Enabling TLS requires \code{mirai}
-version 0.9.0.9013 or above, and a \code{NULL} value for \code{tls_enable}
-will enable TLS if and only if the \code{mirai} version is sufficient.}
+\item{tls}{A TLS configuration object from \code{\link[=crew_tls]{crew_tls()}}.}
 
-\item{tls_config}{Optional and only relevant if TLS is enabled
-(see the \code{tls_config} argument). The \code{tls_config} argument
-controls how transport layer security (TLS) is configured,
-and it is directly forwarded to the \code{tls} argument of
-\code{mirai::daemons()}. If \code{tls_config} is \code{NULL},
-then \code{mirai} will generate a one-time
-self-signed certificate. This default approach is protects against
-the simplest attempts at packet sniffing, but it is still vulnerable
-to man-in-the-middle attacks. When greater security is required,
-consider generating a PEM-encoded certificate and associated
-private key yourself and using a trusted certificate authority (CA)
-to sign the former. The documentation of \code{mirai}, including the
-\code{tls} arguments of the \code{mirai::daemons()} and \code{mirai::server()}
-functions, has more details.}
+\item{tls_enable}{Deprecated on 2023-09-15 in version 0.4.1.
+Use argument \code{tls} instead.}
+
+\item{tls_config}{Deprecated on 2023-09-15 in version 0.4.1.
+Use argument \code{tls} instead.}
 
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
@@ -83,7 +66,7 @@ considered alive if it is actively connected to its assign websocket.}
 since the completion of the last task. If exceeded, the worker exits.
 But the timer does not launch until \code{tasks_timers} tasks
 have completed.
-See the \code{idletime} argument of \code{mirai::server()}. \code{crew} does not
+See the \code{idletime} argument of \code{mirai::daemon()}. \code{crew} does not
 excel with perfectly transient workers because it does not micromanage
 the assignment of tasks to workers, so please allow enough idle
 time for a new worker to be delegated a new task.}
@@ -91,15 +74,15 @@ time for a new worker to be delegated a new task.}
 \item{seconds_wall}{Soft wall time in seconds.
 The timer does not launch until \code{tasks_timers} tasks
 have completed.
-See the \code{walltime} argument of \code{mirai::server()}.}
+See the \code{walltime} argument of \code{mirai::daemon()}.}
 
 \item{seconds_exit}{Number of seconds to wait for NNG websockets
 to finish sending large data (when a worker exits after reaching a
 timeout or having completed a certain number of tasks).
-See the \code{exitlinger} argument of \code{mirai::server()}.}
+See the \code{exitlinger} argument of \code{mirai::daemon()}.}
 
 \item{tasks_max}{Maximum number of tasks that a worker will do before
-exiting. See the \code{maxtasks} argument of \code{mirai::server()}.
+exiting. See the \code{maxtasks} argument of \code{mirai::daemon()}.
 \code{crew} does not
 excel with perfectly transient workers because it does not micromanage
 the assignment of tasks to workers, it is recommended to set
@@ -107,7 +90,7 @@ the assignment of tasks to workers, it is recommended to set
 
 \item{tasks_timers}{Number of tasks to do before activating
 the timers for \code{seconds_idle} and \code{seconds_wall}.
-See the \code{timerstart} argument of \code{mirai::server()}.}
+See the \code{timerstart} argument of \code{mirai::daemon()}.}
 
 \item{reset_globals}{\code{TRUE} to reset global environment
 variables between tasks, \code{FALSE} to leave them alone.}
@@ -122,6 +105,16 @@ because packages sometimes rely on options they set at loading time.}
 
 \item{garbage_collection}{\code{TRUE} to run garbage collection between
 tasks, \code{FALSE} to skip.}
+
+\item{launch_max}{Positive integer of length 1, maximum allowed
+consecutive launch attempts which do not complete any tasks.
+Enforced on a worker-by-worker basis.
+The futile launch count resets to back 0
+for each worker that completes a task.
+It is recommended to set \code{launch_max} above 0
+because sometimes workers are unproductive under perfectly ordinary
+circumstances. But \code{launch_max} should still be small enough
+to detect errors in the underlying platform.}
 }
 \description{
 Create an \code{R6} object to submit tasks and
@@ -141,6 +134,7 @@ controller$terminate()
 Other user: 
 \code{\link{crew-package}},
 \code{\link{crew_clean}()},
-\code{\link{crew_controller_group}()}
+\code{\link{crew_controller_group}()},
+\code{\link{crew_tls}()}
 }
 \concept{user}

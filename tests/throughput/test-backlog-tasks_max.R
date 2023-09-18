@@ -2,7 +2,7 @@ library(crew)
 controller <- crew_controller_local(
   workers = 20L,
   tasks_max = 100,
-  tls_enable = TRUE
+  tls = crew_tls(mode = "automatic")
 )
 controller$start()
 names <- character(0L)

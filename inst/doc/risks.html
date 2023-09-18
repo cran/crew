@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Known risks of crew</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Known risks of crew</h1>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#resources" id="toc-resources"><span class="toc-section-number">1</span> Resources</a>
+<ul>
+<li><a href="#processes" id="toc-processes"><span class="toc-section-number">1.1</span> Processes</a></li>
+<li><a href="#ports" id="toc-ports"><span class="toc-section-number">1.2</span> Ports</a></li>
+</ul></li>
+<li><a href="#security" id="toc-security"><span class="toc-section-number">2</span> Security</a>
+<ul>
+<li><a href="#perimeters" id="toc-perimeters"><span class="toc-section-number">2.1</span> Perimeters</a></li>
+<li><a href="#encryption" id="toc-encryption"><span class="toc-section-number">2.2</span> Encryption</a></li>
+<li><a href="#certificate-authorities" id="toc-certificate-authorities"><span class="toc-section-number">2.3</span> Certificate authorities</a></li>
+</ul></li>
+</ul>
+</div>
+
+<p>The <code>crew</code> package has unavoidable risks, and the user is
+responsible for safety, security, and computational resources. This
+vignette describes known risks and safeguards, but is by no means
+exhaustive. Please read the <a href="https://wlandau.github.io/crew/LICENSE.html">software
+license</a>.</p>
+<div id="resources" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Resources</h1>
+<div id="processes" class="section level2" number="1.1">
+<h2><span class="header-section-number">1.1</span> Processes</h2>
+<p>The <code>crew</code> package launches external R processes:</p>
+<ol style="list-style-type: decimal">
+<li>Worker processes to run tasks, which may include expensive jobs on
+cloud services like AWS Batch or traditional clusters like SLURM.</li>
+<li>A local <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+dispatcher process to schedule the tasks. If <code>x</code> is a
+<code>crew</code> controller, the process ID of the dispatcher is
+<code>x$client$dispatcher</code>.</li>
+</ol>
+<p>In the event of a poorly-timed crash or network error, these
+processes may not terminate properly. If that happens, they will
+continue to run, which may strain traditional clusters or incur heavy
+expenses on the cloud. Please monitor the platforms you use and manually
+terminate defunct hanging processes as needed.</p>
+</div>
+<div id="ports" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Ports</h2>
+<p>In addition, <code>crew</code> occupies one TCP port per controller.
+TCP ports range from 0 to 65535, and only around 16000 of these ports
+are considered ephemeral or dynamic, so please be careful not to run too
+many controllers simultaneously on shared machines, especially in <a href="https://wlandau.github.io/crew/articles/groups.html">controller
+group</a>. The <code>terminate()</code> frees these ports again for
+other processes to use.</p>
+</div>
+</div>
+<div id="security" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Security</h1>
+<p>By default, <code>crew</code> uses unencrypted TCP connections for
+transactions among workers. In a compromised network, an attacker can
+read the data in transit, and even gain direct access to the client or
+host.</p>
+<div id="perimeters" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Perimeters</h2>
+<p>It is best to avoid persistent direct connections between your local
+computer and the public internet. The <code>host</code> argument of the
+controller should not be a public IP address. Instead, please try to
+operate entirely within a perimeter such as a firewall, a virtual
+private network (VPN), or an Amazon Web Services (AWS) security group.
+In the case of AWS, your security group can open ports to itself. That
+way, the <code>crew</code> workers on e.g. AWS Batch jobs can connect to
+a <code>crew</code> client running in the same security group on an AWS
+Batch job or EC2 instance.</p>
+</div>
+<div id="encryption" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Encryption</h2>
+<p>In the age of Zero Trust, perimeters alone are seldom sufficient.
+Transport layer security (TLS) encrypts data to protect it from hackers
+while it travels over a network. TLS is the state of the art of
+encryption for network communications, and it is responsible for
+security in popular protocols such as HTTPS and SSH. TLS is based on
+public key cryptography, which requires two files:</p>
+<ol style="list-style-type: decimal">
+<li>A private key file which lives in a protected location on the host
+machine.</li>
+<li>A public key file which is sent to the remote machine on the other
+side of the connection.</li>
+</ol>
+<p>To use TLS in <code>crew</code> with automatic configuration, simply
+set <code>tls = crew_tls(mode = &quot;automatic&quot;)</code> in the controller,
+e.g. <code>crew_controller_local()</code>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+generates a one-time key pair and encrypts data for the current
+<code>crew</code> client. The key pair expires when the client
+terminates, which reduces the risk of a breach. In addition, the public
+key is a self-signed certificate, which somewhat protects against
+tampering on its way from the client to the server.</p>
+</div>
+<div id="certificate-authorities" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Certificate
+authorities</h2>
+<p>The signature in a self-signed certificate helps the server verify
+that the public key has a valid private key somewhere. However, in a
+“man-in-the-middle” (MITM) attack, that private key could belong to a
+malicious hacker instead of the true client. A certificate authority
+(CA) is a trusted third party that vouches for the authenticity of a
+certificate. A CA-backed certificate is more secure than a self-signed
+one. To supply a CA-backed certificate to <code>crew</code>:</p>
+<ol style="list-style-type: decimal">
+<li>Create a PEM-formatted private key file and matching PEM-formatted
+certificate file. Details are in <a href="https://www.feistyduck.com/library/openssl-cookbook/online/" class="uri">https://www.feistyduck.com/library/openssl-cookbook/online/</a>
+Chapter 1.2: Key and Certificate Management. When you are done with this
+step, you should at least have have a private key file, a matching
+signed certificate, and the root certificate of the CA. If your private
+key is encrypted, you will also have a password.</li>
+<li>When you create a <code>crew</code> controller, create a TLS
+configuration object with <code>crew_tls()</code> using the following
+arguments:
+<ul>
+<li><code>mode</code>: <code>&quot;custom&quot;</code>.</li>
+<li><code>key</code>: file path the private key.</li>
+<li><code>pass</code>: Your private key password if the private key is
+encrypted. Do not hard-code this value into any R code files. Instead,
+use a package like <code>keyring</code> to mask your password.</li>
+<li><code>certificates</code>: Character vector of file paths to
+certificates. One option is to supply only your own certificate.
+However, for extra security, you may wish to supply the entire
+certificate chain. In that case, set <code>certificates</code> to the
+character vector of the certificate file paths in the order they appear
+in the chain. Begin with your own certificate, then list the certificate
+that signed it, then the certificate that signed that one, and so on.
+The final certificate should be the root certificate of the CA.</li>
+</ul></li>
+<li>As before, supply this <code>crew_tls()</code> object to the
+<code>tls</code> argument of functions like
+<code>crew_controller_local()</code> (and for plugin developers,
+<code>crew_client()</code>).</li>
+</ol>
+<p><a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>, <a href="https://github.com/shikokuchuo/nanonext"><code>nanonext</code></a>,
+and <a href="https://nng.nanomsg.org">NNG</a> manage encryption behind
+the scenes. For more details about configuring TLS, please read <a href="https://github.com/shikokuchuo/mirai#distributed-computing-tls-secure-connections" class="uri">https://github.com/shikokuchuo/mirai#distributed-computing-tls-secure-connections</a>.</p>
+</div>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://wlandau.github.io/crew/articles/plugins.html">Launcher
+plugins</a> should expose the <code>tls</code> argument of
+<code>crew_client()</code>.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

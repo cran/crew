@@ -4,7 +4,7 @@
 \alias{crew_deprecate}
 \title{Deprecate a \code{crew} feature.}
 \usage{
-crew_deprecate(name, date, version, alternative)
+crew_deprecate(name, date, version, alternative, condition = "warning")
 }
 \arguments{
 \item{name}{Name of the feature (function or argument) to deprecate.}
@@ -14,6 +14,9 @@ crew_deprecate(name, date, version, alternative)
 \item{version}{Package version when deprecation was instated.}
 
 \item{alternative}{Message about an alternative.}
+
+\item{condition}{Either "warning" or "message" to indicate the type
+of condition thrown on deprecation.}
 }
 \value{
 \code{NULL} (invisibly). Throws a warning if a feature is deprecated.

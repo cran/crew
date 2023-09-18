@@ -53,7 +53,8 @@ Other class:
 \code{\link{crew_class_client}},
 \code{\link{crew_class_controller_group}},
 \code{\link{crew_class_controller}},
-\code{\link{crew_class_schedule}}
+\code{\link{crew_class_schedule}},
+\code{\link{crew_class_tls}}
 }
 \concept{class}
 \section{Public fields}{
@@ -84,6 +85,10 @@ Other class:
 \item{\code{reset_options}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{garbage_collection}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{launch_max}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{until}}{Numeric of length 1, time point when throttled unlocks.}
 }
@@ -129,7 +134,9 @@ Launcher constructor.
   reset_globals = NULL,
   reset_packages = NULL,
   reset_options = NULL,
-  garbage_collection = NULL
+  garbage_collection = NULL,
+  launch_max = NULL,
+  tls = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -159,6 +166,10 @@ Launcher constructor.
 \item{\code{reset_options}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{garbage_collection}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{launch_max}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}}
 }
 \if{html}{\out{</div>}}
 }
@@ -201,7 +212,7 @@ Validate the launcher.
 \if{html}{\out{<a id="method-crew_class_launcher-settings"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-settings}{}}}
 \subsection{Method \code{settings()}}{
-List of arguments for \code{mirai::server()}.
+List of arguments for \code{mirai::daemon()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$settings(socket)}\if{html}{\out{</div>}}
 }
@@ -215,7 +226,7 @@ to launch.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-List of arguments for \code{mirai::server()}.
+List of arguments for \code{mirai::daemon()}.
 }
 }
 \if{html}{\out{<hr>}}

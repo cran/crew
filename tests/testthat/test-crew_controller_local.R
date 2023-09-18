@@ -85,16 +85,19 @@ crew_test("crew_controller_local()", {
     # data task
     expect_false(exists(x = ".crew_y", envir = globalenv()))
     x$push(
-      command = paste0("a", x, .crew_y, sample.int(n = 1e9L, size = 1L)),
+      command = {
+        paste0("a", x, .crew_y, sample.int(n = 1e9L, size = 1L))
+      },
       data = list(x = "b"),
       globals = list(.crew_y = "c"),
       seed = 0L,
+      algorithm = "L'Ecuyer-CMRG",
       save_command = FALSE,
       seconds_timeout = 100
     )
     x$wait(seconds_timeout = 5)
     out <- x$pop()
-    set.seed(0L)
+    set.seed(seed = 0L, kind = "L'Ecuyer-CMRG")
     exp <- paste0("abc", sample.int(n = 1e9L, size = 1L))
     expect_true(anyNA(out$command))
     expect_equal(out$result[[1]], exp)
@@ -351,7 +354,8 @@ crew_test("controller map() works", {
     command = f(x, y) + a + b,
     iterate = list(x = c(1L, 2L), y = c(3L, 4L)),
     data = list(a = 5L),
-    globals = list(f = f, b = 6L)
+    globals = list(f = f, b = 6L),
+    seed = 0L
   )
   x$terminate()
   expect_null(x$error)
@@ -442,7 +446,7 @@ crew_test("map() works with errors and names and command strings", {
   expect_equal(out$result, list(NA, NA))
   expect_true(all(out$seconds >= 0))
   expect_true(is.integer(out$seed))
-  expect_true(anyDuplicated(out$seed) < 1L)
+  expect_true(all(is.na(out$seed)))
   expect_false(anyNA(out$error))
   expect_false(anyNA(out$trace))
   expect_false(anyNA(out$warnings))

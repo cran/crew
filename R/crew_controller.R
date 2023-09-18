@@ -250,7 +250,21 @@ crew_class_controller <- R6::R6Class(
     #'   whereas `substitute = FALSE` is meant for automated R programs
     #'   that invoke `crew` controllers.
     #' @param seed Integer of length 1 with the pseudo-random number generator
-    #'   seed to set for the evaluation of the task.
+    #'   seed to set for the evaluation of the task. Passed to the
+    #'   `seed` argument of `set.seed()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
+    #' @param algorithm Integer of length 1 with the pseudo-random number
+    #'   generator algorithm to set for the evaluation of the task.
+    #'   Passed to the `kind` argument of `RNGkind()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
     #' @param packages Character vector of packages to load for the task.
     #' @param library Library path to load the packages. See the `lib.loc`
     #'   argument of `require()`.
@@ -278,7 +292,8 @@ crew_class_controller <- R6::R6Class(
       data = list(),
       globals = list(),
       substitute = TRUE,
-      seed = as.integer(nanonext::random() / 2),
+      seed = NULL,
+      algorithm = NULL,
       packages = character(0),
       library = NULL,
       seconds_timeout = NULL,
@@ -310,6 +325,7 @@ crew_class_controller <- R6::R6Class(
         data = data,
         globals = globals,
         seed = seed,
+        algorithm = algorithm,
         packages = packages,
         library = library,
         .timeout = .timeout,
@@ -322,8 +338,8 @@ crew_class_controller <- R6::R6Class(
       invisible()
     },
     #' @description Quickly push a task to the head of the task list.
-    #' @details Exists to support extensions to `crew` for `purrr`-like
-    #'   functional programming. For developers only and not supported for
+    #' @details Exists to support `map()`.
+    #'   For developers only and not supported for
     #'   controller groups. Relative to `push()`, `shove()` skips user
     #'   options and guardrails for to aggressively optimize performance.
     #' @return `NULL` (invisibly).
@@ -338,7 +354,21 @@ crew_class_controller <- R6::R6Class(
     #'   See the `reset_globals` argument
     #'   of [crew_controller_local()].
     #' @param seed Integer of length 1 with the pseudo-random number generator
-    #'   seed to set for the evaluation of the task.
+    #'   seed to set for the evaluation of the task. Passed to the
+    #'   `seed` argument of `set.seed()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
+    #' @param algorithm Integer of length 1 with the pseudo-random number
+    #'   generator algorithm to set for the evaluation of the task.
+    #'   Passed to the `kind` argument of `RNGkind()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
     #' @param packages Character vector of packages to load for the task.
     #' @param library Library path to load the packages. See the `lib.loc`
     #'   argument of `require()`.
@@ -360,7 +390,8 @@ crew_class_controller <- R6::R6Class(
       command,
       data = list(),
       globals = list(),
-      seed = 0L,
+      seed = NULL,
+      algorithm = NULL,
       packages = character(0),
       library = NULL,
       .timeout = NULL,
@@ -375,6 +406,7 @@ crew_class_controller <- R6::R6Class(
         data = data,
         globals = globals,
         seed = seed,
+        algorithm = algorithm,
         packages = packages,
         library = library,
         .timeout = .timeout,
@@ -386,9 +418,8 @@ crew_class_controller <- R6::R6Class(
     #' @description Apply a single command to multiple inputs.
     #' @details The idea comes from functional programming: for example,
     #'   the `map()` function from the `purrr` package.
-    #'   The controller must be started and empty before calling `map()`.
-    #' @return A `tibble` of results and metadata, like the output of `pop()`
-    #'   but with multiple rows aggregated together (one row per task).
+    #' @return A `tibble` of results and metadata: one row per task
+    #'   and columns corresponding to the output of `pop()`.
     #' @param command Language object with R code to run.
     #' @param iterate Named list of vectors or lists to iterate over.
     #'   For example, to run function calls
@@ -421,9 +452,22 @@ crew_class_controller <- R6::R6Class(
     #'   `substitute = TRUE` is appropriate for interactive use,
     #'   whereas `substitute = FALSE` is meant for automated R programs
     #'   that invoke `crew` controllers.
-    #' @param seed Integer of length 1 with a pseudo-random number generator
-    #'   seed. Task-specific task seeds are non-randomly derived
-    #'   from this seed.
+    #' @param seed Integer of length 1 with the pseudo-random number generator
+    #'   seed to set for the evaluation of the task. Passed to the
+    #'   `seed` argument of `set.seed()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
+    #' @param algorithm Integer of length 1 with the pseudo-random number
+    #'   generator algorithm to set for the evaluation of the task.
+    #'   Passed to the `kind` argument of `RNGkind()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
     #' @param packages Character vector of packages to load for the task.
     #' @param library Library path to load the packages. See the `lib.loc`
     #'   argument of `require()`.
@@ -457,7 +501,8 @@ crew_class_controller <- R6::R6Class(
       data = list(),
       globals = list(),
       substitute = TRUE,
-      seed = as.integer(nanonext::random() / 2),
+      seed = NULL,
+      algorithm = NULL,
       packages = character(0),
       library = NULL,
       seconds_interval = NULL,
@@ -505,11 +550,19 @@ crew_class_controller <- R6::R6Class(
         message = "the \"globals\" argument of map() must be a named list"
       )
       crew_assert(
-        seed,
+        seed %|||% 1L,
         is.integer(.),
         length(.) == 1L,
         !anyNA(seed),
         message = "seed must be an integer of length 1"
+      )
+      crew_assert(
+        algorithm %|||% "Mersenne-Twister",
+        is.character(.),
+        length(.) == 1L,
+        !anyNA(.),
+        nzchar(.),
+        message = "algorithm must be a valid RNG algorithm name"
       )
       crew_assert(
         packages,
@@ -574,16 +627,26 @@ crew_class_controller <- R6::R6Class(
         seconds_interval = old_schedule$seconds_interval
       )
       self$schedule$start()
+      sign <- if_any(!is.null(seed) && seed > 0L, 1L, -1L)
+      if (!is.null(seed)) {
+        seed <- 1L
+      }
       for (index in seq_along(names)) {
         for (name in names_iterate) {
           data[[name]] <- .subset2(.subset2(iterate, name), index)
+        }
+        if (is.null(seed)) {
+          task_seed <- NULL
+        } else {
+          task_seed <- seed - (sign * index)
         }
         .subset2(self, "shove")(
           command = command,
           string = string,
           data = data,
           globals = globals,
-          seed = seed - (as.integer(sign(seed)) * index),
+          seed = task_seed,
+          algorithm = algorithm,
           packages = packages,
           library = library,
           .timeout = .timeout,
@@ -609,7 +672,7 @@ crew_class_controller <- R6::R6Class(
       results <- self$schedule$list()
       self$schedule <- old_schedule
       out <- lapply(results, monad_tibble)
-      out <- tibble::new_tibble(data.table::rbindlist(out))
+      out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       out <- out[match(x = names, table = out$name),, drop = FALSE] # nolint
       out <- out[!is.na(out$name),, drop = FALSE] # nolint
       worker <- .subset2(out, "worker")
@@ -676,10 +739,31 @@ crew_class_controller <- R6::R6Class(
     #' @details If not task is currently completed and collected, `pop()`
     #'   will attempt to auto-scale workers as needed and collect
     #'   any newly completed results.
-    #' @return If there is a completed task available to collect, the return
-    #'   value is a one-row data frame with the results, warnings, and errors.
-    #'   Otherwise, if there are no results available to collect,
-    #'   the return value is `NULL`.
+    #' @return If there is no task to collect, return `NULL`. Otherwise,
+    #'   return a one-row `tibble` with the following columns.
+    #'   * `name`: the task name if given.
+    #'   * `command`: a character string with the R command if `save_command`
+    #'     was set to `TRUE` in `push()`.
+    #'   * `result`: a list containing the return value of the R command.
+    #'   * `seconds`: number of seconds that the task ran.
+    #'   * `seed`: the single integer originally supplied to `push()`,
+    #'      `NA` otherwise. The pseudo-random number generator state
+    #'      just prior to the task can be restored using
+    #'      `set.seed(seed = seed, kind = algorithm)`, where `seed` and
+    #'      `algorithm` are part of this output.
+    #'   * `algorithm`: name of the pseudo-random number generator algorithm
+    #'      originally supplied to `push()`,
+    #'      `NA` otherwise. The pseudo-random number generator state
+    #'      just prior to the task can be restored using
+    #'      `set.seed(seed = seed, kind = algorithm)`, where `seed` and
+    #'      `algorithm` are part of this output.
+    #'   * `error`: the first 2048 characters of the error message if
+    #'     the task threw an error, `NA` otherwise.
+    #'   * `trace`: the first 2048 characters of the text of the traceback
+    #'     if the task threw an error, `NA` otherwise.
+    #'   * `warnings`: the first 2048 characters. of the text of
+    #'     warning messages that the task may have generated, `NA` otherwise.
+    #'   * `launcher`: name of the `crew` launcher where the task ran.
     #' @param scale Logical of length 1,
     #'   whether to automatically call `scale()`
     #'   to auto-scale workers to meet the demand of the task load.
@@ -861,6 +945,7 @@ expr_crew_eval <- quote(
     data = data,
     globals = globals,
     seed = seed,
+    algorithm = algorithm,
     packages = packages,
     library = library
   )

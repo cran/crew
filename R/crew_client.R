@@ -9,31 +9,11 @@
 #'   If `NULL`, the host defaults to the local IP address.
 #' @param port TCP port to listen for the workers. If `NULL`,
 #'   then an available ephemeral port is automatically chosen.
-#' @param tls_enable Logical of length 1, whether to use transport layer
-#'   security (TLS) to secure connections between the client and workers.
-#'   Only supported for `mirai` version 0.9.0.9020 and above and
-#'   `nanonext` version 0.9.0.9034 and above.
-#'   Uses an automatically generated one-time self-signed certificate by
-#'   default. To guard against man-in-the-middle attacks, consider
-#'   generating a one-time certificate yourself, requesting a trusted
-#'   certificate authority (CA) to sign it, and then supplying the
-#'   keys to the `tls_config` argument. Enabling TLS requires `mirai`
-#'   version 0.9.0.9013 or above, and a `NULL` value for `tls_enable`
-#'   will enable TLS if and only if the `mirai` version is sufficient.
-#' @param tls_config Optional and only relevant if TLS is enabled
-#'   (see the `tls_config` argument). The `tls_config` argument
-#'   controls how transport layer security (TLS) is configured,
-#'   and it is directly forwarded to the `tls` argument of
-#'   `mirai::daemons()`. If `tls_config` is `NULL`,
-#'   then `mirai` will generate a one-time
-#'   self-signed certificate. This default approach is protects against
-#'   the simplest attempts at packet sniffing, but it is still vulnerable
-#'   to man-in-the-middle attacks. When greater security is required,
-#'   consider generating a PEM-encoded certificate and associated
-#'   private key yourself and using a trusted certificate authority (CA)
-#'   to sign the former. The documentation of `mirai`, including the
-#'   `tls` arguments of the `mirai::daemons()` and `mirai::server()`
-#'    functions, has more details.
+#' @param tls A TLS configuration object from [crew_tls()].
+#' @param tls_enable Deprecated on 2023-09-15 in version 0.4.1.
+#'   Use argument `tls` instead.
+#' @param tls_config Deprecated on 2023-09-15 in version 0.4.1.
+#'   Use argument `tls` instead.
 #' @param seconds_interval Number of seconds between
 #'   polling intervals waiting for certain internal
 #'   synchronous operations to complete. If `space_poll` is `TRUE`, then
@@ -53,50 +33,50 @@ crew_client <- function(
   workers = 1L,
   host = NULL,
   port = NULL,
-  tls_enable = FALSE,
+  tls = crew::crew_tls(),
+  tls_enable = NULL,
   tls_config = NULL,
   seconds_interval = 0.25,
   seconds_timeout = 10
 ) {
+  # TODO: turn these into warnings:
+  if (!is.null(tls_enable)) {
+    crew_deprecate(
+      name = "tls_enable",
+      date = "2023-09-15",
+      version = "0.4.1",
+      alternative = "argument tls and function crew_tls()",
+      condition = "message"
+    )
+  }
+  if (!is.null(tls_config)) {
+    crew_deprecate(
+      name = "tls_config",
+      date = "2023-09-15",
+      version = "0.4.1",
+      alternative = "argument tls and function crew_tls()",
+      condition = "message"
+    )
+  }
   name <- as.character(name %|||% crew_random_name())
   workers <- as.integer(workers)
   host <- as.character(host %|||% getip::getip(type = "local"))
   port <- as.integer(port %|||% 0L)
-  tls_package_check(tls_enable)
+  crew_assert(
+    inherits(tls, "crew_class_tls"),
+    message = "argument tls must be an object created by crew_tls()"
+  )
   client <- crew_class_client$new(
     name = name,
     workers = workers,
     host = host,
     port = port,
-    tls_enable = tls_enable,
-    tls_config = tls_config,
+    tls = tls,
     seconds_interval = seconds_interval,
     seconds_timeout = seconds_timeout
   )
   client$validate()
   client
-}
-
-# TODO: remove when mirai > 0.9.0 and nanonext > 0.9.0 are on CRAN.
-tls_package_check <- function(tls_enable) {
-  mirai <- utils::compareVersion(
-    as.character(utils::packageVersion("mirai")),
-    "0.9.0.9027"
-  ) >= 0L
-  nanonext <- utils::compareVersion(
-    as.character(utils::packageVersion("nanonext")),
-    "0.9.0.9039"
-  ) >= 0L
-  if_any(
-    tls_enable && !(mirai && nanonext),
-    crew_error(
-      paste(
-        "tls_enable = TRUE requires mirai >= 0.9.0.9027",
-        "and nanonext >= 0.9.0.9039."
-      )
-    ),
-    NULL
-  )
 }
 
 #' @title `R6` client class.
@@ -123,10 +103,8 @@ crew_class_client <- R6::R6Class(
     host = NULL,
     #' @field port See [crew_client()].
     port = NULL,
-    #' @field tls_enable See [crew_client()].
-    tls_enable = NULL,
-    #' @field tls_config See [crew_client()].
-    tls_config = NULL,
+    #' @field tls See [crew_client()].
+    tls = NULL,
     #' @field seconds_interval See [crew_client()].
     seconds_interval = NULL,
     #' @field seconds_timeout See [crew_client()].
@@ -141,8 +119,7 @@ crew_class_client <- R6::R6Class(
     #' @param workers Argument passed from [crew_client()].
     #' @param host Argument passed from [crew_client()].
     #' @param port Argument passed from [crew_client()].
-    #' @param tls_enable Argument passed from [crew_client()].
-    #' @param tls_config Argument passed from [crew_client()].
+    #' @param tls Argument passed from [crew_client()].
     #' @param seconds_interval Argument passed from [crew_client()].
     #' @param seconds_timeout Argument passed from [crew_client()].
     #' @examples
@@ -157,8 +134,7 @@ crew_class_client <- R6::R6Class(
       workers = NULL,
       host = NULL,
       port = NULL,
-      tls_enable = NULL,
-      tls_config = NULL,
+      tls = NULL,
       seconds_interval = NULL,
       seconds_timeout = NULL
     ) {
@@ -166,8 +142,7 @@ crew_class_client <- R6::R6Class(
       self$workers <- workers
       self$host <- host
       self$port <- port
-      self$tls_enable <- tls_enable
-      self$tls_config <- tls_config
+      self$tls <- tls
       self$seconds_interval <- seconds_interval
       self$seconds_timeout <- seconds_timeout
     },
@@ -196,7 +171,10 @@ crew_class_client <- R6::R6Class(
       )
       crew_assert(self$port, is.integer(.), length(.) == 1L, !anyNA(.))
       crew_assert(self$port, . >= 0L, . <= 65535L)
-      crew_assert(self$tls_enable, isTRUE(.) || isFALSE(.))
+      crew_assert(
+        inherits(self$tls, "crew_class_tls"),
+        message = "argument tls must be an object created by crew_tls()"
+      )
       fields <- c(
         "seconds_interval",
         "seconds_timeout"
@@ -232,23 +210,27 @@ crew_class_client <- R6::R6Class(
       }
       url <- sprintf(
         "%s://%s:%s",
-        if_any(self$tls_enable, "wss", "ws"),
+        if_any(self$tls$mode == "none", "ws", "wss"),
         self$host,
         self$port
       )
-      args <- list(
+      get_password <- function() {
+        self$tls$password
+      }
+      mirai::daemons(
         n = self$workers,
         url = url,
         dispatcher = TRUE,
-        tls = self$tls_config,
+        seed = NULL,
+        tls = self$tls$client(),
+        pass = get_password(),
         token = TRUE,
         .compute = self$name
       )
-      do.call(what = mirai::daemons, args = args)
       # TODO: remove code that gets the dispatcher PID if the dispatcher
       # process becomes a C thread.
       # Begin dispatcher code.
-      self$dispatcher <- environment(mirai::daemons)$..[[self$name]]$pid
+      self$dispatcher <- mirai::nextget("pid", .compute = self$name)
       # End dispatcher code.
       self$started <- TRUE
       invisible()
@@ -260,7 +242,7 @@ crew_class_client <- R6::R6Class(
     #'   * `worker`: integer index of the worker.
     #'   * `online`: `TRUE` if the worker is online and connected to the
     #'     websocket URL, `FALSE` otherwise.
-    #'   * `instances`: integer, number of instances of `mirai` servers
+    #'   * `instances`: integer, number of instances of `mirai` daemons
     #'     (`crew` workers) that have connected to the websocket URL
     #'     during the life cycle of the listener.
     #'   * `assigned`: number of tasks assigned to the current websocket URL.
@@ -275,7 +257,7 @@ crew_class_client <- R6::R6Class(
       tibble::tibble(
         worker = seq_len(nrow(daemons)),
         online = as.logical(daemons[, "online"] > 0L),
-        instances = as.integer(daemons[, "instance"]),
+        instances = as.integer(abs(daemons[, "instance"])),
         assigned = as.integer(daemons[, "assigned"]),
         complete = as.integer(daemons[, "complete"]),
         socket = as.character(rownames(daemons))

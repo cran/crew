@@ -2,13 +2,14 @@ daemons_info <- function(name) {
   envir <- new.env(parent = emptyenv())
   crew_retry(
     fun = ~{
-      daemons <- mirai::daemons(.compute = name)$daemons
+      daemons <- mirai::status(.compute = name)$daemons
       valid <- is.matrix(daemons) && all(dim(daemons) > 0L)
       envir$daemons <- daemons
       envir$valid <- valid
     },
     seconds_interval = 0.5,
     seconds_timeout = 60,
+    max_tries = 1L,
     error = FALSE
   )
   daemons <- .subset2(envir, "daemons")
@@ -18,7 +19,7 @@ daemons_info <- function(name) {
 
 daemons_error <- function(daemons, name) {
   message <- sprintf("invalid daemons: %s\n", deparse1(daemons))
-  pid <- environment(mirai::daemons)$..[[name]]$pid
+  pid <- mirai::nextget("pid", .compute = name)
   exists <- !is.null(pid) &&
     !inherits(
       try(handle <- ps::ps_handle(pid = pid), silent = TRUE),

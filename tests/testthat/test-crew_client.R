@@ -8,7 +8,7 @@ crew_test("crew_client() validate", {
 crew_test("crew_client() works", {
   skip_on_cran()
   skip_on_os("windows")
-  client <- crew_client(host = "127.0.0.1", tls_enable = FALSE)
+  client <- crew_client(host = "127.0.0.1")
   on.exit({
     client$terminate()
     rm(client)
@@ -45,11 +45,11 @@ crew_test("crew_client() works", {
   expect_equal(log$instances, 0L)
   bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
   path <- file.path(R.home("bin"), bin)
-  call <- sprintf("mirai::server('%s')", socket)
+  call <- sprintf("mirai::daemon('%s')", socket)
   px <- processx::process$new(command = path, args = c("-e", call))
   crew_retry(
     ~{
-      daemons <- mirai::daemons(.compute = client$name)$daemons
+      daemons <- mirai::status(.compute = client$name)$daemons
       identical(
         as.integer(unname(daemons[, "online", drop = TRUE])),
         1L
@@ -60,11 +60,11 @@ crew_test("crew_client() works", {
   )
   m <- mirai::mirai(ps::ps_pid(), .compute = client$name)
   crew_retry(
-    ~!anyNA(m$data),
+    ~!.unresolved(m),
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
-  expect_false(anyNA(m$data))
+  expect_false(.unresolved(m))
   expect_true(is.numeric(m$data))
   expect_true(abs(m$data - ps::ps_pid()) > 0.5)
   expect_true(client$started)
@@ -78,4 +78,18 @@ crew_test("crew_client() works", {
   expect_false(client$started)
   px$kill()
   expect_null(client$summary())
+})
+
+crew_test("crew_client() deprecate tls_enable", {
+  expect_message(
+    crew_client(host = "127.0.0.1", tls_enable = TRUE),
+    class = "crew_deprecate"
+  )
+})
+
+crew_test("crew_client() deprecate tls_config", {
+  expect_message(
+    crew_client(host = "127.0.0.1", tls_config = list()),
+    class = "crew_deprecate"
+  )
 })

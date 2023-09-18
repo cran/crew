@@ -20,7 +20,8 @@ crew_controller_local <- function(
   workers = 1L,
   host = "127.0.0.1",
   port = NULL,
-  tls_enable = FALSE,
+  tls = crew::crew_tls(),
+  tls_enable = NULL,
   tls_config = NULL,
   seconds_interval = 0.25,
   seconds_timeout = 10,
@@ -33,13 +34,15 @@ crew_controller_local <- function(
   reset_globals = TRUE,
   reset_packages = FALSE,
   reset_options = FALSE,
-  garbage_collection = FALSE
+  garbage_collection = FALSE,
+  launch_max = 5L
 ) {
   client <- crew_client(
     name = name,
     workers = workers,
     host = host,
     port = port,
+    tls = tls,
     tls_enable = tls_enable,
     tls_config = tls_config,
     seconds_interval = seconds_interval,
@@ -57,7 +60,9 @@ crew_controller_local <- function(
     reset_globals = reset_globals,
     reset_packages = reset_packages,
     reset_options = reset_options,
-    garbage_collection = garbage_collection
+    garbage_collection = garbage_collection,
+    launch_max = launch_max,
+    tls = tls
   )
   controller <- crew_controller(client = client, launcher = launcher)
   controller$validate()

@@ -33,7 +33,8 @@ Other class:
 \code{\link{crew_class_controller_group}},
 \code{\link{crew_class_controller}},
 \code{\link{crew_class_launcher}},
-\code{\link{crew_class_schedule}}
+\code{\link{crew_class_schedule}},
+\code{\link{crew_class_tls}}
 }
 \concept{class}
 \section{Public fields}{
@@ -47,9 +48,7 @@ Other class:
 
 \item{\code{port}}{See \code{\link[=crew_client]{crew_client()}}.}
 
-\item{\code{tls_enable}}{See \code{\link[=crew_client]{crew_client()}}.}
-
-\item{\code{tls_config}}{See \code{\link[=crew_client]{crew_client()}}.}
+\item{\code{tls}}{See \code{\link[=crew_client]{crew_client()}}.}
 
 \item{\code{seconds_interval}}{See \code{\link[=crew_client]{crew_client()}}.}
 
@@ -82,8 +81,7 @@ Other class:
   workers = NULL,
   host = NULL,
   port = NULL,
-  tls_enable = NULL,
-  tls_config = NULL,
+  tls = NULL,
   seconds_interval = NULL,
   seconds_timeout = NULL
 )}\if{html}{\out{</div>}}
@@ -100,9 +98,7 @@ Other class:
 
 \item{\code{port}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
-\item{\code{tls_enable}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
-
-\item{\code{tls_config}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
+\item{\code{tls}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
 \item{\code{seconds_interval}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
@@ -170,7 +166,7 @@ per worker and the following columns:
 \item \code{worker}: integer index of the worker.
 \item \code{online}: \code{TRUE} if the worker is online and connected to the
 websocket URL, \code{FALSE} otherwise.
-\item \code{instances}: integer, number of instances of \code{mirai} servers
+\item \code{instances}: integer, number of instances of \code{mirai} daemons
 (\code{crew} workers) that have connected to the websocket URL
 during the life cycle of the listener.
 \item \code{assigned}: number of tasks assigned to the current websocket URL.

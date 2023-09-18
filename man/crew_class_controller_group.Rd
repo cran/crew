@@ -47,7 +47,8 @@ Other class:
 \code{\link{crew_class_client}},
 \code{\link{crew_class_controller}},
 \code{\link{crew_class_launcher}},
-\code{\link{crew_class_schedule}}
+\code{\link{crew_class_schedule}},
+\code{\link{crew_class_tls}}
 }
 \concept{class}
 \section{Public fields}{
@@ -290,7 +291,8 @@ Push a task to the head of the task list.
   data = list(),
   globals = list(),
   substitute = TRUE,
-  seed = sample.int(n = 1000000000L, size = 1L),
+  seed = NULL,
+  algorithm = NULL,
   packages = character(0),
   library = NULL,
   seconds_timeout = NULL,
@@ -326,8 +328,22 @@ whereas \code{substitute = FALSE} is meant for automated R programs
 that invoke \code{crew} controllers.}
 
 \item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
-seed to temporarily set for the evaluation of the task.
-At the end of the task, the seed is restored.}
+seed to set for the evaluation of the task. Passed to the
+\code{seed} argument of \code{set.seed()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
+
+\item{\code{algorithm}}{Integer of length 1 with the pseudo-random number
+generator algorithm to set for the evaluation of the task.
+Passed to the \code{kind} argument of \code{RNGkind()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
 
 \item{\code{packages}}{Character vector of packages to load for the task.}
 
@@ -381,7 +397,8 @@ Apply a single command to multiple inputs.
   data = list(),
   globals = list(),
   substitute = TRUE,
-  seed = as.integer(nanonext::random()/2),
+  seed = NULL,
+  algorithm = NULL,
   packages = character(0),
   library = NULL,
   seconds_interval = NULL,
@@ -434,9 +451,23 @@ value, e.g. \code{push(command = quote(your_function_call()))}.
 whereas \code{substitute = FALSE} is meant for automated R programs
 that invoke \code{crew} controllers.}
 
-\item{\code{seed}}{Integer of length 1 with a pseudo-random number generator
-seed. Task-specific task seeds are non-randomly derived
-from this seed.}
+\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
+seed to set for the evaluation of the task. Passed to the
+\code{seed} argument of \code{set.seed()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
+
+\item{\code{algorithm}}{Integer of length 1 with the pseudo-random number
+generator algorithm to set for the evaluation of the task.
+Passed to the \code{kind} argument of \code{RNGkind()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
 
 \item{\code{packages}}{Character vector of packages to load for the task.}
 
@@ -461,7 +492,11 @@ a text string version of the R command in the output.}
 a task has an error. Possible values:
 \itemize{
 \item \code{"stop"}: throw an error in the main R session instead of returning
-a value.
+a value. In case of an error, the results from the last errored
+\code{map()} are in the \code{error} field
+of the controller, e.g. \code{controller_object$error}. To reduce
+memory consumption, set \code{controller_object$error <- NULL} after
+you are finished troubleshooting.
 \item \code{"warn"}: throw a warning. This allows the return value with
 all the error messages and tracebacks to be generated.
 \item \code{"silent"}: do nothing special.
@@ -479,12 +514,11 @@ first controller in the list.}
 \subsection{Details}{
 The idea comes from functional programming: for example,
 the \code{map()} function from the \code{purrr} package.
-The controller must be started and empty before calling \code{map()}.
 }
 
 \subsection{Returns}{
-A \code{tibble} of results and metadata, like the output of \code{pop()}
-but with multiple rows aggregated together (one row per task).
+A \code{tibble} of results and metadata: one row per task and
+columns corresponding to the output of \code{pop()}.
 }
 }
 \if{html}{\out{<hr>}}
@@ -560,10 +594,9 @@ Set to \code{NULL} to select all controllers.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-If there is a completed task available to collect, the return
-value is a one-row data frame with the results, warnings, and errors.
-Otherwise, if there are no results available to collect,
-the return value is \code{NULL}.
+If there is no task to collect, return \code{NULL}. Otherwise,
+return a one-row \code{tibble} with the same columns as \code{pop()}
+for ordinary controllers.
 }
 }
 \if{html}{\out{<hr>}}

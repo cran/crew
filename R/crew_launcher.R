@@ -5,6 +5,7 @@
 #'   in functions that create custom third-party launchers. See
 #'   `@inheritParams crew::crew_launcher` in the source code file of
 #'   [crew_launcher_local()].
+#' @inheritParams crew_client
 #' @param name Name of the launcher.
 #' @param seconds_interval Seconds to wait between asynchronous operations.
 #' @param seconds_launch Seconds of startup time to allow.
@@ -16,27 +17,27 @@
 #'   since the completion of the last task. If exceeded, the worker exits.
 #'   But the timer does not launch until `tasks_timers` tasks
 #'   have completed.
-#'   See the `idletime` argument of `mirai::server()`. `crew` does not
+#'   See the `idletime` argument of `mirai::daemon()`. `crew` does not
 #'   excel with perfectly transient workers because it does not micromanage
 #'   the assignment of tasks to workers, so please allow enough idle
 #'   time for a new worker to be delegated a new task.
 #' @param seconds_wall Soft wall time in seconds.
 #'   The timer does not launch until `tasks_timers` tasks
 #'   have completed.
-#'   See the `walltime` argument of `mirai::server()`.
+#'   See the `walltime` argument of `mirai::daemon()`.
 #' @param seconds_exit Number of seconds to wait for NNG websockets
 #'   to finish sending large data (when a worker exits after reaching a
 #'   timeout or having completed a certain number of tasks).
-#'   See the `exitlinger` argument of `mirai::server()`.
+#'   See the `exitlinger` argument of `mirai::daemon()`.
 #' @param tasks_max Maximum number of tasks that a worker will do before
-#'   exiting. See the `maxtasks` argument of `mirai::server()`.
+#'   exiting. See the `maxtasks` argument of `mirai::daemon()`.
 #'   `crew` does not
 #'   excel with perfectly transient workers because it does not micromanage
 #'   the assignment of tasks to workers, it is recommended to set
 #'   `tasks_max` to a value greater than 1.
 #' @param tasks_timers Number of tasks to do before activating
 #'   the timers for `seconds_idle` and `seconds_wall`.
-#'   See the `timerstart` argument of `mirai::server()`.
+#'   See the `timerstart` argument of `mirai::daemon()`.
 #' @param reset_globals `TRUE` to reset global environment
 #'   variables between tasks, `FALSE` to leave them alone.
 #' @param reset_packages `TRUE` to unload any packages loaded during
@@ -47,6 +48,15 @@
 #'   because packages sometimes rely on options they set at loading time.
 #' @param garbage_collection `TRUE` to run garbage collection between
 #'   tasks, `FALSE` to skip.
+#' @param launch_max Positive integer of length 1, maximum allowed
+#'   consecutive launch attempts which do not complete any tasks.
+#'   Enforced on a worker-by-worker basis.
+#'   The futile launch count resets to back 0
+#'   for each worker that completes a task.
+#'   It is recommended to set `launch_max` above 0
+#'   because sometimes workers are unproductive under perfectly ordinary
+#'   circumstances. But `launch_max` should still be small enough
+#'   to detect errors in the underlying platform.
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' client <- crew_client()
@@ -71,9 +81,15 @@ crew_launcher <- function(
   reset_globals = TRUE,
   reset_packages = FALSE,
   reset_options = FALSE,
-  garbage_collection = FALSE
+  garbage_collection = FALSE,
+  launch_max = 5L,
+  tls = crew::crew_tls()
 ) {
   name <- as.character(name %|||% crew_random_name())
+  crew_assert(
+    inherits(tls, "crew_class_tls"),
+    message = "argument tls must be an object created by crew_tls()"
+  )
   crew_class_launcher$new(
     name = name,
     seconds_interval = seconds_interval,
@@ -86,7 +102,9 @@ crew_launcher <- function(
     reset_globals = reset_globals,
     reset_packages = reset_packages,
     reset_options = reset_options,
-    garbage_collection = garbage_collection
+    garbage_collection = garbage_collection,
+    launch_max = launch_max,
+    tls = tls
   )
 }
 
@@ -138,6 +156,10 @@ crew_class_launcher <- R6::R6Class(
     reset_options = NULL,
     #' @field garbage_collection See [crew_launcher()].
     garbage_collection = NULL,
+    #' @field launch_max See [crew_launcher()].
+    launch_max = NULL,
+    #' @field tls See [crew_launcher()].
+    tls = NULL,
     #' @field until Numeric of length 1, time point when throttled unlocks.
     until = NULL,
     #' @description Launcher constructor.
@@ -154,6 +176,8 @@ crew_class_launcher <- R6::R6Class(
     #' @param reset_packages See [crew_launcher()].
     #' @param reset_options See [crew_launcher()].
     #' @param garbage_collection See [crew_launcher()].
+    #' @param launch_max See [crew_launcher()].
+    #' @param tls See [crew_launcher()]
     #' @examples
     #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
     #' client <- crew_client()
@@ -178,7 +202,9 @@ crew_class_launcher <- R6::R6Class(
       reset_globals = NULL,
       reset_packages = NULL,
       reset_options = NULL,
-      garbage_collection = NULL
+      garbage_collection = NULL,
+      launch_max = NULL,
+      tls = NULL
     ) {
       self$name <- name
       self$seconds_interval <- seconds_interval
@@ -192,6 +218,8 @@ crew_class_launcher <- R6::R6Class(
       self$reset_packages <- reset_packages
       self$reset_options <- reset_options
       self$garbage_collection <- garbage_collection
+      self$launch_max <- launch_max
+      self$tls <- tls
     },
     #' @description Validate the launcher.
     #' @return `NULL` (invisibly).
@@ -233,6 +261,7 @@ crew_class_launcher <- R6::R6Class(
         "seconds_exit",
         "tasks_max",
         "tasks_timers"
+        # TODO: add launch_max
       )
       for (field in fields) {
         crew_assert(
@@ -259,17 +288,26 @@ crew_class_launcher <- R6::R6Class(
           "socket",
           "start",
           "launches",
+          "futile",
           "launched",
+          "history",
           "assigned",
           "complete"
         )
         crew_assert(identical(colnames(self$workers), cols))
         crew_assert(nrow(self$workers) > 0L)
       }
+      # TODO: forbid NULL tls objects:
+      if (!is.null(self$tls)) {
+        crew_assert(
+          inherits(self$tls, "crew_class_tls"),
+          message = "field tls must be an object created by crew_tls()"
+        )
+      }
       invisible()
     },
-    #' @description List of arguments for `mirai::server()`.
-    #' @return List of arguments for `mirai::server()`.
+    #' @description List of arguments for `mirai::daemon()`.
+    #' @return List of arguments for `mirai::daemon()`.
     #' @param socket Character of length 1, websocket address of the worker
     #'   to launch.
     settings = function(socket) {
@@ -277,8 +315,6 @@ crew_class_launcher <- R6::R6Class(
         (2L * as.integer(isTRUE(self$reset_packages))) +
         (4L * as.integer(isTRUE(self$reset_options))) +
         (8L * as.integer(isTRUE(self$garbage_collection)))
-      tls <- environment(mirai::daemons)$..[[self$name]]$tls
-      tls <- if_any(is.null(tls), tls, nanonext::weakref_value(tls))
       list(
         url = socket,
         asyncdial = FALSE,
@@ -288,7 +324,13 @@ crew_class_launcher <- R6::R6Class(
         timerstart = self$tasks_timers,
         exitlinger = self$seconds_exit * 1000,
         cleanup = cleanup,
-        tls = tls
+        # TODO: always use tls objects:
+        tls = if_any(
+          is.null(self$tls),
+          NULL,
+          self$tls$worker(name = self$name)
+        ),
+        rs = mirai::nextstream(self$name)
       )
     },
     #' @description Create a call to [crew_worker()] to
@@ -334,14 +376,16 @@ crew_class_launcher <- R6::R6Class(
     #' @return `NULL` (invisibly).
     #' @param sockets For testing purposes only.
     start = function(sockets = NULL) {
-      sockets <- sockets %|||% environment(mirai::daemons)$..[[self$name]]$urls
+      sockets <- sockets %|||% mirai::nextget("urls", .compute = self$name)
       n <- length(sockets)
       self$workers <- tibble::tibble(
         handle = replicate(n, crew_null, simplify = FALSE),
         socket = sockets,
         start = rep(NA_real_, n),
         launches = rep(0L, n),
+        futile = rep(0L, n),
         launched = rep(FALSE, n),
+        history = rep(0L, n),
         assigned = rep(0L, n),
         complete = rep(0L, n)
       )
@@ -394,7 +438,7 @@ crew_class_launcher <- R6::R6Class(
       launching <- !is.na(start) & ((now - start) < bound)
       daemons <- daemons %|||% daemons_info(name = self$name)
       online <- as.logical(daemons[, "online"])
-      discovered <- as.logical(daemons[, "instance"])
+      discovered <- as.logical(daemons[, "instance"] > 0L)
       inactive <- (!online) & (discovered | (!launching))
       launched <- self$workers$launched
       which(inactive & launched)
@@ -466,6 +510,22 @@ crew_class_launcher <- R6::R6Class(
         worker = index,
         instance = instance
       )
+      history <- self$workers$history[index]
+      complete <- self$workers$complete[index]
+      futile <- self$workers$futile[index]
+      futile <- if_any(complete > history, 0L, futile + 1L)
+      crew_assert(
+        futile <= self$launch_max,
+        message = paste(
+          "{crew} worker",
+          index,
+          "launched",
+          self$launch_max,
+          "times in a row without completing any tasks. Either raise",
+          "launch_max or troubleshoot your platform to figure out",
+          "why {crew} workers are not launching or connecting."
+        )
+      )
       handle <- self$launch_worker(
         call = as.character(call),
         name = as.character(name),
@@ -477,7 +537,9 @@ crew_class_launcher <- R6::R6Class(
       self$workers$socket[index] <- socket
       self$workers$start[index] <- nanonext::mclock() / 1000
       self$workers$launches[index] <- self$workers$launches[index] + 1L
+      self$workers$futile[index] <- futile
       self$workers$launched[index] <- TRUE
+      self$workers$history[index] <- complete
       invisible()
     },
     #' @description Throttle repeated calls.

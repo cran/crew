@@ -495,7 +495,7 @@ launcher and run the <code>call()</code> method.</p>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">worker =</span> 3L,</span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">instance =</span> <span class="st">&quot;aa9c59ea&quot;</span></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>)</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, asyncdial = FALSE, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, tls = NULL), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;)&quot;</span></span></code></pre></div>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, asyncdial = FALSE, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, exitlinger = 1000, cleanup = 1L, tls = NULL, rs = NULL), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;)&quot;</span></span></code></pre></div>
 </div>
 <div id="helper" class="section level1" number="9">
 <h1><span class="header-section-number">9</span> Helper</h1>
@@ -527,49 +527,50 @@ workers take a long time to launch.</p>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">host =</span> <span class="cn">NULL</span>,</span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">tls_enable =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">tls_config =</span> <span class="cn">NULL</span>,</span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">10</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">seconds_exit =</span> <span class="dv">1</span>,</span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">tls =</span> crew<span class="sc">::</span><span class="fu">crew_tls</span>(),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">10</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">seconds_exit =</span> <span class="dv">1</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  <span class="at">launch_max =</span> 5L</span>
 <span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>) {</span>
 <span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
 <span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
 <span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
 <span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
 <span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    <span class="at">tls_enable =</span> tls_enable,</span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    <span class="at">tls_config =</span> tls_config,</span>
-<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  )</span>
-<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
-<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
-<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
-<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
-<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">seconds_exit =</span> seconds_exit,</span>
-<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
-<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
-<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
-<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
-<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
-<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection</span>
-<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>  )</span>
-<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
-<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
-<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a>  controller</span>
-<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>  )</span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">seconds_exit =</span> seconds_exit,</span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection,</span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>    <span class="at">launch_max =</span> launch_max,</span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>    <span class="at">tls =</span> tls</span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a>  )</span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a>  controller</span>
+<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div id="informal-testing" class="section level1" number="10">
 <h1><span class="header-section-number">10</span> Informal testing</h1>

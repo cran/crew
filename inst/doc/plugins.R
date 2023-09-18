@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 #    )
 #  )
 
-## ---- eval = TRUE-------------------------------------------------------------
+## ---- eval = TRUE, message = FALSE--------------------------------------------
 library(crew)
 launcher <- crew_launcher_local()
 launcher$call(
@@ -46,8 +46,7 @@ launcher$call(
 #    workers = 1L,
 #    host = NULL,
 #    port = NULL,
-#    tls_enable = FALSE,
-#    tls_config = NULL,
+#    tls = crew::crew_tls(),
 #    seconds_interval = 0.5,
 #    seconds_timeout = 10,
 #    seconds_launch = 30,
@@ -59,15 +58,15 @@ launcher$call(
 #    reset_globals = TRUE,
 #    reset_packages = FALSE,
 #    reset_options = FALSE,
-#    garbage_collection = FALSE
+#    garbage_collection = FALSE,
+#    launch_max = 5L
 #  ) {
 #    client <- crew::crew_client(
 #      name = name,
 #      workers = workers,
 #      host = host,
 #      port = port,
-#      tls_enable = tls_enable,
-#      tls_config = tls_config,
+#      tls = tls,
 #      seconds_interval = seconds_interval,
 #      seconds_timeout = seconds_timeout
 #    )
@@ -83,7 +82,9 @@ launcher$call(
 #      reset_globals = reset_globals,
 #      reset_packages = reset_packages,
 #      reset_options = reset_options,
-#      garbage_collection = garbage_collection
+#      garbage_collection = garbage_collection,
+#      launch_max = launch_max,
+#      tls = tls
 #    )
 #    controller <- crew::crew_controller(client = client, launcher = launcher)
 #    controller$validate()

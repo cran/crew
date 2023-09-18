@@ -1,3 +1,16 @@
+# crew 0.5.0
+
+* Suppress interactive browser on Windows which launched on each worker previously (@psychelzh).
+* Migrate to the new host/daemon nomenclature in `mirai` 0.9.1 (#96).
+* Suppress `status()` retries (@shikokuchuo, #100).
+* Implement `launch_max` to error out if workers repeatedly launch without completing any tasks (#101, @shikokuchuo, @multimeric).
+* Detect discovered workers more robustly in `launcher$done()`.
+* Add a new `algorithm` argument to the `push()`, `shove()`, and `map()` methods of controllers and controller groups, as well as arguments/fields in `crew_eval()` and its return value (#113, @shikokuchuo).
+* As a default for pseudo-random number generation, leverage widely-spaced L'Ecuyer streams as supported by `mirai::nextstream()` (#115, @shikokuchuo).
+* Move README documentation to vignettes.
+* Add a new `crew_tls()` function for TLS configuration (#120).
+* Deprecate the `tls_enable` and `tls_config` arguments of `crew_client()` etc. in favor of a `tls` argument which accepts `crew_tls()` objects (#120).
+
 # crew 0.4.0
 
 ## Highlights

@@ -27,7 +27,9 @@ crew_launcher_local <- function(
   reset_globals = TRUE,
   reset_packages = FALSE,
   reset_options = FALSE,
-  garbage_collection = FALSE
+  garbage_collection = FALSE,
+  launch_max = 5L,
+  tls = crew::crew_tls()
 ) {
   name <- as.character(name %|||% crew_random_name())
   launcher <- crew_class_launcher_local$new(
@@ -42,7 +44,9 @@ crew_launcher_local <- function(
     reset_globals = reset_globals,
     reset_packages = reset_packages,
     reset_options = reset_options,
-    garbage_collection = garbage_collection
+    garbage_collection = garbage_collection,
+    launch_max = launch_max,
+    tls = tls
   )
   launcher$validate()
   launcher
@@ -94,7 +98,7 @@ crew_class_launcher_local <- R6::R6Class(
       processx::process$new(
         command = path,
         args = c("-e", call),
-        cleanup = FALSE
+        cleanup = TRUE
       )
     },
     #' @description Terminate a local process worker.

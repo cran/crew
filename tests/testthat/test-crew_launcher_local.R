@@ -1,11 +1,7 @@
 crew_test("crew_launcher_local() can run a task on a worker", {
   skip_on_cran()
   skip_on_os("windows")
-  client <- crew_client(
-    host = "127.0.0.1",
-    workers = 4L,
-    tls_enable = FALSE
-  )
+  client <- crew_client(host = "127.0.0.1", workers = 4L)
   launcher <- crew_launcher_local(name = client$name, seconds_idle = 360)
   on.exit({
     client$terminate()
@@ -34,7 +30,7 @@ crew_test("crew_launcher_local() can run a task on a worker", {
   crew::crew_retry(
     ~{
       daemons <- rlang::duplicate(
-        x = mirai::daemons(.compute = client$name)$daemons,
+        x = mirai::status(.compute = client$name)$daemons,
         shallow = FALSE
       )
       if (is.null(nrow(daemons))) {
@@ -49,7 +45,7 @@ crew_test("crew_launcher_local() can run a task on a worker", {
   expect_equal(launcher$workers$launches, c(0L, 1L, 0L, 0L))
   m <- mirai::mirai(ps::ps_pid(), .compute = client$name)
   crew_retry(
-    ~!anyNA(m$data),
+    ~!.unresolved(m),
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
@@ -104,7 +100,7 @@ crew_test("crew_launcher_local() can run a task and time out a worker", {
   )
   m <- mirai::mirai(ps::ps_pid(), .compute = client$name)
   crew::crew_retry(
-    ~!anyNA(m$data),
+    ~!.unresolved(m),
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
@@ -120,7 +116,7 @@ crew_test("crew_launcher_local() can run a task and time out a worker", {
   crew::crew_retry(
     ~{
       daemons <- rlang::duplicate(
-        x = mirai::daemons(.compute = client$name)$daemons,
+        x = mirai::status(.compute = client$name)$daemons,
         shallow = FALSE
       )
       status <- unname(daemons[, "online", drop = TRUE])
@@ -158,7 +154,7 @@ crew_test("crew_launcher_local() can run a task and end a worker", {
   crew::crew_retry(
     ~{
       daemons <- rlang::duplicate(
-        x = mirai::daemons(.compute = client$name)$daemons,
+        x = mirai::status(.compute = client$name)$daemons,
         shallow = FALSE
       )
       status <- unname(daemons[, "online", drop = TRUE])
@@ -179,7 +175,7 @@ crew_test("crew_launcher_local() can run a task and end a worker", {
   crew::crew_retry(
     ~{
       daemons <- rlang::duplicate(
-        x = mirai::daemons(.compute = client$name)$daemons,
+        x = mirai::status(.compute = client$name)$daemons,
         shallow = FALSE
       )
       status <- unname(daemons[, "online", drop = TRUE])

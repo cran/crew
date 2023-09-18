@@ -10,7 +10,8 @@ crew_eval(
   string = NA_character_,
   data = list(),
   globals = list(),
-  seed = as.integer(nanonext::random()/2),
+  seed = NULL,
+  algorithm = NULL,
   packages = character(0),
   library = NULL
 )
@@ -28,9 +29,22 @@ crew_eval(
 global environment for the task.}
 
 \item{seed}{Integer of length 1 with the pseudo-random number generator
-seed to set for the evaluation of the task. Does not restore
-the original seed, but this is okay because \code{crew_eval()}
-should only run in a non-interactive worker process.}
+seed to set for the evaluation of the task. Passed to the
+\code{seed} argument of \code{set.seed()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
+
+\item{algorithm}{Integer of length 1 with the pseudo-random number
+generator algorithm to set for the evaluation of the task.
+Passed to the \code{kind} argument of \code{RNGkind()} if not \code{NULL}.
+If \code{algorithm} and \code{seed} are both \code{NULL},
+then the random number generator defaults to the
+recommended widely spaced worker-specific
+L'Ecuyer streams as supported by \code{mirai::nextstream()}.
+See \code{vignette("parallel", package = "parallel")} for details.}
 
 \item{packages}{Character vector of packages to load for the task.}
 

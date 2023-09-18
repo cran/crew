@@ -374,11 +374,11 @@ controllers to act on. Below in <code>pop()</code> the
 ran the task.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>group<span class="sc">$</span><span class="fu">wait</span>(<span class="at">controllers =</span> <span class="st">&quot;semi-persistent&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>group<span class="sc">$</span><span class="fu">pop</span>()</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 11</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   name    command result seconds   seed error trace warnings launcher worker</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;   &lt;dbl&gt;  &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;    &lt;chr&gt;     &lt;int&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 1 my task NA      &lt;dbl&gt;        0 6.30e8 NA    NA    NA       semi-pe…      1</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; # ℹ 1 more variable: instance &lt;chr&gt;</span></span></code></pre></div>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 12</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   name    command result seconds  seed algorithm error trace warnings</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;   &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 1 my task NA      &lt;dbl&gt;        0    NA NA        NA    NA    NA</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
 <p>The <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-group-map"><code>map()</code></a>
 method provides functional programming, and the <code>controller</code>
 argument lets you choose the controller to submit the tasks.</p>
@@ -392,13 +392,12 @@ argument lets you choose the controller to submit the tasks.</p>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="at">globals =</span> <span class="fu">list</span>(<span class="at">d =</span> <span class="dv">6</span>),</span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="at">controller =</span> <span class="st">&quot;persistent&quot;</span></span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>)</span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 11</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds      seed error trace warnings</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt;     &lt;int&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0 870591596 NA    NA    NA</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0 870591595 NA    NA    NA</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;,</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; #   instance &lt;chr&gt;</span></span></code></pre></div>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 12</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds  seed algorithm error trace warnings</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
 <p>The controller group has a <code>summary()</code> method which
 aggregates the summaries of one or more controllers.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>group<span class="sc">$</span><span class="fu">summary</span>()</span>
