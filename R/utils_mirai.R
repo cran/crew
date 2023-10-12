@@ -18,7 +18,11 @@ daemons_info <- function(name) {
 }
 
 daemons_error <- function(daemons, name) {
-  message <- sprintf("invalid daemons: %s\n", deparse1(daemons))
+  message <- sprintf(
+    "'errorValue' int %d | %s\n",
+    daemons,
+    nanonext::nng_error(daemons)
+  )
   pid <- mirai::nextget("pid", .compute = name)
   exists <- !is.null(pid) &&
     !inherits(
@@ -40,4 +44,12 @@ daemons_error <- function(daemons, name) {
     )
   )
   crew_error(paste(message, info))
+}
+
+mirai_error <- function(task) {
+  if_any(
+    mirai::is_mirai(task) && mirai::is_mirai_error(task$data),
+    as.character(task$data),
+    NULL
+  )
 }

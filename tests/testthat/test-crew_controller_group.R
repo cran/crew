@@ -168,47 +168,6 @@ crew_test("crew_controller_group() select", {
   expect_false(b$client$started)
 })
 
-crew_test("crew_controller_group() collect", {
-  skip_on_cran()
-  skip_on_os("windows")
-  a <- crew_controller_local(
-    name = "a"
-  )
-  b <- crew_controller_local(
-    name = "b",
-    tasks_max = 1L,
-    seconds_idle = 360
-  )
-  x <- crew_controller_group(a, b)
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  expect_silent(x$validate())
-  expect_null(x$controllers[[1]]$client$started)
-  expect_null(x$controllers[[2]]$client$started)
-  x$start()
-  expect_null(x$pop())
-  x$push(command = ps::ps_pid(), name = "task_pid")
-  crew_retry(
-    fun = ~{
-      x$scale()
-      x$collect()
-      length(x$controllers[[1]]$schedule$collected) > 0L
-    },
-    seconds_interval = 0.5,
-    seconds_timeout = 10
-  )
-  out <- x$pop(scale = FALSE, controllers = "a")
-  expect_equal(
-    out$result[[1]],
-    x$controllers[[1]]$launcher$workers$handle[[1]]$get_pid()
-  )
-  expect_false(is.null(out))
-})
-
 crew_test("crew_controller_group() launch method", {
   skip_on_cran()
   skip_on_os("windows")
@@ -271,7 +230,7 @@ crew_test("crew_controller_group() scale method", {
   })
   x$start()
   a$push(command = "x", scale = FALSE)
-  expect_silent(x$scale())
+  x$scale()
   crew_retry(
     ~length(a$launcher$workers$handle) > 0L,
     seconds_interval = 0.1,
@@ -289,6 +248,7 @@ crew_test("crew_controller_group() scale method", {
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
+  expect_true(TRUE)
 })
 
 crew_test("controller group map() works", {
@@ -335,4 +295,60 @@ crew_test("controller group map() works", {
   expect_equal(sum$tasks, 2L)
   expect_equal(sum$errors, 0L)
   expect_equal(sum$warnings, 0L)
+})
+
+crew_test("crew_controller_group() wait one", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    name = "a",
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  expect_null(x$summary())
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  x$push(
+    command = "done",
+    name = "task_a",
+    controller = "a"
+  )
+  x$push(
+    command = Sys.sleep(300),
+    name = "task_a2",
+    controller = "a"
+  )
+  x$push(
+    command = Sys.sleep(300),
+    name = "task_a",
+    controller = "b"
+  )
+  x$wait(mode = "one", seconds_timeout = 30)
+  out <- x$pop()
+  expect_equal(out$result[[1L]], "done")
+})
+
+crew_test("crew_controller_group() deprecate collect()", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    name = "a",
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  suppressWarnings(x$collect())
+  expect_true(TRUE)
 })

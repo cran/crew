@@ -50,10 +50,10 @@ launcher$call(
 }
 \seealso{
 Other class: 
+\code{\link{crew_class_async}},
 \code{\link{crew_class_client}},
 \code{\link{crew_class_controller_group}},
 \code{\link{crew_class_controller}},
-\code{\link{crew_class_schedule}},
 \code{\link{crew_class_tls}}
 }
 \concept{class}
@@ -64,15 +64,11 @@ Other class:
 
 \item{\code{name}}{Name of the launcher.}
 
-\item{\code{seconds_interval}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
 \item{\code{seconds_launch}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_idle}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_wall}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
-
-\item{\code{seconds_exit}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{tasks_max}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
@@ -90,7 +86,10 @@ Other class:
 
 \item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{until}}{Numeric of length 1, time point when throttled unlocks.}
+\item{\code{processes}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{async}}{A \code{\link[=crew_async]{crew_async()}} object to run low-level launcher tasks
+asynchronously.}
 }
 \if{html}{\out{</div>}}
 }
@@ -103,17 +102,22 @@ Other class:
 \item \href{#method-crew_class_launcher-call}{\code{crew_class_launcher$call()}}
 \item \href{#method-crew_class_launcher-start}{\code{crew_class_launcher$start()}}
 \item \href{#method-crew_class_launcher-summary}{\code{crew_class_launcher$summary()}}
-\item \href{#method-crew_class_launcher-done}{\code{crew_class_launcher$done()}}
-\item \href{#method-crew_class_launcher-rotate}{\code{crew_class_launcher$rotate()}}
 \item \href{#method-crew_class_launcher-tally}{\code{crew_class_launcher$tally()}}
 \item \href{#method-crew_class_launcher-unlaunched}{\code{crew_class_launcher$unlaunched()}}
-\item \href{#method-crew_class_launcher-backlogged}{\code{crew_class_launcher$backlogged()}}
-\item \href{#method-crew_class_launcher-resolved}{\code{crew_class_launcher$resolved()}}
+\item \href{#method-crew_class_launcher-booting}{\code{crew_class_launcher$booting()}}
+\item \href{#method-crew_class_launcher-active}{\code{crew_class_launcher$active()}}
+\item \href{#method-crew_class_launcher-done}{\code{crew_class_launcher$done()}}
+\item \href{#method-crew_class_launcher-rotate}{\code{crew_class_launcher$rotate()}}
 \item \href{#method-crew_class_launcher-launch}{\code{crew_class_launcher$launch()}}
+\item \href{#method-crew_class_launcher-forward}{\code{crew_class_launcher$forward()}}
+\item \href{#method-crew_class_launcher-errors}{\code{crew_class_launcher$errors()}}
+\item \href{#method-crew_class_launcher-wait}{\code{crew_class_launcher$wait()}}
 \item \href{#method-crew_class_launcher-throttle}{\code{crew_class_launcher$throttle()}}
 \item \href{#method-crew_class_launcher-scale}{\code{crew_class_launcher$scale()}}
-\item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
+\item \href{#method-crew_class_launcher-launch_worker}{\code{crew_class_launcher$launch_worker()}}
 \item \href{#method-crew_class_launcher-terminate_worker}{\code{crew_class_launcher$terminate_worker()}}
+\item \href{#method-crew_class_launcher-terminate_workers}{\code{crew_class_launcher$terminate_workers()}}
+\item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -136,7 +140,8 @@ Launcher constructor.
   reset_options = NULL,
   garbage_collection = NULL,
   launch_max = NULL,
-  tls = NULL
+  tls = NULL,
+  processes = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -169,7 +174,9 @@ Launcher constructor.
 
 \item{\code{launch_max}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}}
+\item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{processes}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -316,6 +323,13 @@ with one row per \code{crew} worker and the following columns:
 \item \code{launches}: number of times the worker was launched. Each launch
 occurs at a different websocket because the token at the end of the
 URL is rotated before each new launch.
+\item \code{online}: logical vector, whether the current instance of each
+worker was actively connected to its NNG socket during the time of
+the last call to \code{tally()}.
+\item \code{discovered}: logical vector, whether the current instance of each
+worker had connected to its NNG socket at some point
+(and then possibly disconnected) during the time of
+the last call to \code{tally()}.
 \item \code{assigned}: cumulative number of tasks assigned, reported by
 \code{mirai::daemons()} and summed over all
 completed instances of the worker. Does not reflect the activity
@@ -329,70 +343,11 @@ of the currently running instance of the worker.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-done"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-done}{}}}
-\subsection{Method \code{done()}}{
-Get done workers.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$done(daemons = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{daemons}}{\code{mirai} daemons matrix. For testing only. Users
-should not set this.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-A worker is "done" if it is launched and inactive.
-A worker is "launched" if \code{launch()} was called
-and the worker websocket has not been rotated since.
-If a worker is currently online, then it is not inactive.
-If a worker is not currently online, then it is inactive
-if and only if (1) either it connected to the current
-websocket at some point in the past,
-or (2) \code{seconds_launch} seconds elapsed since launch.
-}
-
-\subsection{Returns}{
-Integer index of inactive workers.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-rotate"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-rotate}{}}}
-\subsection{Method \code{rotate()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$rotate(index)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{index}}{Integer index of a worker.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-Rotate a websocket.
-}
-
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_launcher-tally"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-tally}{}}}
 \subsection{Method \code{tally()}}{
-Update the cumulative assigned and complete statistics.
-
-
-Used to detect backlogged workers with more assigned
-than complete tasks. If terminated, these workers need to be
-relaunched until the backlog of assigned tasks is complete.
+Update the \code{daemons}-related columns of the internal
+\code{workers} data frame.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$tally(daemons = NULL)}\if{html}{\out{</div>}}
 }
@@ -413,7 +368,7 @@ should not set this.}
 \if{html}{\out{<a id="method-crew_class_launcher-unlaunched"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-unlaunched}{}}}
 \subsection{Method \code{unlaunched()}}{
-Get workers available for launch.
+Get indexes of unlaunched workers.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$unlaunched(n = Inf)}\if{html}{\out{</div>}}
 }
@@ -425,41 +380,91 @@ Get workers available for launch.
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+A worker is "unlaunched" if it has never connected
+to the current instance of its websocket. Once a worker
+launches with the \code{launch()} method, it is considered "launched"
+until it disconnects and its websocket is rotated with \code{rotate()}.
+}
+
 \subsection{Returns}{
 Integer index of workers available for launch.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-backlogged"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-backlogged}{}}}
-\subsection{Method \code{backlogged()}}{
-List non-launched backlogged workers.
+\if{html}{\out{<a id="method-crew_class_launcher-booting"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-booting}{}}}
+\subsection{Method \code{booting()}}{
+Get workers that may still be booting up.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$backlogged()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$booting()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+A worker is "booting" if its launch time is within the last
+\code{seconds_launch} seconds. \code{seconds_launch} is a configurable grace
+period when \code{crew} allows a worker to start up and connect to the
+\code{mirai} dispatcher. The \code{booting()} function does not know about the
+actual worker connection status, it just knows about launch times,
+so it may return \code{TRUE} for workers that have already connected
+and started doing tasks.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-active"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-active}{}}}
+\subsection{Method \code{active()}}{
+Get active workers.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$active()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+A worker is "active" if its current instance is online and
+connected, or if it is within its booting time window
+and has never connected.
+In other words, "active" means \code{online | (!discovered & booting)}.
 }
 
 \subsection{Returns}{
-Integer vector of worker indexes.
+Logical vector with \code{TRUE} for active workers and \code{FALSE} for
+inactive ones.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-resolved"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-resolved}{}}}
-\subsection{Method \code{resolved()}}{
-List non-launched non-backlogged workers.
+\if{html}{\out{<a id="method-crew_class_launcher-done"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-done}{}}}
+\subsection{Method \code{done()}}{
+Get done workers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$resolved()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$done()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{Maximum number of worker indexes to return.}
+\subsection{Details}{
+A worker is "done" if it is launched and inactive.
+A worker is "launched" if \code{launch()} was called
+and the worker websocket has not been rotated since.
 }
-\if{html}{\out{</div>}}
-}
+
 \subsection{Returns}{
-Integer vector of worker indexes.
+Integer index of inactive workers.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-rotate"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-rotate}{}}}
+\subsection{Method \code{rotate()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$rotate()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+Rotate websockets at all unlaunched workers.
+}
+
+\subsection{Returns}{
+\code{NULL} (invisibly).
 }
 }
 \if{html}{\out{<hr>}}
@@ -484,16 +489,80 @@ to launch.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-forward"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-forward}{}}}
+\subsection{Method \code{forward()}}{
+Forward an asynchronous launch/termination error condition
+of a worker.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$forward(index, condition = "error")}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{index}}{Integer of length 1, index of the worker to inspect.}
+
+\item{\code{condition}}{Character of length 1 indicating what to do
+with an error if found. \code{"error"} to throw an error,
+\code{"warning"} to throw a warning,
+\code{"message"} to print a message,
+and \code{"character"} to return a character vector of specific
+task-level error messages.
+The return value is \code{NULL} if no error is found.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Throw an error, throw a warning, or return a character string,
+depending on the \code{condition} argument.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-errors"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-errors}{}}}
+\subsection{Method \code{errors()}}{
+Collect and return the most recent error messages
+from asynchronous worker launching and termination.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$errors()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Character vector of all the most recent error messages
+from asynchronous worker launching and termination. \code{NULL}
+if there are no errors.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-wait"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-wait}{}}}
+\subsection{Method \code{wait()}}{
+Wait for any local asynchronous launch or termination
+tasks to complete.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$wait()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+Only relevant if \code{processes} is a positive integer.
+}
+
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_launcher-throttle"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-throttle}{}}}
 \subsection{Method \code{throttle()}}{
-Throttle repeated calls.
+Deprecated in version 0.5.0.9000 (2023-10-02). Not used.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$throttle()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-\code{TRUE} to throttle, \code{FALSE} to continue.
+\code{NULL}
 }
 }
 \if{html}{\out{<hr>}}
@@ -502,7 +571,7 @@ Throttle repeated calls.
 \subsection{Method \code{scale()}}{
 Auto-scale workers out to meet the demand of tasks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$scale(demand, throttle = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$scale(demand, throttle = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -510,12 +579,7 @@ Auto-scale workers out to meet the demand of tasks.
 \describe{
 \item{\code{demand}}{Number of unresolved tasks.}
 
-\item{\code{throttle}}{Logical of length 1, whether to delay auto-scaling
-until the next auto-scaling request at least
-\code{self$client$seconds_interval} seconds from the original request.
-The idea is similar to \code{shiny::throttle()} except that \code{crew} does not
-accumulate a backlog of requests. The technique improves robustness
-and efficiency.}
+\item{\code{throttle}}{Deprecated in version 0.5.0.9000 (2023-10-02).}
 }
 \if{html}{\out{</div>}}
 }
@@ -524,12 +588,75 @@ and efficiency.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-terminate"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate}{}}}
-\subsection{Method \code{terminate()}}{
+\if{html}{\out{<a id="method-crew_class_launcher-launch_worker"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-launch_worker}{}}}
+\subsection{Method \code{launch_worker()}}{
+Abstract worker launch method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$launch_worker(call, name, launcher, worker, instance)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{call}}{Character of length 1 with a namespaced call to
+\code{\link[=crew_worker]{crew_worker()}} which will run in the worker and accept tasks.}
+
+\item{\code{name}}{Character of length 1 with an informative worker name.}
+
+\item{\code{launcher}}{Character of length 1, name of the launcher.}
+
+\item{\code{worker}}{Positive integer of length 1, index of the worker.
+This worker index remains the same even when the current instance
+of the worker exits and a new instance launches.
+It is always between 1 and the maximum number of concurrent workers.}
+
+\item{\code{instance}}{Character of length 1 to uniquely identify
+the current instance of the worker a the index in the launcher.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Launcher plugins will overwrite this method.
+}
+
+\subsection{Returns}{
+A handle to mock the worker launch.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-terminate_worker"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate_worker}{}}}
+\subsection{Method \code{terminate_worker()}}{
+Abstract worker termination method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate_worker(handle)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{handle}}{A handle object previously
+returned by \code{launch_worker()} which allows the termination
+of the worker.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Launcher plugins will overwrite this method.
+}
+
+\subsection{Returns}{
+A handle to mock worker termination.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-terminate_workers"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate_workers}{}}}
+\subsection{Method \code{terminate_workers()}}{
 Terminate one or more workers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate(index = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate_workers(index = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -545,27 +672,12 @@ to terminate. If \code{NULL}, all current workers are terminated.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-terminate_worker"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate_worker}{}}}
-\subsection{Method \code{terminate_worker()}}{
-Abstract method.
+\if{html}{\out{<a id="method-crew_class_launcher-terminate"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate}{}}}
+\subsection{Method \code{terminate()}}{
+Terminate the whole launcher, including all workers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate_worker(handle)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{handle}}{A handle object previously
-returned by \code{launch_worker()} which allows the termination
-of the worker.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-Does not actually terminate a worker. This method is a
-placeholder, and its presence allows manual worker termination
-to be optional.
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{

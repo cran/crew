@@ -374,12 +374,11 @@ dispatcher.</p>
 <p>Use <code>push()</code> to submit a new task and <code>pop()</code>
 to return a completed task.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> <span class="st">&quot;get pid&quot;</span>, <span class="at">command =</span> ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span></code></pre></div>
-<p>Behind the scenes, <code>push()</code> and <code>pop()</code> also
-launch workers to run the tasks. This process is expensive, so
-<code>crew</code> uses <a href="https://css-tricks.com/debouncing-throttling-explained-examples/">throttling</a>.
-That means not every call to <code>push()</code> or <code>pop()</code>
-launches any workers. To ensure enough workers get launched, keep
-calling <code>pop()</code>.</p>
+<p>As a side effect, methods <code>push()</code>, <code>pop()</code>,
+and <code>scale()</code> also launch workers to run the tasks. If your
+controller uses transient workers and has a backlog of tasks, you may
+need to loop over <code>pop()</code> or <code>scale()</code> multiple
+times to make sure enough workers are always available.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">pop</span>() <span class="co"># No workers started yet and the task is not done.</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
@@ -494,30 +493,26 @@ and errors.</p>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;    &lt;int&gt;</span></span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 1 example         1     2   0.001      0        0</span></span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 2 example         2     1   0          0        0</span></span></code></pre></div>
-<p>The schedule summary counts “pushed” tasks which may not be complete
-and “collected” tasks which <code>pop()</code> can return.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span>schedule<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 2</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   pushed collected</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;     &lt;int&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; 1      0         0</span></span></code></pre></div>
 <p>The launcher summary counts the number of times each worker was
 launched, and it shows the total number of assigned and completed tasks
-from all past terminated instances of each worker.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 4</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   worker launches assigned complete</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt;    &lt;int&gt;    &lt;int&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2        1        1</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1        0        0</span></span></code></pre></div>
+from all past terminated instances of each worker. In addition, it shows
+whether the current worker instance was actively connected (“online”) or
+had connected at some point during its life cycle (“discovered”) as of
+the last call to <code>controller$launcher$tally()</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   worker launches online discovered assigned complete</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt; &lt;lgl&gt;  &lt;lgl&gt;         &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2 TRUE   TRUE              0        0</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1 TRUE   TRUE              0        0</span></span></code></pre></div>
 <p>Finally, the client summary shows up-to-date worker status from
 <code>mirai::daemons()</code>.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
 </div>
 <div id="termination" class="section level1">
 <h1>Termination</h1>
@@ -525,14 +520,14 @@ from all past terminated instances of each worker.</p>
 using it. <code>terminate()</code> tries to close the the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
 dispatcher and any workers that may still be running. It is important to
 free up these resources.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>The <code>mirai</code> dispatcher process should exit on its own, but
 if not, you can manually terminate the process ID at
 <code>controller$client$dispatcher</code> or call
 <code>crew_clean()</code> to terminate any dispatchers from current or
 previous R sessions.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
 </div>
 <div id="tuning-and-auto-scaling" class="section level1">
 <h1>Tuning and auto-scaling</h1>
@@ -569,6 +564,17 @@ transient worker to run it. Transient workers avoid excessive idling,
 but frequent worker launches cause significant overhead and slows down
 the computation as a whole.</li>
 </ol>
+</div>
+<div id="asynchronous-management-of-workers" class="section level1">
+<h1>Asynchronous management of workers</h1>
+<p>Some launchers support local processes to launch and terminate
+workers asynchronously. For example, a cloud-based launcher may need to
+make HTTP requests to launch and terminate workers on e.g. AWS Batch,
+and these time-consuming requests should happen in the background.
+Controllers that support this will have a <code>processes</code>
+argument to specify the number of local R processes to churn through
+worker launches and terminations. Set <code>processes = NULL</code> to
+disable async, which can be helpful for troubleshooting.</p>
 </div>
 
 

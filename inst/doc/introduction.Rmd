@@ -47,7 +47,7 @@ Use `push()` to submit a new task and `pop()` to return a completed task.
 controller$push(name = "get pid", command = ps::ps_pid())
 ```
 
-Behind the scenes, `push()` and `pop()` also launch workers to run the tasks. This process is expensive, so `crew` uses [throttling](https://css-tricks.com/debouncing-throttling-explained-examples/). That means not every call to `push()` or `pop()` launches any workers. To ensure enough workers get launched, keep calling `pop()`.
+As a side effect, methods `push()`, `pop()`, and `scale()` also launch workers to run the tasks. If your controller uses transient workers and has a backlog of tasks, you may need to loop over `pop()` or `scale()` multiple times to make sure enough workers are always available.
 
 ```{r}
 controller$pop() # No workers started yet and the task is not done.
@@ -149,25 +149,15 @@ controller$summary()
 #> 2 example         2     1   0          0        0
 ```
 
-The schedule summary counts "pushed" tasks which may not be complete and "collected" tasks which `pop()` can return.
-
-```{r}
-controller$schedule$summary()
-#> # A tibble: 1 × 2
-#>   pushed collected
-#>    <int>     <int>
-#> 1      0         0
-```
-
-The launcher summary counts the number of times each worker was launched, and it shows the total number of assigned and completed tasks from all past terminated instances of each worker.
+The launcher summary counts the number of times each worker was launched, and it shows the total number of assigned and completed tasks from all past terminated instances of each worker. In addition, it shows whether the current worker instance was actively connected ("online") or had connected at some point during its life cycle ("discovered") as of the last call to `controller$launcher$tally()`.
 
 ```{r}
 controller$launcher$summary()
-#> # A tibble: 2 × 4
-#>   worker launches assigned complete
-#>    <int>    <int>    <int>    <int>
-#> 1      1        2        1        1
-#> 2      2        1        0        0
+#> # A tibble: 2 × 6
+#>   worker launches online discovered assigned complete
+#>    <int>    <int> <lgl>  <lgl>         <int>    <int>
+#> 1      1        2 TRUE   TRUE              0        0
+#> 2      2        1 TRUE   TRUE              0        0
 ```
 
 Finally, the client summary shows up-to-date worker status from `mirai::daemons()`.
@@ -210,3 +200,7 @@ Please tune these these arguments to achieve the desired balance for auto-scalin
 
 1. *Persistent workers*: a persistent worker launches once, typically runs many tasks, and stays running for the entire lifetime of the controller. Persistent workers minimize overhead and quickly complete large numbers of short tasks. However, they risk spending too much time in an idle state if there are no tasks to run. Excessive idling wastes resources, which could impact your colleagues on a shared cluster or drive up costs on Amazon Web Services.
 2. *Transient workers*: a transient worker terminates as soon as it completes a single task. Each subsequent task requires a new transient worker to run it. Transient workers avoid excessive idling, but frequent worker launches cause significant overhead and slows down the computation as a whole.
+
+# Asynchronous management of workers
+
+Some launchers support local processes to launch and terminate workers asynchronously. For example, a cloud-based launcher may need to make HTTP requests to launch and terminate workers on e.g. AWS Batch, and these time-consuming requests should happen in the background. Controllers that support this will have a `processes` argument to specify the number of local R processes to churn through worker launches and terminations. Set `processes = NULL` to disable async, which can be helpful for troubleshooting.

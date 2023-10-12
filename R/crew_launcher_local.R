@@ -17,11 +17,11 @@
 #' }
 crew_launcher_local <- function(
   name = NULL,
-  seconds_interval = 0.25,
+  seconds_interval = NULL,
   seconds_launch = 30,
   seconds_idle = Inf,
   seconds_wall = Inf,
-  seconds_exit = 1,
+  seconds_exit = NULL,
   tasks_max = Inf,
   tasks_timers = 0L,
   reset_globals = TRUE,
@@ -31,14 +31,30 @@ crew_launcher_local <- function(
   launch_max = 5L,
   tls = crew::crew_tls()
 ) {
+  crew_deprecate(
+    name = "seconds_interval",
+    date = "2023-10-02",
+    version = "0.5.0.9003",
+    alternative = "none (no longer necessary)",
+    condition = "message",
+    value = seconds_interval,
+    frequency = "once"
+  )
+  crew_deprecate(
+    name = "seconds_exit",
+    date = "2023-09-21",
+    version = "0.5.0.9002",
+    alternative = "none (no longer necessary)",
+    condition = "message",
+    value = seconds_exit,
+    frequency = "once"
+  )
   name <- as.character(name %|||% crew_random_name())
   launcher <- crew_class_launcher_local$new(
     name = name,
-    seconds_interval = seconds_interval,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
-    seconds_exit = seconds_exit,
     tasks_max = tasks_max,
     tasks_timers = tasks_timers,
     reset_globals = reset_globals,
@@ -102,12 +118,12 @@ crew_class_launcher_local <- R6::R6Class(
       )
     },
     #' @description Terminate a local process worker.
-    #' @return `NULL` (invisibly).
+    #' @return A list with the process ID of the worker.
     #' @param handle A process handle object previously
     #'   returned by `launch_worker()`.
     terminate_worker = function(handle) {
       handle$kill()
-      invisible()
+      list(pid = handle$get_pid())
     }
   )
 )

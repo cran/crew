@@ -4,7 +4,16 @@
 \alias{crew_deprecate}
 \title{Deprecate a \code{crew} feature.}
 \usage{
-crew_deprecate(name, date, version, alternative, condition = "warning")
+crew_deprecate(
+  name,
+  date,
+  version,
+  alternative,
+  condition = "warning",
+  value = "x",
+  skip_cran = FALSE,
+  frequency = "always"
+)
 }
 \arguments{
 \item{name}{Name of the feature (function or argument) to deprecate.}
@@ -17,6 +26,15 @@ crew_deprecate(name, date, version, alternative, condition = "warning")
 
 \item{condition}{Either "warning" or "message" to indicate the type
 of condition thrown on deprecation.}
+
+\item{value}{Value of the object. Deprecation is skipped
+if \code{value} is \code{NULL}.}
+
+\item{skip_cran}{Logical of length 1, whether to skip the deprecation
+warning or message on CRAN.}
+
+\item{frequency}{Character of length 1, passed to the \code{.frequency}
+argument of \code{rlang::warn()}.}
 }
 \value{
 \code{NULL} (invisibly). Throws a warning if a feature is deprecated.
@@ -38,6 +56,7 @@ suppressWarnings(
 \seealso{
 Other utilities: 
 \code{\link{crew_assert}()},
+\code{\link{crew_eval_async}()},
 \code{\link{crew_eval}()},
 \code{\link{crew_random_name}()},
 \code{\link{crew_retry}()},

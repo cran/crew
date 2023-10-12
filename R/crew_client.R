@@ -39,25 +39,20 @@ crew_client <- function(
   seconds_interval = 0.25,
   seconds_timeout = 10
 ) {
-  # TODO: turn these into warnings:
-  if (!is.null(tls_enable)) {
-    crew_deprecate(
-      name = "tls_enable",
-      date = "2023-09-15",
-      version = "0.4.1",
-      alternative = "argument tls and function crew_tls()",
-      condition = "message"
-    )
-  }
-  if (!is.null(tls_config)) {
-    crew_deprecate(
-      name = "tls_config",
-      date = "2023-09-15",
-      version = "0.4.1",
-      alternative = "argument tls and function crew_tls()",
-      condition = "message"
-    )
-  }
+  crew_deprecate(
+    name = "tls_enable",
+    date = "2023-09-15",
+    version = "0.4.1",
+    alternative = "argument tls and function crew_tls()",
+    value = tls_enable
+  )
+  crew_deprecate(
+    name = "tls_config",
+    date = "2023-09-15",
+    version = "0.4.1",
+    alternative = "argument tls and function crew_tls()",
+    value = tls_config
+  )
   name <- as.character(name %|||% crew_random_name())
   workers <- as.integer(workers)
   host <- as.character(host %|||% getip::getip(type = "local"))
@@ -214,16 +209,13 @@ crew_class_client <- R6::R6Class(
         self$host,
         self$port
       )
-      get_password <- function() {
-        self$tls$password
-      }
       mirai::daemons(
         n = self$workers,
         url = url,
         dispatcher = TRUE,
         seed = NULL,
         tls = self$tls$client(),
-        pass = get_password(),
+        pass = self$tls$password,
         token = TRUE,
         .compute = self$name
       )
@@ -234,6 +226,24 @@ crew_class_client <- R6::R6Class(
       # End dispatcher code.
       self$started <- TRUE
       invisible()
+    },
+    #' @description Get the `nanonext` condition variable.
+    #' @return The `nanonext` condition variable which tasks signal
+    #'   on resolution. The return value is `NULL` if the client
+    #'   is not running.
+    condition = function() {
+      mirai::nextget(x = "cv", .compute = .subset2(self, "name"))
+    },
+    #' @description Get the true value of the `nanonext` condition variable.
+    #' @details Subtracts a safety offset which was padded on start.
+    #' @return The value of the `nanonext` condition variable.
+    condition_value = function() {
+      condition <- .subset2(self, "condition")()
+      if_any(
+        is.null(condition),
+        0L,
+        nanonext::cv_value(condition)
+      )
     },
     #' @description Show an informative worker log.
     #' @return A `tibble` with information on the workers, or `NULL`

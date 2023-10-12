@@ -6,11 +6,11 @@
 \usage{
 crew_launcher(
   name = NULL,
-  seconds_interval = 0.25,
+  seconds_interval = NULL,
   seconds_launch = 30,
   seconds_idle = Inf,
   seconds_wall = Inf,
-  seconds_exit = 1,
+  seconds_exit = NULL,
   tasks_max = Inf,
   tasks_timers = 0L,
   reset_globals = TRUE,
@@ -18,13 +18,15 @@ crew_launcher(
   reset_options = FALSE,
   garbage_collection = FALSE,
   launch_max = 5L,
-  tls = crew::crew_tls()
+  tls = crew::crew_tls(),
+  processes = NULL
 )
 }
 \arguments{
 \item{name}{Name of the launcher.}
 
-\item{seconds_interval}{Seconds to wait between asynchronous operations.}
+\item{seconds_interval}{Deprecated in version 0.5.0.9003 (2023-10-02)
+no longer used.}
 
 \item{seconds_launch}{Seconds of startup time to allow.
 A worker is unconditionally assumed to be alive
@@ -46,10 +48,8 @@ The timer does not launch until \code{tasks_timers} tasks
 have completed.
 See the \code{walltime} argument of \code{mirai::daemon()}.}
 
-\item{seconds_exit}{Number of seconds to wait for NNG websockets
-to finish sending large data (when a worker exits after reaching a
-timeout or having completed a certain number of tasks).
-See the \code{exitlinger} argument of \code{mirai::daemon()}.}
+\item{seconds_exit}{Deprecated on 2023-09-21 in version 0.5.0.9002.
+No longer necessary.}
 
 \item{tasks_max}{Maximum number of tasks that a worker will do before
 exiting. See the \code{maxtasks} argument of \code{mirai::daemon()}.
@@ -87,6 +87,15 @@ circumstances. But \code{launch_max} should still be small enough
 to detect errors in the underlying platform.}
 
 \item{tls}{A TLS configuration object from \code{\link[=crew_tls]{crew_tls()}}.}
+
+\item{processes}{\code{NULL} or positive integer of length 1,
+number of local processes to
+launch to allow worker launches to happen asynchronously. If \code{NULL},
+then no local processes are launched. If 1 or greater, then the launcher
+starts the processes on \code{start()} and ends them on \code{terminate()}.
+Plugins that may use these processes should run asynchronous calls
+using \code{launcher$async$eval()} and expect a \code{mirai} task object
+as the return value.}
 }
 \description{
 This function is useful for inheriting argument documentation
@@ -109,8 +118,8 @@ client$terminate()
 }
 \seealso{
 Other developer: 
+\code{\link{crew_async}()},
 \code{\link{crew_client}()},
-\code{\link{crew_controller}()},
-\code{\link{crew_schedule}()}
+\code{\link{crew_controller}()}
 }
 \concept{developer}

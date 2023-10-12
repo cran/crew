@@ -60,11 +60,11 @@ crew_test("crew_client() works", {
   )
   m <- mirai::mirai(ps::ps_pid(), .compute = client$name)
   crew_retry(
-    ~!.unresolved(m),
+    ~!unresolved(m),
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
-  expect_false(.unresolved(m))
+  expect_false(unresolved(m))
   expect_true(is.numeric(m$data))
   expect_true(abs(m$data - ps::ps_pid()) > 0.5)
   expect_true(client$started)
@@ -81,14 +81,14 @@ crew_test("crew_client() works", {
 })
 
 crew_test("crew_client() deprecate tls_enable", {
-  expect_message(
+  expect_warning(
     crew_client(host = "127.0.0.1", tls_enable = TRUE),
     class = "crew_deprecate"
   )
 })
 
 crew_test("crew_client() deprecate tls_config", {
-  expect_message(
+  expect_warning(
     crew_client(host = "127.0.0.1", tls_config = list()),
     class = "crew_deprecate"
   )

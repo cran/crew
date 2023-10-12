@@ -26,7 +26,6 @@ crew_controller_system2 <- function(
   seconds_launch = 30,
   seconds_idle = Inf,
   seconds_wall = Inf,
-  seconds_exit = 0.1,
   tasks_max = Inf,
   tasks_timers = 0L,
   reset_globals = TRUE,
@@ -46,11 +45,9 @@ crew_controller_system2 <- function(
   )
   launcher <- system2_launcher_class$new(
     name = name,
-    seconds_interval = seconds_interval,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
-    seconds_exit = seconds_exit,
     tasks_max = tasks_max,
     tasks_timers = tasks_timers,
     reset_globals = reset_globals,

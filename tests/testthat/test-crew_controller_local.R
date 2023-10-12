@@ -120,7 +120,7 @@ crew_test("crew_controller_local()", {
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
-    seconds_timeout = 5,
+    seconds_timeout = 5
   )
 })
 
@@ -147,7 +147,7 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   x$push(command = command, substitute = FALSE, name = "substitute")
   x$wait(seconds_timeout = 10)
   # just list
-  out <- x$schedule$list()[[1L]]
+  out <- monad_tibble(x$tasks[[1L]]$data)
   expect_equal(out$result[[1L]], 5L)
   expect_equal(out$name, "substitute")
   expect_true(is.numeric(out$seconds))
@@ -265,8 +265,10 @@ crew_test("crew_controller_local() can terminate a lost worker", {
   x$launcher$workers$socket[1L] <- x$client$summary()$socket
   x$launcher$workers$start[1L] <- - Inf
   x$launcher$workers$launches[1L] <- 1L
+  x$launcher$workers$launched[1L] <- TRUE
+  x$launcher$workers$terminated[1L] <- FALSE
   expect_true(handle$is_alive())
-  x$launcher$rotate(index = 1L)
+  x$launcher$rotate()
   crew_retry(
     ~!handle$is_alive(),
     seconds_interval = 0.1,
@@ -399,17 +401,15 @@ crew_test("map() works with errors and names and command strings", {
     warning("message")
     x + y
   }
-  expect_silent(
-    x$map(
-      command = f(x, y) + a + b,
-      iterate = list(x = c(1L, 2L), y = c(3L, 4L), id = c("z", "w")),
-      data = list(a = 5L),
-      globals = list(f = f),
-      save_command = TRUE,
-      names = "id",
-      error = "silent",
-      verbose = FALSE
-    )
+  x$map(
+    command = f(x, y) + a + b,
+    iterate = list(x = c(1L, 2L), y = c(3L, 4L), id = c("z", "w")),
+    data = list(a = 5L),
+    globals = list(f = f),
+    save_command = TRUE,
+    names = "id",
+    error = "silent",
+    verbose = FALSE
   )
   expect_null(x$error)
   expect_error(
@@ -533,10 +533,21 @@ crew_test("map() does not need an empty controller", {
   x$start()
   x$push(command = TRUE)
   x$wait(seconds_timeout = 30)
-  expect_equal(x$schedule$summary()$pushed, 0L)
-  expect_equal(x$schedule$summary()$collected, 1L)
+  expect_equal(x$unresolved(), 0L)
+  expect_equal(x$resolved(), 1L)
   results <- x$map(command = TRUE, iterate = list(x = c(1, 2)))
   expect_equal(nrow(results), 2L)
-  expect_equal(x$schedule$summary()$pushed, 0L)
-  expect_equal(x$schedule$summary()$collected, 1L)
+  expect_equal(x$unresolved(), 0L)
+  expect_equal(x$resolved(), 3L)
+})
+
+crew_test("deprecate seconds_exit", {
+  expect_message(
+    x <- crew_controller_local(
+      workers = 1L,
+      seconds_idle = 360,
+      seconds_exit = 1
+    ),
+    class = "crew_deprecate"
+  )
 })

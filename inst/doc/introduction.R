@@ -70,19 +70,12 @@ library(crew)
 #  #> 2 example         2     1   0          0        0
 
 ## -----------------------------------------------------------------------------
-#  controller$schedule$summary()
-#  #> # A tibble: 1 × 2
-#  #>   pushed collected
-#  #>    <int>     <int>
-#  #> 1      0         0
-
-## -----------------------------------------------------------------------------
 #  controller$launcher$summary()
-#  #> # A tibble: 2 × 4
-#  #>   worker launches assigned complete
-#  #>    <int>    <int>    <int>    <int>
-#  #> 1      1        2        1        1
-#  #> 2      2        1        0        0
+#  #> # A tibble: 2 × 6
+#  #>   worker launches online discovered assigned complete
+#  #>    <int>    <int> <lgl>  <lgl>         <int>    <int>
+#  #> 1      1        2 TRUE   TRUE              0        0
+#  #> 2      2        1 TRUE   TRUE              0        0
 
 ## -----------------------------------------------------------------------------
 #  controller$client$summary()

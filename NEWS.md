@@ -1,3 +1,15 @@
+# crew 0.6.0
+
+* Migrate checks to enforce features in version 0.5.0 for reverse dependencies.
+* Drop check of backlogged workers, c.f. https://github.com/shikokuchuo/mirai/discussions/63#discussioncomment-7051889 (#79, #124, @shikokuchuo).
+* Deprecate `seconds_exit` because `exitlinger` in `mirai` is now obsolete (#125, @shikokuchuo).
+* Use `mirai::nextget("cv")` to count unresolved tasks instead of looping through all the task objects (#131).
+* Remove throttling and `collect()` in auto-scaling. Simplifies much of the code. Made possible by the efficiency gains in #131.
+* Simplify `wait()`.
+* `seconds_interval` in `map()` no longer defaults to `controller$client$seconds_interval`.
+* `launcher$terminate_workers()` terminates one or more workers, and `launcher$terminate` terminates the whole launcher.
+* Add infrastructure to let custom launcher plugins launch and terminate workers asynchronously (#133). Launchers can set a positive number in the `processes` field to set the number of local `mirai` daemons for asynchronous requests to launch and terminate the serious workers. Then, `launch_worker()` and `terminate_worker()` can optionally make use of `launcher$async$eval()` to send these asynchronous calls.
+
 # crew 0.5.0
 
 * Suppress interactive browser on Windows which launched on each worker previously (@psychelzh).

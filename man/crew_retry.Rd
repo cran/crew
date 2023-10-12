@@ -12,7 +12,8 @@ crew_retry(
   max_tries = Inf,
   error = TRUE,
   message = character(0),
-  envir = parent.frame()
+  envir = parent.frame(),
+  condition = NULL
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ before giving up.}
 if the wait times out.}
 
 \item{envir}{Environment to evaluate \code{fun}.}
+
+\item{condition}{Optional \code{nanonext} condition variable to wait on.
+Functionality using condition variables is not implemented yet.}
 }
 \value{
 \code{NULL} (invisibly).
@@ -51,6 +55,7 @@ crew_retry(fun = function() TRUE)
 Other utilities: 
 \code{\link{crew_assert}()},
 \code{\link{crew_deprecate}()},
+\code{\link{crew_eval_async}()},
 \code{\link{crew_eval}()},
 \code{\link{crew_random_name}()},
 \code{\link{crew_worker}()}
