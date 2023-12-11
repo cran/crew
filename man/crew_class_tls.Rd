@@ -19,16 +19,12 @@ crew_tls(mode = "automatic")
 crew_tls(mode = "automatic")
 }
 \seealso{
-Other class: 
-\code{\link{crew_class_async}},
-\code{\link{crew_class_client}},
-\code{\link{crew_class_controller_group}},
-\code{\link{crew_class_controller}},
-\code{\link{crew_class_launcher}}
+Other tls: 
+\code{\link{crew_tls}()}
 }
-\concept{class}
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
+\concept{tls}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{mode}}{See \code{\link[=crew_tls]{crew_tls()}}.}
 

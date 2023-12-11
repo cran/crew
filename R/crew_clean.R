@@ -1,6 +1,6 @@
 #' @title Terminate dispatchers and/or workers
 #' @export
-#' @family user
+#' @family utility
 #' @description Terminate `mirai` dispatchers and/or `crew` workers
 #'   which may be lingering from previous workloads.
 #' @details Behind the scenes, `mirai` uses an external R process
@@ -34,9 +34,9 @@
 crew_clean <- function(
   dispatchers = TRUE,
   workers = TRUE,
-  user = Sys.getenv("USER"),
-  seconds_interval = 0.1,
-  seconds_timeout = 10,
+  user = Sys.info()[["user"]],
+  seconds_interval = 0.5,
+  seconds_timeout = 60,
   verbose = TRUE
 ) {
   crew_assert(dispatchers, isTRUE(.) || isFALSE(.))

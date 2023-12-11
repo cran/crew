@@ -3,8 +3,30 @@ crew_test("abstract launcher class", {
   expect_crew_error(out$validate())
 })
 
+crew_test("active bindings for covr", {
+  out <- crew_launcher(processes = 1L)
+  expect_equal(out$processes, 1L)
+  expect_null(out$async)
+  expect_null(out$throttle)
+  expect_true(inherits(out$tls, "crew_class_tls"))
+  out$start(sockets = "url")
+  expect_s3_class(out$async, "crew_class_async")
+  expect_s3_class(out$throttle, "crew_class_throttle")
+  expect_silent(out$async$validate())
+  expect_silent(out$throttle$validate())
+  expect_silent(out$validate())
+})
+
+crew_test("preemptive async termination for covr", {
+  out <- crew_launcher(processes = 1L)
+  on.exit(out$terminate())
+  private <- crew_private(out)
+  private$.async <- crew_async()
+  expect_silent(out$start())
+})
+
 crew_test("default launch_launcher() method", {
-  launcher <- crew_class_launcher$new()
+  launcher <- crew_class_launcher$new(seconds_interval = 0.5)
   out <- launcher$launch_worker(
     call = "a",
     name = "b",
@@ -16,13 +38,14 @@ crew_test("default launch_launcher() method", {
 })
 
 crew_test("default terminate_launcher() method", {
-  launcher <- crew_class_launcher$new()
+  launcher <- crew_class_launcher$new(seconds_interval = 0.5)
   expect_equal(launcher$terminate_worker(handle = crew_null)$abstract, TRUE)
 })
 
 crew_test("launcher settings", {
   launcher <- crew_class_launcher$new(
     name = "my_launcher_name",
+    seconds_interval = 0.5,
     seconds_launch = 1,
     seconds_idle = 2,
     seconds_wall = 3,
@@ -38,7 +61,7 @@ crew_test("launcher settings", {
   socket <- "ws://127.0.0.1:5000"
   settings <- launcher$settings(socket = socket)
   expect_equal(settings$url, socket)
-  expect_equal(settings$asyncdial, FALSE)
+  expect_equal(settings$autoexit, TRUE)
   expect_equal(settings$maxtasks, 7)
   expect_equal(settings$idletime, 2000)
   expect_equal(settings$walltime, 3000)
@@ -49,6 +72,7 @@ crew_test("launcher settings", {
 crew_test("launcher alternative cleanup", {
   launcher <- crew_class_launcher$new(
     name = "my_launcher_name",
+    seconds_interval = 0.5,
     seconds_launch = 1,
     seconds_idle = 2,
     seconds_wall = 3,
@@ -67,6 +91,7 @@ crew_test("launcher alternative cleanup", {
 crew_test("launcher alternative cleanup 2", {
   launcher <- crew_class_launcher$new(
     name = "my_launcher_name",
+    seconds_interval = 0.5,
     seconds_launch = 1,
     seconds_idle = 2,
     seconds_wall = 3,
@@ -85,6 +110,7 @@ crew_test("launcher alternative cleanup 2", {
 crew_test("launcher alternative cleanup 3", {
   launcher <- crew_class_launcher$new(
     name = "my_launcher_name",
+    seconds_interval = 0.5,
     seconds_launch = 1,
     seconds_idle = 2,
     seconds_wall = 3,
@@ -105,6 +131,7 @@ crew_test("launcher call", {
   skip_on_os("windows")
   launcher <- crew_class_launcher$new(
     name = "my_launcher_name",
+    seconds_interval = 0.5,
     seconds_launch = 1,
     seconds_idle = 0.001,
     seconds_wall = 3,
@@ -134,7 +161,7 @@ crew_test("launcher call", {
 crew_test("launcher start()", {
   skip_on_cran()
   skip_on_os("windows")
-  launcher <- crew_class_launcher$new()
+  launcher <- crew_class_launcher$new(seconds_interval = 1)
   workers <- launcher$workers
   expect_equal(workers, NULL)
   launcher$start(sockets = c("a", "b"))
@@ -168,21 +195,26 @@ crew_test("launcher start()", {
 })
 
 crew_test("launcher done()", {
+  skip_on_cran()
   grid <- expand.grid(
     complete = c(3L, 7L),
     start = c(NA_real_, -Inf, Inf),
     instance = c(0L, 1L),
     online = c(0L, 1L)
   )
-  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher <- crew_class_launcher$new(
+    seconds_launch = 9999,
+    seconds_interval = 0.5
+  )
   launcher$start(sockets = rep("x", nrow(grid)))
-  launcher$workers$start <- grid$start
+  private <- crew_private(launcher)
+  private$.workers$start <- grid$start
   socket <- sprintf(
     "ws://127.0.0.1:5000/%s/token",
     seq_len(nrow(grid))
   )
-  launcher$workers$socket <- socket
-  launcher$workers$launched <- rep(TRUE, nrow(grid))
+  private$.workers$socket <- socket
+  private$.workers$launched <- rep(TRUE, nrow(grid))
   daemons <- cbind(
     online = grid$online,
     instance = grid$instance,
@@ -195,16 +227,21 @@ crew_test("launcher done()", {
   out <- which(launcher$done())
   exp <- c(1L, 2L, 3L, 4L, 7L, 8L, 9L, 10L, 11L, 12L)
   expect_equal(out, exp)
-  launcher$workers$launched <- rep(FALSE, nrow(grid))
+  private$.workers$launched <- rep(FALSE, nrow(grid))
   launcher$tally(daemons = daemons)
   expect_equal(which(launcher$done()), integer(0L))
 })
 
 crew_test("launcher tally()", {
+  skip_on_cran()
   grid <- expand.grid(complete = c(3L, 7L), launched = c(TRUE, FALSE))
-  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  launcher <- crew_class_launcher$new(
+    seconds_launch = 9999,
+    seconds_interval = 0.5
+  )
   launcher$start(sockets = rep("x", nrow(grid)))
-  launcher$workers$launched <- grid$launched
+  private <- crew_private(launcher)
+  private$.workers$launched <- grid$launched
   daemons <- cbind(
     online = c(1L, 1L, 0L, 0L),
     instance = c(1L, 0L, 1L, 0L),
@@ -223,9 +260,14 @@ crew_test("launcher tally()", {
 })
 
 crew_test("launcher unlaunched()", {
-  launcher <- crew_class_launcher$new(seconds_launch = 9999)
+  skip_on_cran()
+  launcher <- crew_class_launcher$new(
+    seconds_launch = 9999,
+    seconds_interval = 0.5
+  )
   launcher$start(sockets = rep("x", 5L))
-  launcher$workers$launched <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
+  private <- crew_private(launcher)
+  private$.workers$launched <- c(TRUE, FALSE, FALSE, FALSE, TRUE)
   expect_equal(launcher$unlaunched(), c(2L, 3L, 4L))
   expect_equal(launcher$unlaunched(n = 2L), c(2L, 3L))
 })
@@ -252,15 +294,66 @@ crew_test("launcher summary", {
   }
 })
 
-crew_test("deprecate seconds_exit", {
-  suppressWarnings(crew_launcher(seconds_exit = 1))
-  expect_true(TRUE)
+crew_test("launcher forward", {
+  skip_on_cran()
+  x <- crew_launcher()
+  on.exit({
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start(sockets = "url")
+  private <- crew_private(x)
+  private$.workers$handle[[1L]] <- mirai::mirai(stop("message"))
+  crew_retry(
+    fun = ~!mirai::unresolved(x$workers$handle[[1L]]),
+    seconds_interval = 0.01
+  )
+  expect_crew_error(x$forward(index = 1L))
+  expect_warning(
+    x$forward(index = 1L, condition = "warning"),
+    class = "crew_warning"
+  )
+  expect_message(
+    x$forward(index = 1L, condition = "message"),
+    class = "crew_message"
+  )
+  out <- x$forward(index = 1L, condition = "character")
+  expect_true(nzchar(out))
 })
 
-crew_test("deprecate throttle()", {
+crew_test("launcher errors", {
   skip_on_cran()
-  skip_on_os("windows")
   x <- crew_launcher()
-  suppressWarnings(x$throttle())
+  on.exit({
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start(sockets = "url")
+  expect_null(x$errors())
+  private <- crew_private(x)
+  private$.workers$handle[[1L]] <- mirai::mirai(stop("message"))
+  crew_retry(
+    fun = ~!mirai::unresolved(x$workers$handle[[1L]]),
+    seconds_interval = 0.01
+  )
+  expect_true(nzchar(x$errors()))
+})
+
+crew_test("launcher errors", {
+  x <- crew_launcher(processes = 1L)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start(sockets = "url")
+  expect_null(x$wait())
+})
+
+crew_test("deprecate seconds_exit", {
+  suppressWarnings(crew_launcher(seconds_exit = 1))
   expect_true(TRUE)
 })

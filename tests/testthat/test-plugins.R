@@ -54,6 +54,7 @@ crew_test("custom launcher", {
     launcher <- custom_launcher_class$new(
       name = name,
       seconds_interval = seconds_interval,
+      seconds_timeout = seconds_timeout,
       seconds_launch = seconds_launch,
       seconds_idle = seconds_idle,
       seconds_wall = seconds_wall,
@@ -104,6 +105,7 @@ crew_test("custom launcher", {
 
 crew_test("custom launcher with local async errors", {
   skip_on_cran()
+  skip_on_covr() # Avoid clashes with NNG and covr child processes.
   skip_on_os("windows")
   skip_if_not_installed("processx")
   if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
@@ -159,6 +161,7 @@ crew_test("custom launcher with local async errors", {
     launcher <- custom_launcher_class$new(
       name = name,
       seconds_interval = seconds_interval,
+      seconds_timeout = seconds_timeout,
       seconds_launch = seconds_launch,
       seconds_idle = seconds_idle,
       seconds_wall = seconds_wall,
@@ -220,6 +223,7 @@ crew_test("custom launcher with local async errors", {
 
 crew_test("custom launcher with async internal launcher tasks", {
   skip_on_cran()
+  skip_on_covr() # Avoid clashes with NNG and covr child processes.
   skip_on_os("windows")
   skip_if_not_installed("processx")
   # TODO: remove this part when crew.cluster is updated on CRAN:
@@ -298,6 +302,7 @@ crew_test("custom launcher with async internal launcher tasks", {
     launcher <- custom_launcher_class$new(
       name = name,
       seconds_interval = seconds_interval,
+      seconds_timeout = seconds_timeout,
       seconds_launch = seconds_launch,
       seconds_idle = seconds_idle,
       seconds_wall = seconds_wall,

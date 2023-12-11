@@ -1,6 +1,6 @@
 #' @title Retry code.
 #' @export
-#' @family utilities
+#' @family utility
 #' @description Repeatedly retry a function while it keeps returning `FALSE`
 #'   and exit the loop when it returns `TRUE`
 #' @return `NULL` (invisibly).
@@ -17,8 +17,6 @@
 #' @param message Character of length 1, optional error message
 #'   if the wait times out.
 #' @param envir Environment to evaluate `fun`.
-#' @param condition Optional `nanonext` condition variable to wait on.
-#'   Functionality using condition variables is not implemented yet.
 #' @examples
 #' crew_retry(fun = function() TRUE)
 crew_retry <- function(
@@ -29,8 +27,7 @@ crew_retry <- function(
   max_tries = Inf,
   error = TRUE,
   message = character(0),
-  envir = parent.frame(),
-  condition = NULL
+  envir = parent.frame()
 ) {
   force(envir)
   fun <- rlang::as_function(fun)
@@ -62,7 +59,6 @@ crew_retry <- function(
     . >= 0
   )
   crew_assert(error, isTRUE(.) || isFALSE(.))
-  crew_assert(condition, is.null(.) || inherits(., "conditionVariable"))
   milli_timeout <- 1000 * seconds_timeout
   tries <- 0L
   start <- nanonext::mclock()
@@ -94,11 +90,7 @@ crew_retry <- function(
         return(invisible())
       }
     }
-    if_any(
-      is.null(condition),
-      nanonext::msleep(time = 1000 * seconds_interval),
-      crew_error("crew_retry() cannot yet wait on condition variables")
-    )
+    nanonext::msleep(time = 1000 * seconds_interval)
   }
   invisible()
 }

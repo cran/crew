@@ -33,9 +33,7 @@ controller$terminate()
 }
 }
 \seealso{
-Other developer: 
-\code{\link{crew_async}()},
-\code{\link{crew_client}()},
-\code{\link{crew_launcher}()}
+Other controller: 
+\code{\link{crew_class_controller}}
 }
-\concept{developer}
+\concept{controller}

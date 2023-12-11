@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 library(crew)
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 #    )
 #  )
 
-## ---- eval = TRUE, message = FALSE--------------------------------------------
+## ----eval = TRUE, message = FALSE---------------------------------------------
 library(crew)
 launcher <- crew_launcher_local()
 launcher$call(
@@ -48,7 +48,7 @@ launcher$call(
 #    port = NULL,
 #    tls = crew::crew_tls(),
 #    seconds_interval = 0.5,
-#    seconds_timeout = 10,
+#    seconds_timeout = 30,
 #    seconds_launch = 30,
 #    seconds_idle = Inf,
 #    seconds_wall = Inf,
@@ -71,6 +71,8 @@ launcher$call(
 #    )
 #    launcher <- custom_launcher_class$new(
 #      name = name,
+#      seconds_interval = seconds_interval,
+#      seconds_timeout = seconds_timeout,
 #      seconds_launch = seconds_launch,
 #      seconds_idle = seconds_idle,
 #      seconds_wall = seconds_wall,
@@ -204,7 +206,7 @@ launcher$call(
 #    port = NULL,
 #    tls = crew::crew_tls(mode = "none"),
 #    seconds_interval = 0.5,
-#    seconds_timeout = 5,
+#    seconds_timeout = 30,
 #    seconds_launch = 30,
 #    seconds_idle = Inf,
 #    seconds_wall = Inf,

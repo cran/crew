@@ -12,8 +12,8 @@ crew_client(
   tls = crew::crew_tls(),
   tls_enable = NULL,
   tls_config = NULL,
-  seconds_interval = 0.25,
-  seconds_timeout = 10
+  seconds_interval = 0.5,
+  seconds_timeout = 5
 )
 }
 \arguments{
@@ -38,12 +38,12 @@ Use argument \code{tls} instead.}
 
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
-synchronous operations to complete. If \code{space_poll} is \code{TRUE}, then
-this is also the minimum number of seconds between calls to
-\code{mirai::daemons()} for the purposes of checking worker status.}
+synchronous operations to complete,
+such as checking \code{mirai::status()}}
 
 \item{seconds_timeout}{Number of seconds until timing
-out while waiting for certain synchronous operations to complete.}
+out while waiting for certain synchronous operations to complete,
+such as checking \code{mirai::status()}.}
 }
 \description{
 Create an \code{R6} wrapper object to manage the \code{mirai} client.
@@ -57,9 +57,7 @@ client$terminate()
 }
 }
 \seealso{
-Other developer: 
-\code{\link{crew_async}()},
-\code{\link{crew_controller}()},
-\code{\link{crew_launcher}()}
+Other client: 
+\code{\link{crew_class_client}}
 }
-\concept{developer}
+\concept{client}

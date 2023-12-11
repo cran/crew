@@ -37,16 +37,12 @@ controller$terminate()
 }
 }
 \seealso{
-Other class: 
-\code{\link{crew_class_async}},
-\code{\link{crew_class_client}},
-\code{\link{crew_class_controller_group}},
-\code{\link{crew_class_launcher}},
-\code{\link{crew_class_tls}}
+Other controller: 
+\code{\link{crew_controller}()}
 }
-\concept{class}
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
+\concept{controller}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{client}}{Router object.}
 
@@ -55,6 +51,9 @@ Other class:
 \item{\code{tasks}}{A list of \code{mirai::mirai()} task objects.}
 
 \item{\code{pushed}}{Number of tasks pushed since the controller was started.}
+
+\item{\code{popped}}{Number of tasks popped
+since the controller was started.}
 
 \item{\code{log}}{Tibble with per-worker metadata about tasks.}
 
@@ -70,15 +69,14 @@ from the last call to \verb{map(error = "stop)}.}
 \item \href{#method-crew_class_controller-validate}{\code{crew_class_controller$validate()}}
 \item \href{#method-crew_class_controller-empty}{\code{crew_class_controller$empty()}}
 \item \href{#method-crew_class_controller-nonempty}{\code{crew_class_controller$nonempty()}}
-\item \href{#method-crew_class_controller-exists_resolved}{\code{crew_class_controller$exists_resolved()}}
 \item \href{#method-crew_class_controller-resolved}{\code{crew_class_controller$resolved()}}
 \item \href{#method-crew_class_controller-unresolved}{\code{crew_class_controller$unresolved()}}
+\item \href{#method-crew_class_controller-unpopped}{\code{crew_class_controller$unpopped()}}
 \item \href{#method-crew_class_controller-saturated}{\code{crew_class_controller$saturated()}}
 \item \href{#method-crew_class_controller-start}{\code{crew_class_controller$start()}}
 \item \href{#method-crew_class_controller-launch}{\code{crew_class_controller$launch()}}
 \item \href{#method-crew_class_controller-scale}{\code{crew_class_controller$scale()}}
 \item \href{#method-crew_class_controller-push}{\code{crew_class_controller$push()}}
-\item \href{#method-crew_class_controller-shove}{\code{crew_class_controller$shove()}}
 \item \href{#method-crew_class_controller-map}{\code{crew_class_controller$map()}}
 \item \href{#method-crew_class_controller-collect}{\code{crew_class_controller$collect()}}
 \item \href{#method-crew_class_controller-pop}{\code{crew_class_controller$pop()}}
@@ -192,19 +190,6 @@ or completed tasks waiting to be retrieved with \code{push()}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller-exists_resolved"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller-exists_resolved}{}}}
-\subsection{Method \code{exists_resolved()}}{
-Does the controller have a resolved task?
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$exists_resolved()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-\code{TRUE} if the controller has a resolved task, \code{FALSE} otherwise.
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_controller-resolved"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_controller-resolved}{}}}
 \subsection{Method \code{resolved()}}{
@@ -237,6 +222,20 @@ Number of unresolved \code{mirai()} tasks.
 \subsection{Returns}{
 Non-negative integer of length 1,
 number of unresolved \code{mirai()} tasks.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-unpopped"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-unpopped}{}}}
+\subsection{Method \code{unpopped()}}{
+Number of resolved \code{mirai()} tasks available via \code{pop()}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$unpopped()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Non-negative integer of length 1,
+number of resolved \code{mirai()} tasks available via \code{pop()}.
 }
 }
 \if{html}{\out{<hr>}}
@@ -341,13 +340,16 @@ compatible with the analogous method of controller groups.}
 \subsection{Method \code{scale()}}{
 Auto-scale workers out to meet the demand of tasks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$scale(throttle = NULL, controllers = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$scale(throttle = TRUE, controllers = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{throttle}}{Deprecated in version 0.5.0.9003 (2023-10-02). Not used.}
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
 
 \item{\code{controllers}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}
@@ -383,7 +385,7 @@ Push a task to the head of the task list.
   library = NULL,
   seconds_timeout = NULL,
   scale = TRUE,
-  throttle = NULL,
+  throttle = TRUE,
   name = NA_character_,
   save_command = FALSE,
   controller = NULL
@@ -422,7 +424,7 @@ seed to set for the evaluation of the task. Passed to the
 \code{seed} argument of \code{set.seed()} if not \code{NULL}.
 If \code{algorithm} and \code{seed} are both \code{NULL},
 then the random number generator defaults to the
-recommended widely spaced worker-specific
+widely spaced worker-specific
 L'Ecuyer streams as supported by \code{mirai::nextstream()}.
 See \code{vignette("parallel", package = "parallel")} for details.}
 
@@ -444,9 +446,13 @@ argument of \code{require()}.}
 argument of \code{mirai::mirai()} (after converting to milliseconds).}
 
 \item{\code{scale}}{Logical, whether to automatically call \code{scale()}
-to auto-scale workers to meet the demand of the task load.}
+to auto-scale workers to meet the demand of the task load. Also
+see the \code{throttle} argument.}
 
-\item{\code{throttle}}{Deprecated in version 0.5.0.9003 (2023-10-02). Not used.}
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
 
 \item{\code{name}}{Optional name of the task.}
 
@@ -460,90 +466,6 @@ compatible with the analogous method of controller groups.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_controller-shove"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_controller-shove}{}}}
-\subsection{Method \code{shove()}}{
-Quickly push a task to the head of the task list.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$shove(
-  command,
-  data = list(),
-  globals = list(),
-  seed = NULL,
-  algorithm = NULL,
-  packages = character(0),
-  library = NULL,
-  .timeout = NULL,
-  name = NA_character_,
-  string = NA_character_
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{command}}{Language object with R code to run.}
-
-\item{\code{data}}{Named list of local data objects in the
-evaluation environment.}
-
-\item{\code{globals}}{Named list of objects to temporarily assign to the
-global environment for the task.
-This list should
-include any functions you previously defined in the global
-environment which are required to run tasks.
-See the \code{reset_globals} argument
-of \code{\link[=crew_controller_local]{crew_controller_local()}}.}
-
-\item{\code{seed}}{Integer of length 1 with the pseudo-random number generator
-seed to set for the evaluation of the task. Passed to the
-\code{seed} argument of \code{set.seed()} if not \code{NULL}.
-If \code{algorithm} and \code{seed} are both \code{NULL},
-then the random number generator defaults to the
-recommended widely spaced worker-specific
-L'Ecuyer streams as supported by \code{mirai::nextstream()}.
-See \code{vignette("parallel", package = "parallel")} for details.}
-
-\item{\code{algorithm}}{Integer of length 1 with the pseudo-random number
-generator algorithm to set for the evaluation of the task.
-Passed to the \code{kind} argument of \code{RNGkind()} if not \code{NULL}.
-If \code{algorithm} and \code{seed} are both \code{NULL},
-then the random number generator defaults to the
-recommended widely spaced worker-specific
-L'Ecuyer streams as supported by \code{mirai::nextstream()}.
-See \code{vignette("parallel", package = "parallel")} for details.}
-
-\item{\code{packages}}{Character vector of packages to load for the task.}
-
-\item{\code{library}}{Library path to load the packages. See the \code{lib.loc}
-argument of \code{require()}.}
-
-\item{\code{.timeout}}{Optional task timeout passed to the \code{.timeout}
-argument of \code{mirai::mirai()} (after converting to milliseconds).}
-
-\item{\code{name}}{Optional name of the task.}
-
-\item{\code{string}}{Optional character string with the deparsed command.}
-
-\item{\code{scale}}{Logical, whether to automatically call \code{scale()}
-to auto-scale workers to meet the demand of the task load.}
-
-\item{\code{throttle}}{Deprecated in version 0.5.0.9003 (2023-10-02). Not used.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-Exists to support \code{map()}.
-For developers only and not supported for
-controller groups. Relative to \code{push()}, \code{shove()} skips user
-options and guardrails for to aggressively optimize performance.
-}
-
 \subsection{Returns}{
 \code{NULL} (invisibly).
 }
@@ -564,12 +486,14 @@ Apply a single command to multiple inputs.
   algorithm = NULL,
   packages = character(0),
   library = NULL,
-  seconds_interval = 0.25,
+  seconds_interval = 0.5,
   seconds_timeout = NULL,
   names = NULL,
   save_command = FALSE,
   error = "stop",
   verbose = interactive(),
+  scale = TRUE,
+  throttle = TRUE,
   controller = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -666,14 +590,25 @@ all the error messages and tracebacks to be generated.
 
 \item{\code{verbose}}{Logical of length 1, whether to print progress messages.}
 
+\item{\code{scale}}{Logical, whether to automatically scale workers to meet
+demand. See also the \code{throttle} argument.}
+
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
+
 \item{\code{controller}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The idea comes from functional programming: for example,
-the \code{map()} function from the \code{purrr} package.
+\code{map()} cannot be used unless all prior tasks are
+completed and popped. You may need to wait and then pop them
+manually. Alternatively, you can start over: either call
+\code{terminate()} on the current controller object to reset it, or
+create a new controller object entirely.
 }
 
 \subsection{Returns}{
@@ -712,7 +647,7 @@ Pop a completed task from the results data frame.
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$pop(
   scale = TRUE,
   collect = NULL,
-  throttle = NULL,
+  throttle = TRUE,
   controllers = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -725,11 +660,15 @@ whether to automatically call \code{scale()}
 to auto-scale workers to meet the demand of the task load.
 Scaling up on \code{pop()} may be important
 for transient or nearly transient workers that tend to drop off
-quickly after doing little work.}
+quickly after doing little work.
+See also the \code{throttle} argument.}
 
 \item{\code{collect}}{Deprecated in version 0.5.0.9003 (2023-10-02).}
 
-\item{\code{throttle}}{Deprecated in version 0.5.0.9003 (2023-10-02). Not used.}
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
 
 \item{\code{controllers}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}
@@ -779,10 +718,10 @@ Wait for tasks.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$wait(
   mode = "all",
-  seconds_interval = 0.01,
+  seconds_interval = 0.5,
   seconds_timeout = Inf,
   scale = TRUE,
-  throttle = NULL,
+  throttle = TRUE,
   controllers = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -793,16 +732,19 @@ Wait for tasks.
 \item{\code{mode}}{Character of length 1: \code{"all"} to wait for all tasks to
 complete, \code{"one"} to wait for a single task to complete.}
 
-\item{\code{seconds_interval}}{Number of seconds to wait between polling
-intervals waiting for tasks. Defaults to the \code{seconds_interval}
-field of the client object.}
+\item{\code{seconds_interval}}{Number of seconds to interrupt the wait
+in order to scale up workers as needed.}
 
 \item{\code{seconds_timeout}}{Timeout length in seconds waiting for tasks.}
 
 \item{\code{scale}}{Logical, whether to automatically call \code{scale()}
-to auto-scale workers to meet the demand of the task load.}
+to auto-scale workers to meet the demand of the task load.
+See also the \code{throttle} argument.}
 
-\item{\code{throttle}}{Deprecated in version 0.5.0.9003 (2023-10-02).}
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
 
 \item{\code{controllers}}{Not used. Included to ensure the signature is
 compatible with the analogous method of controller groups.}

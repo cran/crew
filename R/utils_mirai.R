@@ -1,4 +1,4 @@
-daemons_info <- function(name) {
+daemons_info <- function(name, seconds_interval, seconds_timeout) {
   envir <- new.env(parent = emptyenv())
   crew_retry(
     fun = ~{
@@ -7,9 +7,8 @@ daemons_info <- function(name) {
       envir$daemons <- daemons
       envir$valid <- valid
     },
-    seconds_interval = 0.5,
-    seconds_timeout = 60,
-    max_tries = 1L,
+    seconds_interval = seconds_interval,
+    seconds_timeout = seconds_timeout,
     error = FALSE
   )
   daemons <- .subset2(envir, "daemons")

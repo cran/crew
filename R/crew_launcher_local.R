@@ -1,5 +1,6 @@
 #' @title Create a launcher with local process workers.
 #' @export
+#' @family plugin_local
 #' @description Create an `R6` object to launch and maintain
 #'   local process workers.
 #' @inheritParams crew_launcher
@@ -17,7 +18,8 @@
 #' }
 crew_launcher_local <- function(
   name = NULL,
-  seconds_interval = NULL,
+  seconds_interval = 0.5,
+  seconds_timeout = 60,
   seconds_launch = 30,
   seconds_idle = Inf,
   seconds_wall = Inf,
@@ -32,15 +34,6 @@ crew_launcher_local <- function(
   tls = crew::crew_tls()
 ) {
   crew_deprecate(
-    name = "seconds_interval",
-    date = "2023-10-02",
-    version = "0.5.0.9003",
-    alternative = "none (no longer necessary)",
-    condition = "message",
-    value = seconds_interval,
-    frequency = "once"
-  )
-  crew_deprecate(
     name = "seconds_exit",
     date = "2023-09-21",
     version = "0.5.0.9002",
@@ -52,6 +45,8 @@ crew_launcher_local <- function(
   name <- as.character(name %|||% crew_random_name())
   launcher <- crew_class_launcher_local$new(
     name = name,
+    seconds_interval = seconds_interval,
+    seconds_timeout = seconds_timeout,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
@@ -70,7 +65,7 @@ crew_launcher_local <- function(
 
 #' @title Local process launcher class
 #' @export
-#' @family launchers
+#' @family plugin_local
 #' @description `R6` class to launch and manage local process workers.
 #' @details See [crew_launcher_local()].
 #' @examples

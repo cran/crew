@@ -45,6 +45,8 @@ crew_controller_system2 <- function(
   )
   launcher <- system2_launcher_class$new(
     name = name,
+    seconds_interval = seconds_interval,
+    seconds_timeout = seconds_timeout,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,
@@ -72,7 +74,6 @@ controller$start()
 for (index in seq_len(100L)) {
   name <- paste0("task_", index)
   controller$push(name = name, command = index, data = list(index = index))
-  message(paste("push", name))
 }
 # Wait for the tasks to complete.
 controller$wait()
@@ -86,7 +87,6 @@ crew_retry(
 for (index in (seq_len(100L) + 100L)) {
   name <- paste0("task_", index)
   controller$push(name = name, command = index, data = list(index = index))
-  message(paste("push", name))
 }
 controller$wait()
 crew_retry(

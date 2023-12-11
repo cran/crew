@@ -18,7 +18,7 @@ crew_test("crew_controller_local()", {
   expect_false(x$saturated())
   crew_retry(
     ~{
-      x$wait(seconds_timeout = 30, seconds_interval = 0.5)
+      x$wait(mode = "all", seconds_timeout = 30, seconds_interval = 0.5)
       TRUE
     },
     seconds_interval = 0.5,
@@ -43,14 +43,18 @@ crew_test("crew_controller_local()", {
   expect_equal(s$tasks, 0L)
   expect_true(x$client$started)
   # first task
+  expect_equal(x$pushed, 0L)
+  expect_equal(x$popped, 0L)
   x$push(
     command = Sys.getenv("CREW_INSTANCE"),
     name = "task",
     save_command = TRUE
   )
+  expect_equal(x$pushed, 1L)
+  expect_equal(x$popped, 0L)
   expect_false(x$empty())
   expect_true(x$nonempty())
-  x$wait(seconds_timeout = 5)
+  x$wait(mode = "one", seconds_timeout = 5)
   expect_false(x$empty())
   expect_true(x$nonempty())
   envir <- new.env(parent = emptyenv())
@@ -62,6 +66,8 @@ crew_test("crew_controller_local()", {
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
+  expect_equal(x$pushed, 1L)
+  expect_equal(x$popped, 1L)
   out <- envir$out
   expect_true(x$empty())
   expect_false(x$nonempty())
@@ -167,7 +173,8 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   expect_true(anyNA(out$warnings))
   expect_true(anyNA(out$trace))
   # quick push
-  x$shove(command = command, name = "substitute")
+  private <- crew_private(x)
+  private$.shove(command = command, name = "substitute")
   x$wait(seconds_timeout = 10)
   out <- x$pop(scale = FALSE)
   expect_equal(out$result[[1]], 5L)
@@ -251,7 +258,8 @@ crew_test("crew_controller_local() can terminate a lost worker", {
     gc()
     crew_test_sleep()
   })
-  x$launcher$workers$launches <- 1L
+  private <- crew_private(x$launcher)
+  private$.workers$launches <- 1L
   bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
   path <- file.path(R.home("bin"), bin)
   call <- "Sys.sleep(300)"
@@ -261,12 +269,12 @@ crew_test("crew_controller_local() can terminate a lost worker", {
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
-  x$launcher$workers$handle[[1L]] <- handle
-  x$launcher$workers$socket[1L] <- x$client$summary()$socket
-  x$launcher$workers$start[1L] <- - Inf
-  x$launcher$workers$launches[1L] <- 1L
-  x$launcher$workers$launched[1L] <- TRUE
-  x$launcher$workers$terminated[1L] <- FALSE
+  private$.workers$handle[[1L]] <- handle
+  private$.workers$socket[1L] <- x$client$summary()$socket
+  private$.workers$start[1L] <- - Inf
+  private$.workers$launches[1L] <- 1L
+  private$.workers$launched[1L] <- TRUE
+  private$.workers$terminated[1L] <- FALSE
   expect_true(handle$is_alive())
   x$launcher$rotate()
   crew_retry(
@@ -357,7 +365,8 @@ crew_test("controller map() works", {
     iterate = list(x = c(1L, 2L), y = c(3L, 4L)),
     data = list(a = 5L),
     globals = list(f = f, b = 6L),
-    seed = 0L
+    seed = 0L,
+    verbose = TRUE
   )
   x$terminate()
   expect_null(x$error)
@@ -420,7 +429,8 @@ crew_test("map() works with errors and names and command strings", {
       globals = list(f = f),
       save_command = TRUE,
       names = "id",
-      error = "stop"
+      error = "stop",
+      verbose = TRUE
     ),
     class = "crew_error"
   )
@@ -433,7 +443,8 @@ crew_test("map() works with errors and names and command strings", {
       globals = list(f = f),
       save_command = TRUE,
       names = "id",
-      error = "warn"
+      error = "warn",
+      verbose = TRUE
     ),
     class = "crew_warning"
   )
@@ -500,7 +511,7 @@ crew_test("map() tasks attributed to correct workers", {
   expect_equal(sum$warnings, c(0L, 0L, 1L, 0L))
 })
 
-crew_test("map() does not need an started controller", {
+crew_test("map() does not need a started controller", {
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
@@ -517,7 +528,7 @@ crew_test("map() does not need an started controller", {
   expect_equal(nrow(results), 2L)
 })
 
-crew_test("map() does not need an empty controller", {
+crew_test("map() needs an empty controller", {
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
@@ -535,10 +546,7 @@ crew_test("map() does not need an empty controller", {
   x$wait(seconds_timeout = 30)
   expect_equal(x$unresolved(), 0L)
   expect_equal(x$resolved(), 1L)
-  results <- x$map(command = TRUE, iterate = list(x = c(1, 2)))
-  expect_equal(nrow(results), 2L)
-  expect_equal(x$unresolved(), 0L)
-  expect_equal(x$resolved(), 3L)
+  expect_crew_error(x$map(command = TRUE, iterate = list(x = c(1, 2))))
 })
 
 crew_test("deprecate seconds_exit", {

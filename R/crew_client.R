@@ -1,6 +1,6 @@
 #' @title Create a client object.
 #' @export
-#' @family developer
+#' @family client
 #' @description Create an `R6` wrapper object to manage the `mirai` client.
 #' @param name Name of the client object. If `NULL`, a name is automatically
 #'   generated.
@@ -16,11 +16,11 @@
 #'   Use argument `tls` instead.
 #' @param seconds_interval Number of seconds between
 #'   polling intervals waiting for certain internal
-#'   synchronous operations to complete. If `space_poll` is `TRUE`, then
-#'   this is also the minimum number of seconds between calls to
-#'   `mirai::daemons()` for the purposes of checking worker status.
+#'   synchronous operations to complete,
+#'   such as checking `mirai::status()`
 #' @param seconds_timeout Number of seconds until timing
-#'   out while waiting for certain synchronous operations to complete.
+#'   out while waiting for certain synchronous operations to complete,
+#'   such as checking `mirai::status()`.
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' client <- crew_client()
@@ -36,8 +36,8 @@ crew_client <- function(
   tls = crew::crew_tls(),
   tls_enable = NULL,
   tls_config = NULL,
-  seconds_interval = 0.25,
-  seconds_timeout = 10
+  seconds_interval = 0.5,
+  seconds_timeout = 5
 ) {
   crew_deprecate(
     name = "tls_enable",
@@ -68,7 +68,8 @@ crew_client <- function(
     port = port,
     tls = tls,
     seconds_interval = seconds_interval,
-    seconds_timeout = seconds_timeout
+    seconds_timeout = seconds_timeout,
+    relay = crew_relay()
   )
   client$validate()
   client
@@ -76,7 +77,7 @@ crew_client <- function(
 
 #' @title `R6` client class.
 #' @export
-#' @family class
+#' @family client
 #' @description `R6` class for `mirai` clients.
 #' @details See [crew_client()].
 #' @examples
@@ -89,25 +90,62 @@ crew_client <- function(
 crew_class_client <- R6::R6Class(
   classname = "crew_class_client",
   cloneable = FALSE,
-  public = list(
+  private = list(
+    .name = NULL,
+    .workers = NULL,
+    .host = NULL,
+    .port = NULL,
+    .tls = NULL,
+    .seconds_interval = NULL,
+    .seconds_timeout = NULL,
+    .relay = NULL,
+    .started = NULL,
+    .dispatcher = NULL
+  ),
+  active = list(
     #' @field name See [crew_client()].
-    name = NULL,
+    name = function() {
+      .subset2(private, ".name")
+    },
     #' @field workers See [crew_client()].
-    workers = NULL,
+    workers = function() {
+      .subset2(private, ".workers")
+    },
     #' @field host See [crew_client()].
-    host = NULL,
+    host = function() {
+      .subset2(private, ".host")
+    },
     #' @field port See [crew_client()].
-    port = NULL,
+    port = function() {
+      .subset2(private, ".port")
+    },
     #' @field tls See [crew_client()].
-    tls = NULL,
+    tls = function() {
+      .subset2(private, ".tls")
+    },
     #' @field seconds_interval See [crew_client()].
-    seconds_interval = NULL,
+    seconds_interval = function() {
+      .subset2(private, ".seconds_interval")
+    },
     #' @field seconds_timeout See [crew_client()].
-    seconds_timeout = NULL,
+    seconds_timeout = function() {
+      .subset2(private, ".seconds_timeout")
+    },
+    #' @field relay Relay object for event-driven programming on a downstream
+    #'   condition variable.
+    relay = function() {
+      .subset2(private, ".relay")
+    },
     #' @field started Whether the client is started.
-    started = NULL,
+    started = function() {
+      .subset2(private, ".started")
+    },
     #' @field dispatcher Process ID of the `mirai` dispatcher
-    dispatcher = NULL,
+    dispatcher = function() {
+      .subset2(private, ".dispatcher")
+    }
+  ),
+  public = list(
     #' @description `mirai` client constructor.
     #' @return An `R6` object with the client.
     #' @param name Argument passed from [crew_client()].
@@ -117,6 +155,7 @@ crew_class_client <- R6::R6Class(
     #' @param tls Argument passed from [crew_client()].
     #' @param seconds_interval Argument passed from [crew_client()].
     #' @param seconds_timeout Argument passed from [crew_client()].
+    #' @param relay Argument passed from [crew_client()].
     #' @examples
     #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
     #' client <- crew_client()
@@ -131,52 +170,54 @@ crew_class_client <- R6::R6Class(
       port = NULL,
       tls = NULL,
       seconds_interval = NULL,
-      seconds_timeout = NULL
+      seconds_timeout = NULL,
+      relay = NULL
     ) {
-      self$name <- name
-      self$workers <- workers
-      self$host <- host
-      self$port <- port
-      self$tls <- tls
-      self$seconds_interval <- seconds_interval
-      self$seconds_timeout <- seconds_timeout
+      private$.name <- name
+      private$.workers <- workers
+      private$.host <- host
+      private$.port <- port
+      private$.tls <- tls
+      private$.seconds_interval <- seconds_interval
+      private$.seconds_timeout <- seconds_timeout
+      private$.relay <- relay
     },
     #' @description Validate the client.
     #' @return `NULL` (invisibly).
     validate = function() {
       crew_assert(
-        self$name,
+        private$.name,
         is.character(.),
         length(.) == 1L,
         nzchar(.),
         !anyNA(.)
       )
       crew_assert(
-        self$workers,
+        private$.workers,
         is.integer(.),
         length(.) == 1L,
         !anyNA(.), . > 0L
       )
       crew_assert(
-        self$host,
+        private$.host,
         is.character(.),
         length(.) == 1L,
         !anyNA(.),
         nzchar(.)
       )
-      crew_assert(self$port, is.integer(.), length(.) == 1L, !anyNA(.))
-      crew_assert(self$port, . >= 0L, . <= 65535L)
+      crew_assert(private$.port, is.integer(.), length(.) == 1L, !anyNA(.))
+      crew_assert(private$.port, . >= 0L, . <= 65535L)
       crew_assert(
-        inherits(self$tls, "crew_class_tls"),
+        inherits(private$.tls, "crew_class_tls"),
         message = "argument tls must be an object created by crew_tls()"
       )
       fields <- c(
-        "seconds_interval",
-        "seconds_timeout"
+        ".seconds_interval",
+        ".seconds_timeout"
       )
       for (field in fields) {
         crew_assert(
-          self[[field]],
+          private[[field]],
           is.numeric(.),
           length(.) == 1L,
           !is.na(.),
@@ -184,50 +225,101 @@ crew_class_client <- R6::R6Class(
         )
       }
       crew_assert(
-        self$dispatcher %|||% 0L,
+        private$.dispatcher %|||% 0L,
         is.numeric(.),
         length(.) == 1L,
         !is.na(.),
         . >= 0
       )
-      crew_assert(self$seconds_timeout >= self$seconds_interval)
+      crew_assert(private$.seconds_timeout >= private$.seconds_interval)
+      crew_assert(inherits(private$.relay, "crew_class_relay"))
+      private$.relay$validate()
       invisible()
     },
     #' @description Start listening for workers on the available sockets.
     #' @return `NULL` (invisibly).
     start = function() {
-      started <- .subset2(self, "started")
-      if (is.null(started)) {
-        started <- FALSE
-      }
-      if (started) {
+      if (isTRUE(private$.started)) {
         return(invisible())
       }
       url <- sprintf(
         "%s://%s:%s",
-        if_any(self$tls$mode == "none", "ws", "wss"),
-        self$host,
-        self$port
+        if_any(private$.tls$mode == "none", "ws", "wss"),
+        private$.host,
+        private$.port
       )
       mirai::daemons(
-        n = self$workers,
+        n = private$.workers,
         url = url,
         dispatcher = TRUE,
         seed = NULL,
-        tls = self$tls$client(),
-        pass = self$tls$password,
+        tls = private$.tls$client(),
+        pass = private$.tls$password,
         token = TRUE,
-        .compute = self$name
+        .compute = private$.name
       )
       # TODO: remove code that gets the dispatcher PID if the dispatcher
       # process becomes a C thread.
       # Begin dispatcher code.
-      self$dispatcher <- mirai::nextget("pid", .compute = self$name)
+      private$.dispatcher <- mirai::nextget("pid", .compute = private$.name)
       # End dispatcher code.
-      self$started <- TRUE
+      private$.relay$set_from(self$condition())
+      private$.relay$start()
+      private$.started <- TRUE
       invisible()
     },
-    #' @description Get the `nanonext` condition variable.
+    #' @description Stop the mirai client and disconnect from the
+    #'   worker websockets.
+    #' @return `NULL` (invisibly).
+    terminate = function() {
+      if (!isTRUE(private$.started)) {
+        return(invisible())
+      }
+      # TODO: if the dispatcher process becomes a C thread,
+      # delete these superfluous checks on the dispatcher.
+      # Begin dispatcher checks block 1/2.
+      handle <- if_any(
+        is.null(private$.dispatcher),
+        NULL,
+        tryCatch(
+          ps::ps_handle(pid = private$.dispatcher),
+          error = function(condition) NULL
+        )
+      )
+      # End dispatcher checks block 1/2.
+      mirai::daemons(n = 0L, .compute = private$.name)
+      private$.relay$terminate()
+      private$.started <- FALSE
+      # Begin dispatcher checks block 2/2.
+      if (is.null(private$.dispatcher) || is.null(handle)) {
+        return(invisible())
+      }
+      tryCatch(
+        crew_retry(
+          fun = ~!ps::ps_is_running(p = handle),
+          seconds_interval = private$.seconds_interval,
+          seconds_timeout = private$.seconds_timeout
+        ),
+        error = function(condition) NULL
+      )
+      if_any(
+        ps::ps_is_running(p = handle),
+        try(ps::ps_kill(p = handle), silent = TRUE),
+        NULL
+      )
+      tryCatch(
+        crew_retry(
+          fun = ~!ps::ps_is_running(p = handle),
+          seconds_interval = private$.seconds_interval,
+          seconds_timeout = private$.seconds_timeout
+        ),
+        error = function(condition) NULL
+      )
+      # End dispatcher checks block 2/2.
+      invisible()
+    },
+    #' @description Get the `nanonext` condition variable which tasks signal
+    #'   on resolution.
     #' @return The `nanonext` condition variable which tasks signal
     #'   on resolution. The return value is `NULL` if the client
     #'   is not running.
@@ -237,7 +329,7 @@ crew_class_client <- R6::R6Class(
     #' @description Get the true value of the `nanonext` condition variable.
     #' @details Subtracts a safety offset which was padded on start.
     #' @return The value of the `nanonext` condition variable.
-    condition_value = function() {
+    resolved = function() {
       condition <- .subset2(self, "condition")()
       if_any(
         is.null(condition),
@@ -260,10 +352,14 @@ crew_class_client <- R6::R6Class(
     #'   * `socket`: websocket URL. `crew` changes the token at the end of the
     #'     URL path periodically as a safeguard while managing workers.
     summary = function() {
-      if (!isTRUE(self$started)) {
+      if (!isTRUE(private$.started)) {
         return(NULL)
       }
-      daemons <- daemons_info(name = self$name)
+      daemons <- daemons_info(
+        name = private$.name,
+        seconds_interval = private$.seconds_interval,
+        seconds_timeout = private$.seconds_timeout
+      )
       tibble::tibble(
         worker = seq_len(nrow(daemons)),
         online = as.logical(daemons[, "online"] > 0L),
@@ -272,55 +368,6 @@ crew_class_client <- R6::R6Class(
         complete = as.integer(daemons[, "complete"]),
         socket = as.character(rownames(daemons))
       )
-    },
-    #' @description Stop the mirai client and disconnect from the
-    #'   worker websockets.
-    #' @return `NULL` (invisibly).
-    terminate = function() {
-      if (!isTRUE(self$started)) {
-        return(invisible())
-      }
-      # TODO: if the dispatcher process becomes a C thread,
-      # delete these superfluous checks on the dispatcher.
-      # Begin dispatcher checks block 1/2.
-      handle <- if_any(
-        is.null(self$dispatcher),
-        NULL,
-        tryCatch(
-          ps::ps_handle(pid = self$dispatcher),
-          error = function(condition) NULL
-        )
-      )
-      # End dispatcher checks block 1/2.
-      mirai::daemons(n = 0L, .compute = self$name)
-      self$started <- FALSE
-      # Begin dispatcher checks block 2/2.
-      if (is.null(self$dispatcher) || is.null(handle)) {
-        return(invisible())
-      }
-      tryCatch(
-        crew_retry(
-          fun = ~!ps::ps_is_running(p = handle),
-          seconds_interval = self$seconds_interval,
-          seconds_timeout = self$seconds_timeout
-        ),
-        error = function(condition) NULL
-      )
-      if_any(
-        ps::ps_is_running(p = handle),
-        try(ps::ps_kill(p = handle), silent = TRUE),
-        NULL
-      )
-      tryCatch(
-        crew_retry(
-          fun = ~!ps::ps_is_running(p = handle),
-          seconds_interval = self$seconds_interval,
-          seconds_timeout = self$seconds_timeout
-        ),
-        error = function(condition) NULL
-      )
-      # End dispatcher checks block 2/2.
-      invisible()
     }
   )
 )

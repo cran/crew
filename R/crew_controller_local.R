@@ -1,6 +1,6 @@
 #' @title Create a controller with a local process launcher.
 #' @export
-#' @family user
+#' @family plugin_local
 #' @description Create an `R6` object to submit tasks and
 #'   launch workers on local processes.
 #' @inheritParams crew_client
@@ -23,8 +23,8 @@ crew_controller_local <- function(
   tls = crew::crew_tls(),
   tls_enable = NULL,
   tls_config = NULL,
-  seconds_interval = 0.25,
-  seconds_timeout = 10,
+  seconds_interval = 0.5,
+  seconds_timeout = 60,
   seconds_launch = 30,
   seconds_idle = Inf,
   seconds_wall = Inf,
@@ -59,6 +59,8 @@ crew_controller_local <- function(
   )
   launcher <- crew_launcher_local(
     name = name,
+    seconds_interval = seconds_interval,
+    seconds_timeout = seconds_timeout,
     seconds_launch = seconds_launch,
     seconds_idle = seconds_idle,
     seconds_wall = seconds_wall,

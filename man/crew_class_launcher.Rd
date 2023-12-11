@@ -49,20 +49,20 @@ launcher$call(
 )
 }
 \seealso{
-Other class: 
-\code{\link{crew_class_async}},
-\code{\link{crew_class_client}},
-\code{\link{crew_class_controller_group}},
-\code{\link{crew_class_controller}},
-\code{\link{crew_class_tls}}
+Other launcher: 
+\code{\link{crew_launcher}()}
 }
-\concept{class}
-\section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
+\concept{launcher}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{workers}}{Data frame of worker information.}
 
 \item{\code{name}}{Name of the launcher.}
+
+\item{\code{seconds_interval}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{seconds_timeout}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_launch}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
@@ -86,10 +86,13 @@ Other class:
 
 \item{\code{tls}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
-\item{\code{processes}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+\item{\code{processes}}{See \code{\link[=crew_launcher]{crew_launcher()}}.
+asynchronously.}
 
 \item{\code{async}}{A \code{\link[=crew_async]{crew_async()}} object to run low-level launcher tasks
 asynchronously.}
+
+\item{\code{throttle}}{A \code{\link[=crew_throttle]{crew_throttle()}} object to throttle scaling.}
 }
 \if{html}{\out{</div>}}
 }
@@ -98,9 +101,11 @@ asynchronously.}
 \itemize{
 \item \href{#method-crew_class_launcher-new}{\code{crew_class_launcher$new()}}
 \item \href{#method-crew_class_launcher-validate}{\code{crew_class_launcher$validate()}}
+\item \href{#method-crew_class_launcher-set_name}{\code{crew_class_launcher$set_name()}}
 \item \href{#method-crew_class_launcher-settings}{\code{crew_class_launcher$settings()}}
 \item \href{#method-crew_class_launcher-call}{\code{crew_class_launcher$call()}}
 \item \href{#method-crew_class_launcher-start}{\code{crew_class_launcher$start()}}
+\item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
 \item \href{#method-crew_class_launcher-summary}{\code{crew_class_launcher$summary()}}
 \item \href{#method-crew_class_launcher-tally}{\code{crew_class_launcher$tally()}}
 \item \href{#method-crew_class_launcher-unlaunched}{\code{crew_class_launcher$unlaunched()}}
@@ -112,12 +117,10 @@ asynchronously.}
 \item \href{#method-crew_class_launcher-forward}{\code{crew_class_launcher$forward()}}
 \item \href{#method-crew_class_launcher-errors}{\code{crew_class_launcher$errors()}}
 \item \href{#method-crew_class_launcher-wait}{\code{crew_class_launcher$wait()}}
-\item \href{#method-crew_class_launcher-throttle}{\code{crew_class_launcher$throttle()}}
 \item \href{#method-crew_class_launcher-scale}{\code{crew_class_launcher$scale()}}
 \item \href{#method-crew_class_launcher-launch_worker}{\code{crew_class_launcher$launch_worker()}}
 \item \href{#method-crew_class_launcher-terminate_worker}{\code{crew_class_launcher$terminate_worker()}}
 \item \href{#method-crew_class_launcher-terminate_workers}{\code{crew_class_launcher$terminate_workers()}}
-\item \href{#method-crew_class_launcher-terminate}{\code{crew_class_launcher$terminate()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -129,6 +132,7 @@ Launcher constructor.
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$new(
   name = NULL,
   seconds_interval = NULL,
+  seconds_timeout = NULL,
   seconds_launch = NULL,
   seconds_idle = NULL,
   seconds_wall = NULL,
@@ -151,6 +155,8 @@ Launcher constructor.
 \item{\code{name}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_interval}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
+
+\item{\code{seconds_timeout}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
 \item{\code{seconds_launch}}{See \code{\link[=crew_launcher]{crew_launcher()}}.}
 
@@ -211,6 +217,26 @@ Validate the launcher.
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$validate()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-set_name"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-set_name}{}}}
+\subsection{Method \code{set_name()}}{
+Set the name of the launcher.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$set_name(name)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Character of length 1, name to set for the launcher.}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 \code{NULL} (invisibly).
 }
@@ -300,6 +326,19 @@ Start the launcher.
 Creates the workers data frame.
 Meant to be called once at the beginning of the launcher
 life cycle, after the client has started.
+}
+
+\subsection{Returns}{
+\code{NULL} (invisibly).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_launcher-terminate"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate}{}}}
+\subsection{Method \code{terminate()}}{
+Terminate the whole launcher, including all workers.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
@@ -553,25 +592,12 @@ Only relevant if \code{processes} is a positive integer.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-throttle"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-throttle}{}}}
-\subsection{Method \code{throttle()}}{
-Deprecated in version 0.5.0.9000 (2023-10-02). Not used.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$throttle()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-\code{NULL}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_launcher-scale"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_launcher-scale}{}}}
 \subsection{Method \code{scale()}}{
 Auto-scale workers out to meet the demand of tasks.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$scale(demand, throttle = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$scale(demand, throttle = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -579,7 +605,10 @@ Auto-scale workers out to meet the demand of tasks.
 \describe{
 \item{\code{demand}}{Number of unresolved tasks.}
 
-\item{\code{throttle}}{Deprecated in version 0.5.0.9000 (2023-10-02).}
+\item{\code{throttle}}{\code{TRUE} to skip auto-scaling if it already happened
+within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
+every time \code{scale()} is called. Throttling avoids
+overburdening the \code{mirai} dispatcher and other resources.}
 }
 \if{html}{\out{</div>}}
 }
@@ -667,19 +696,6 @@ to terminate. If \code{NULL}, all current workers are terminated.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Returns}{
-\code{NULL} (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_launcher-terminate"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_launcher-terminate}{}}}
-\subsection{Method \code{terminate()}}{
-Terminate the whole launcher, including all workers.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_launcher$terminate()}\if{html}{\out{</div>}}
-}
-
 \subsection{Returns}{
 \code{NULL} (invisibly).
 }

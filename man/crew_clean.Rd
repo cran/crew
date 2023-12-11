@@ -7,9 +7,9 @@
 crew_clean(
   dispatchers = TRUE,
   workers = TRUE,
-  user = Sys.getenv("USER"),
-  seconds_interval = 0.1,
-  seconds_timeout = 10,
+  user = Sys.info()[["user"]],
+  seconds_interval = 0.5,
+  seconds_timeout = 60,
   verbose = TRUE
 )
 }
@@ -58,10 +58,12 @@ crew_clean()
 }
 }
 \seealso{
-Other user: 
-\code{\link{crew-package}},
-\code{\link{crew_controller_group}()},
-\code{\link{crew_controller_local}()},
-\code{\link{crew_tls}()}
+Other utility: 
+\code{\link{crew_assert}()},
+\code{\link{crew_deprecate}()},
+\code{\link{crew_eval}()},
+\code{\link{crew_random_name}()},
+\code{\link{crew_retry}()},
+\code{\link{crew_worker}()}
 }
-\concept{user}
+\concept{utility}

@@ -27,16 +27,14 @@ if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 x <- crew_async()
 x$start()
 out <- x$eval(1 + 1)
-mirai::call_mirai(out)
+mirai::call_mirai_(out)
 out$data # 2
 x$errors() # 0
 x$terminate()
 }
 }
 \seealso{
-Other developer: 
-\code{\link{crew_client}()},
-\code{\link{crew_controller}()},
-\code{\link{crew_launcher}()}
+Other async: 
+\code{\link{crew_class_async}}
 }
-\concept{developer}
+\concept{async}

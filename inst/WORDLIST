@@ -4,6 +4,7 @@ Bengtsson
 Bischel
 Bitbucket
 CloudWatch
+CTRL
 Csárdi
 DVC
 Edmondson
@@ -99,6 +100,7 @@ serializable
 shikokuchuo
 shinyapps
 snapshotted
+stateful
 subclass
 subqueue
 taskq
@@ -109,6 +111,7 @@ tracebacks
 transactional
 unencrypted
 unlaunched
+unpopped
 useR
 validator
 walkthrough
@@ -117,3 +120,5 @@ wlandau
 writeable
 www
 ’
+revdep
+tls
