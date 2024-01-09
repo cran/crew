@@ -74,11 +74,11 @@
 #' client <- crew_client()
 #' client$start()
 #' launcher <- crew_launcher_local(name = client$name)
-#' launcher$start(workers = client$workers)
+#' launcher$start(sockets = client$summary()$socket)
 #' launcher$launch(index = 1L)
-#' m <- mirai::mirai("result", .compute = client$name)
-#' Sys.sleep(0.25)
-#' m$data
+#' task <- mirai::mirai("result", .compute = client$name)
+#' mirai::call_mirai_(task)
+#' task$data
 #' client$terminate()
 #' }
 crew_launcher <- function(
@@ -104,9 +104,8 @@ crew_launcher <- function(
     date = "2023-09-21",
     version = "0.5.0.9002",
     alternative = "none (no longer necessary)",
-    condition = "message",
-    value = seconds_exit,
-    frequency = "once"
+    condition = "warning",
+    value = seconds_exit
   )
   name <- as.character(name %|||% crew_random_name())
   crew_assert(
@@ -371,7 +370,8 @@ crew_class_launcher <- R6::R6Class(
         is.numeric(.),
         . > 0L,
         length(.) == 1L,
-        !anyNA(.)
+        !anyNA(.),
+        message = "processes must be NULL or a positive integer of length 1"
       )
       fields <- c(
         "reset_globals",
@@ -444,12 +444,13 @@ crew_class_launcher <- R6::R6Class(
         (8L * as.integer(isTRUE(private$.garbage_collection)))
       list(
         url = socket,
-        autoexit = TRUE,
+        autoexit = crew_terminate_signal(),
+        cleanup = cleanup,
+        output = TRUE,
         maxtasks = private$.tasks_max,
         idletime = private$.seconds_idle * 1000,
         walltime = private$.seconds_wall * 1000,
         timerstart = private$.tasks_timers,
-        cleanup = cleanup,
         tls = private$.tls$worker(name = private$.name),
         rs = mirai::nextstream(private$.name)
       )
@@ -686,16 +687,16 @@ crew_class_launcher <- R6::R6Class(
       futile <- if_any(complete > history, 0L, futile + 1L)
       crew_assert(
         futile <= private$.launch_max,
-        message = paste(
-          "{crew} worker",
+        message = paste0(
+          "{crew} worker ",
           index,
-          "launched",
+          " launched ",
           private$.launch_max,
-          "times in a row without completing any tasks. Either raise",
-          "launch_max above",
+          " times in a row without completing any tasks. ",
+          "Either troubleshoot or raise launch_max above ",
           private$.launch_max,
-          "or troubleshoot your platform to figure out",
-          "why {crew} workers are not booting up or connecting."
+          ". Details: ",
+          "https://wlandau.github.io/crew/articles/risks.html#crashes"
         )
       )
       mirai::call_mirai_(aio = private$.workers$handle[[index]])

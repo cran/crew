@@ -529,6 +529,49 @@ previous R sessions.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
 </div>
+<div id="monitoring-local-processes" class="section level1">
+<h1>Monitoring local processes</h1>
+<p>A <code>crew</code> controller creates different types of local
+processes. These include:</p>
+<ul>
+<li>Dispatchers: every controller has a special local process called a
+“dispatcher”. <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a> needs
+this process to orchestrate tasks.</li>
+<li>Workers: the R processes that <code>crew</code> launches to run
+tasks. These may be local processes as in the case of
+<code>crew_controller_local()</code>, or they may be processes on
+different computers if you are using a third-party <a href="https://wlandau.github.io/crew/articles/plugins.html">launcher
+plugin</a> like <code>crew.cluster</code> or
+<code>crew.aws.batch</code>. launches processes.</li>
+<li>Daemons: R processes created by <code>mirai</code> outside of
+<code>crew</code> to run tasks. Such processes may spawn automatically
+if you set the <code>processes</code> argument of
+e.g. <code>crew.aws.batch::crew_controller_aws_batch()</code> to a
+positive integer.</li>
+</ul>
+<p>Usually these processes terminate themselves when the parent R
+session exits or the controller terminates, but under rare circumstances
+they may continue running. The “local monitor” in <code>crew</code>
+makes it easy to list and terminate any of these processes which may be
+running on your local computer. Example:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
+<p><code>crew_monitor_local()</code> only manages processes running on
+your local computer. To manage <code>crew</code> workers running on
+different computers, such as SLURM or AWS Batch, please familiarize
+yourself with the given computing platform, and consider using the
+monitor objects in the relevant third-party plugin packages such as <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
+or <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>.
+Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-management" class="uri">https://wlandau.github.io/crew.aws.batch/index.html#job-management</a>.</p>
+</div>
 <div id="tuning-and-auto-scaling" class="section level1">
 <h1>Tuning and auto-scaling</h1>
 <p>As explained above, <code>push()</code>, <code>pop()</code>, and

@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 #        )
 #      },
 #      terminate_worker = function(handle) {
-#        handle$kill()
+#        handle$signal(crew::crew_terminate_signal())
 #      }
 #    )
 #  )
@@ -191,7 +191,7 @@ launcher$call(
 #      },
 #      terminate_worker = function(handle) {
 #        self$async$eval(
-#          command = ps::ps_kill(p = ps::ps_handle(pid = pid)),
+#          command = crew::crew_terminate_process(handle$data$pid),
 #          data = list(pid = handle$data$pid)
 #        )
 #      }
@@ -254,4 +254,16 @@ launcher$call(
 
 ## -----------------------------------------------------------------------------
 #  async_controller <- crew_controller_async(workers = 12, processes = 4)
+
+## ----eval = FALSE-------------------------------------------------------------
+#  monitor <- crew_monitor_local()
+#  monitor$dispatchers() # List PIDs of all local {mirai} dispatcher processes.
+#  #> [1] 31215
+#  monitor$daemons()
+#  #> integer(0)
+#  monitor$workers()
+#  #> [1] 57001 57002
+#  monitor$terminate(pid = c(57001, 57002))
+#  monitor$workers()
+#  #> integer(0)
 

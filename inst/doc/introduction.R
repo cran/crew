@@ -92,3 +92,15 @@ library(crew)
 #  crew_clean()
 #  #> nothing to clean up
 
+## ----eval = FALSE-------------------------------------------------------------
+#  monitor <- crew_monitor_local()
+#  monitor$dispatchers() # List PIDs of all local {mirai} dispatcher processes.
+#  #> [1] 31215
+#  monitor$daemons()
+#  #> integer(0)
+#  monitor$workers()
+#  #> [1] 57001 57002
+#  monitor$terminate(pid = c(57001, 57002))
+#  monitor$workers()
+#  #> integer(0)
+

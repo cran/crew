@@ -16,7 +16,6 @@
 #' out <- x$eval(1 + 1)
 #' mirai::call_mirai_(out)
 #' out$data # 2
-#' x$errors() # 0
 #' x$terminate()
 #' }
 crew_async <- function(workers = NULL) {
@@ -84,7 +83,9 @@ crew_class_async <- R6::R6Class(
       mirai::daemons(
         n = private$.workers,
         dispatcher = FALSE,
-        autoexit = TRUE,
+        autoexit = crew_terminate_signal(),
+        resilience = FALSE,
+        idletime = 60000,
         .compute = private$.instance
       )
       invisible()

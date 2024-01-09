@@ -29,7 +29,15 @@ The `crew` package launches external R processes:
 1. Worker processes to run tasks, which may include expensive jobs on cloud services like AWS Batch or traditional clusters like SLURM.
 2. A local [`mirai`](https://github.com/shikokuchuo/mirai) dispatcher process to schedule the tasks. If `x` is a `crew` controller, the process ID of the dispatcher is `x$client$dispatcher`.
 
-In the event of a poorly-timed crash or network error, these processes may not terminate properly. If that happens, they will continue to run, which may strain traditional clusters or incur heavy expenses on the cloud. Please monitor the platforms you use and manually terminate defunct hanging processes as needed.
+In the event of a poorly-timed crash or network error, these processes may not terminate properly. If that happens, they will continue to run, which may strain traditional clusters or incur heavy expenses on the cloud. Please monitor the platforms you use and manually terminate defunct hanging processes as needed. To list and terminate local processes, please use `crew_monitor_local()` as explained in the introduction vignette. To manage and monitor non-local high-performance computing workers such as those on SLURM and AWS Batch, please familiarize yourself with the given computing platform, and consider using the monitor objects in the relevant third-party plugin packages such as [`crew.cluster`](https://wlandau.github.io/crew.cluster/) or [`crew.aws.batch`](https://wlandau.github.io/crew.aws.batch/). Example: <https://wlandau.github.io/crew.aws.batch/index.html#job-management>.
+
+## Crashes
+
+In addition, `crew` worker processes may crash silently at runtime, or they may fail to launch or connect at all. The reasons may be platform-specific, but here are some common possibilities:
+
+* Memory: if a worker exhausts the available memory limits, it will crash, and there is no way to relay an informative error message. Please grant your workers more computer memory if you think that might have happened. [`crew.aws.batch`](https://wlandau.github.io/crew.aws.batch/) and [`crew.cluster`](https://wlandau.github.io/crew.cluster/) expose special platform-specific parameters in the controllers to do this.
+* Connections: each worker must run on the same local network as the controlling R process, and it must be able to dial into that controlling process over TCP. Firewalls and proxies may interfere, and these safeguards exist for good reason, so please ensure any custom networking you do is safe and secure. For example, it is most likely not secure for these connections to pass through the public internet. For AWS Batch, we recommend you run the controlling R process and all the workers in an isolated security group that points to itself (details: <https://wlandau.github.io/crew.aws.batch/#prerequisites>). You may have to discuss with your system administrator.
+* Tasks: R code may crash or segfault the worker and cause it to abruptly exit. If that happens, see if you can isolate the problem locally, then debug the code that caused the crash.
 
 ## Ports
 

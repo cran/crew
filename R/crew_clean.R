@@ -34,11 +34,14 @@
 crew_clean <- function(
   dispatchers = TRUE,
   workers = TRUE,
-  user = Sys.info()[["user"]],
+  user = ps::ps_username(),
   seconds_interval = 0.5,
   seconds_timeout = 60,
   verbose = TRUE
 ) {
+  # Tests interfere with other processes.
+  # Tested in tests/local/test-crew_clean.R.
+  # nocov start
   crew_assert(dispatchers, isTRUE(.) || isFALSE(.))
   crew_assert(workers, isTRUE(.) || isFALSE(.))
   crew_assert(user, is.character(.), length(.) == 1L, nzchar(.), !anyNA(.))
@@ -62,7 +65,7 @@ crew_clean <- function(
   }
   for (index in seq_len(nrow(ps))) {
     handle <- ps$ps_handle[[index]]
-    ps::ps_kill(handle)
+    crew_terminate_process(ps::ps_pid(p = handle))
     crew_retry(
       fun = ~!ps::ps_is_running(p = handle),
       seconds_interval = seconds_interval,
@@ -78,6 +81,7 @@ crew_clean <- function(
     }
   }
   invisible()
+  # nocov end
 }
 
 process_command <- function(handle) {

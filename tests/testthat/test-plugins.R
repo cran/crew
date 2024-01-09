@@ -19,7 +19,7 @@ crew_test("custom launcher", {
         processx::process$new(command = path, args = c("-e", call))
       },
       terminate_worker = function(handle) {
-        handle$kill()
+        handle$signal(signal = crew::crew_terminate_signal())
       }
     )
   )
@@ -226,12 +226,6 @@ crew_test("custom launcher with async internal launcher tasks", {
   skip_on_covr() # Avoid clashes with NNG and covr child processes.
   skip_on_os("windows")
   skip_if_not_installed("processx")
-  # TODO: remove this part when crew.cluster is updated on CRAN:
-  Sys.setenv(TESTTHAT = "false")
-  on.exit(Sys.setenv(TESTTHAT = "true"))
-  if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
-    skip_on_os("mac")
-  }
   custom_launcher_class <- R6::R6Class(
     classname = "custom_launcher_class",
     inherit = crew::crew_class_launcher,
@@ -262,7 +256,7 @@ crew_test("custom launcher with async internal launcher tasks", {
         pid <- handle$data$pid
         self$async$eval(
           command = {
-            ps::ps_kill(p = ps::ps_handle(pid = pid))
+            crew::crew_terminate_process(pid)
             list(pid = pid, status = "terminated")
           },
           data = list(pid = pid)

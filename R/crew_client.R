@@ -25,7 +25,7 @@
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' client <- crew_client()
 #' client$start()
-#' client$log()
+#' client$summary()
 #' client$terminate()
 #' }
 crew_client <- function(
@@ -304,7 +304,10 @@ crew_class_client <- R6::R6Class(
       )
       if_any(
         ps::ps_is_running(p = handle),
-        try(ps::ps_kill(p = handle), silent = TRUE),
+        try(
+          crew_terminate_process(p = ps::ps_pid(handle)),
+          silent = TRUE
+        ),
         NULL
       )
       tryCatch(

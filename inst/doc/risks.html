@@ -243,7 +243,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <li><a href="#resources" id="toc-resources"><span class="toc-section-number">1</span> Resources</a>
 <ul>
 <li><a href="#processes" id="toc-processes"><span class="toc-section-number">1.1</span> Processes</a></li>
-<li><a href="#ports" id="toc-ports"><span class="toc-section-number">1.2</span> Ports</a></li>
+<li><a href="#crashes" id="toc-crashes"><span class="toc-section-number">1.2</span> Crashes</a></li>
+<li><a href="#ports" id="toc-ports"><span class="toc-section-number">1.3</span> Ports</a></li>
 </ul></li>
 <li><a href="#security" id="toc-security"><span class="toc-section-number">2</span> Security</a>
 <ul>
@@ -276,10 +277,45 @@ dispatcher process to schedule the tasks. If <code>x</code> is a
 processes may not terminate properly. If that happens, they will
 continue to run, which may strain traditional clusters or incur heavy
 expenses on the cloud. Please monitor the platforms you use and manually
-terminate defunct hanging processes as needed.</p>
+terminate defunct hanging processes as needed. To list and terminate
+local processes, please use <code>crew_monitor_local()</code> as
+explained in the introduction vignette. To manage and monitor non-local
+high-performance computing workers such as those on SLURM and AWS Batch,
+please familiarize yourself with the given computing platform, and
+consider using the monitor objects in the relevant third-party plugin
+packages such as <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
+or <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>.
+Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-management" class="uri">https://wlandau.github.io/crew.aws.batch/index.html#job-management</a>.</p>
 </div>
-<div id="ports" class="section level2" number="1.2">
-<h2><span class="header-section-number">1.2</span> Ports</h2>
+<div id="crashes" class="section level2" number="1.2">
+<h2><span class="header-section-number">1.2</span> Crashes</h2>
+<p>In addition, <code>crew</code> worker processes may crash silently at
+runtime, or they may fail to launch or connect at all. The reasons may
+be platform-specific, but here are some common possibilities:</p>
+<ul>
+<li>Memory: if a worker exhausts the available memory limits, it will
+crash, and there is no way to relay an informative error message. Please
+grant your workers more computer memory if you think that might have
+happened. <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>
+and <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
+expose special platform-specific parameters in the controllers to do
+this.</li>
+<li>Connections: each worker must run on the same local network as the
+controlling R process, and it must be able to dial into that controlling
+process over TCP. Firewalls and proxies may interfere, and these
+safeguards exist for good reason, so please ensure any custom networking
+you do is safe and secure. For example, it is most likely not secure for
+these connections to pass through the public internet. For AWS Batch, we
+recommend you run the controlling R process and all the workers in an
+isolated security group that points to itself (details: <a href="https://wlandau.github.io/crew.aws.batch/#prerequisites" class="uri">https://wlandau.github.io/crew.aws.batch/#prerequisites</a>).
+You may have to discuss with your system administrator.</li>
+<li>Tasks: R code may crash or segfault the worker and cause it to
+abruptly exit. If that happens, see if you can isolate the problem
+locally, then debug the code that caused the crash.</li>
+</ul>
+</div>
+<div id="ports" class="section level2" number="1.3">
+<h2><span class="header-section-number">1.3</span> Ports</h2>
 <p>In addition, <code>crew</code> occupies one TCP port per controller.
 TCP ports range from 0 to 65535, and only around 16000 of these ports
 are considered ephemeral or dynamic, so please be careful not to run too

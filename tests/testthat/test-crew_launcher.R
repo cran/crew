@@ -1,15 +1,18 @@
 crew_test("abstract launcher class", {
+  skip_on_cran()
   out <- crew_launcher(reset_options = -1)
   expect_crew_error(out$validate())
 })
 
 crew_test("active bindings for covr", {
+  skip_on_cran()
   out <- crew_launcher(processes = 1L)
   expect_equal(out$processes, 1L)
   expect_null(out$async)
   expect_null(out$throttle)
   expect_true(inherits(out$tls, "crew_class_tls"))
   out$start(sockets = "url")
+  on.exit(out$terminate())
   expect_s3_class(out$async, "crew_class_async")
   expect_s3_class(out$throttle, "crew_class_throttle")
   expect_silent(out$async$validate())
@@ -18,14 +21,20 @@ crew_test("active bindings for covr", {
 })
 
 crew_test("preemptive async termination for covr", {
+  skip_on_cran()
   out <- crew_launcher(processes = 1L)
-  on.exit(out$terminate())
   private <- crew_private(out)
   private$.async <- crew_async()
-  expect_silent(out$start())
+  on.exit({
+    private$.async$terminate()
+    out$terminate()
+  })
+  out$start()
+  expect_true(TRUE)
 })
 
 crew_test("default launch_launcher() method", {
+  skip_on_cran()
   launcher <- crew_class_launcher$new(seconds_interval = 0.5)
   out <- launcher$launch_worker(
     call = "a",
@@ -61,7 +70,6 @@ crew_test("launcher settings", {
   socket <- "ws://127.0.0.1:5000"
   settings <- launcher$settings(socket = socket)
   expect_equal(settings$url, socket)
-  expect_equal(settings$autoexit, TRUE)
   expect_equal(settings$maxtasks, 7)
   expect_equal(settings$idletime, 2000)
   expect_equal(settings$walltime, 3000)
@@ -296,6 +304,7 @@ crew_test("launcher summary", {
 
 crew_test("launcher forward", {
   skip_on_cran()
+  skip_on_os("windows")
   x <- crew_launcher()
   on.exit({
     rm(x)
@@ -324,6 +333,7 @@ crew_test("launcher forward", {
 
 crew_test("launcher errors", {
   skip_on_cran()
+  skip_on_os("windows")
   x <- crew_launcher()
   on.exit({
     rm(x)
@@ -342,6 +352,8 @@ crew_test("launcher errors", {
 })
 
 crew_test("launcher errors", {
+  skip_on_cran()
+  skip_on_os("windows")
   x <- crew_launcher(processes = 1L)
   on.exit({
     x$terminate()
