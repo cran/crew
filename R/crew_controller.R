@@ -66,6 +66,7 @@ crew_class_controller <- R6::R6Class(
     .popped = NULL,
     .log = NULL,
     .error = NULL,
+    .backlog = NULL,
     .shove = function(
       command,
       data = list(),
@@ -96,19 +97,19 @@ crew_class_controller <- R6::R6Class(
         private$.tasks[[length(.subset2(self, "tasks")) + 1L]] <- task
         private$.pushed <- .subset2(self, "pushed") + 1L
       })
-      invisible()
+      invisible(task)
     },
     .wait_all_once = function(seconds_interval) {
-      if (self$unresolved() > 0L) {
+      if (.subset2(self, "unresolved")() > 0L) {
         private$.client$relay$wait(seconds_timeout = seconds_interval)
       }
-      self$unresolved() < 1L
+      .subset2(self, "unresolved")() < 1L
     },
     .wait_one_once = function(seconds_interval) {
-      if (self$unpopped() < 1L) {
+      if (.subset2(self, "unpopped")() < 1L) {
         private$.client$relay$wait(seconds_timeout = seconds_interval)
       }
-      self$unpopped() > 0L
+      .subset2(self, "unpopped")() > 0L
     }
   ),
   active = list(
@@ -141,6 +142,10 @@ crew_class_controller <- R6::R6Class(
     #'   from the last call to `map(error = "stop)`.
     error = function() {
       .subset2(private, ".error")
+    },
+    #' @field backlog Character vector of explicitly backlogged tasks.
+    backlog = function() {
+      .subset2(private, ".backlog")
     }
   ),
   public = list(
@@ -180,6 +185,7 @@ crew_class_controller <- R6::R6Class(
         message = "client and launcher must have the same name"
       )
       crew_assert(private$.log, is.null(.) || is.list(.))
+      crew_assert(private$.backlog, is.null(.) || is.character(.))
       invisible()
     },
     #' @description Check if the controller is empty.
@@ -207,19 +213,25 @@ crew_class_controller <- R6::R6Class(
     #'   number of resolved `mirai()` tasks.
     #'   The return value is 0 if the condition variable does not exist
     #'   (i.e. if the client is not running).
-    resolved = function() {
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    resolved = function(controllers = NULL) {
       .subset2(.subset2(self, "client"), "resolved")()
     },
     #' @description Number of unresolved `mirai()` tasks.
     #' @return Non-negative integer of length 1,
     #'   number of unresolved `mirai()` tasks.
-    unresolved = function() {
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    unresolved = function(controllers = NULL) {
       .subset2(self, "pushed") - .subset2(self, "resolved")()
     },
     #' @description Number of resolved `mirai()` tasks available via `pop()`.
     #' @return Non-negative integer of length 1,
     #'   number of resolved `mirai()` tasks available via `pop()`.
-    unpopped = function() {
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    unpopped = function(controllers = NULL) {
       .subset2(self, "resolved")() - .subset2(self, "popped")
     },
     #' @description Check if the controller is saturated.
@@ -280,6 +292,7 @@ crew_class_controller <- R6::R6Class(
           errors = rep(0L, workers),
           warnings = rep(0L, workers)
         )
+        private$.backlog <- character(0L)
       }
       invisible()
     },
@@ -307,7 +320,13 @@ crew_class_controller <- R6::R6Class(
       invisible()
     },
     #' @description Auto-scale workers out to meet the demand of tasks.
-    #' @details Methods `push()`, `pop()`, and `wait()` already invoke
+    #' @details The `scale()` method re-launches all inactive backlogged
+    #'   workers, then any additional inactive workers needed to
+    #'   accommodate the demand of unresolved tasks. A worker is
+    #'   "backlogged" if it was assigned more tasks than it has completed
+    #'   so far.
+    #'
+    #'   Methods `push()`, `pop()`, and `wait()` already invoke
     #'   `scale()` if the `scale` argument is `TRUE`.
     #'   For finer control of the number of workers launched,
     #'   call `launch()` on the controller with the exact desired
@@ -324,7 +343,9 @@ crew_class_controller <- R6::R6Class(
       invisible()
     },
     #' @description Push a task to the head of the task list.
-    #' @return `NULL` (invisibly).
+    #' @return Invisibly return the `mirai` object of the pushed task.
+    #'   This allows you to interact with the task directly, e.g.
+    #'   to create a promise object with `promises::as.promise()`.
     #' @param command Language object with R code to run.
     #' @param data Named list of local data objects in the
     #'   evaluation environment.
@@ -431,16 +452,16 @@ crew_class_controller <- R6::R6Class(
       if (scale) {
         .subset2(self, "scale")(throttle = throttle)
       }
-      invisible()
+      invisible(task)
     },
-    #' @description Apply a single command to multiple inputs.
-    #' @details `map()` cannot be used unless all prior tasks are
-    #'   completed and popped. You may need to wait and then pop them
-    #'   manually. Alternatively, you can start over: either call
-    #'   `terminate()` on the current controller object to reset it, or
-    #'   create a new controller object entirely.
-    #' @return A `tibble` of results and metadata: one row per task
-    #'   and columns corresponding to the output of `pop()`.
+    #' @description Apply a single command to multiple inputs,
+    #'   and return control to the user without
+    #'   waiting for any task to complete.
+    #' @details In contrast to `walk()`, `map()` blocks the local R session
+    #'   and waits for all tasks to complete.
+    #' @return Invisibly returns a list of `mirai` task objects for the
+    #'   newly created tasks. The order of tasks in the list matches the
+    #'   order of data in the `iterate` argument.
     #' @param command Language object with R code to run.
     #' @param iterate Named list of vectors or lists to iterate over.
     #'   For example, to run function calls
@@ -492,8 +513,6 @@ crew_class_controller <- R6::R6Class(
     #' @param packages Character vector of packages to load for the task.
     #' @param library Library path to load the packages. See the `lib.loc`
     #'   argument of `require()`.
-    #' @param seconds_interval Number of seconds to wait between intervals
-    #'   polling the tasks for completion.
     #' @param seconds_timeout Optional task timeout passed to the `.timeout`
     #'   argument of `mirai::mirai()` (after converting to milliseconds).
     #' @param names Optional character of length 1, name of the element of
@@ -501,20 +520,6 @@ crew_class_controller <- R6::R6Class(
     #'   then `iterate[[names]]` must be a character vector.
     #' @param save_command Logical of length 1, whether to store
     #'   a text string version of the R command in the output.
-    #' @param error Character vector of length 1, choice of action if
-    #'   a task has an error. Possible values:
-    #'   * `"stop"`: throw an error in the main R session instead of returning
-    #'     a value. In case of an error, the results from the last errored
-    #'     `map()` are in the `error` field
-    #'     of the controller, e.g. `controller_object$error`. To reduce
-    #'     memory consumption, set `controller_object$error <- NULL` after
-    #'     you are finished troubleshooting.
-    #'   * `"warn"`: throw a warning. This allows the return value with
-    #'     all the error messages and tracebacks to be generated.
-    #'   * `"silent"`: do nothing special.
-    #' @param warnings Logical of length 1, whether to throw a warning in the
-    #'   interactive session if at least one task encounters an error.
-    #' @param verbose Logical of length 1, whether to print progress messages.
     #' @param scale Logical, whether to automatically scale workers to meet
     #'   demand. See also the `throttle` argument.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
@@ -523,7 +528,7 @@ crew_class_controller <- R6::R6Class(
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param controller Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
-    map = function(
+    walk = function(
       command,
       iterate,
       data = list(),
@@ -533,13 +538,9 @@ crew_class_controller <- R6::R6Class(
       algorithm = NULL,
       packages = character(0),
       library = NULL,
-      seconds_interval = 0.5,
       seconds_timeout = NULL,
       names = NULL,
       save_command = FALSE,
-      error = "stop",
-      warnings = TRUE,
-      verbose = interactive(),
       scale = TRUE,
       throttle = TRUE,
       controller = NULL
@@ -607,22 +608,6 @@ crew_class_controller <- R6::R6Class(
         message = "library must be a NULL or a non-missing character vector"
       )
       crew_assert(
-        seconds_interval,
-        is.numeric(.),
-        length(.) == 1L,
-        !anyNA(.),
-        . >= 0,
-        message = "seconds_interval must be a nonnegative real number"
-      )
-      crew_assert(
-        seconds_timeout %|||% 0,
-        is.numeric(.),
-        length(.) == 1L,
-        !anyNA(.),
-        . >= 0,
-        message = "seconds_timeout must be NULL or a nonnegative real number"
-      )
-      crew_assert(
         names %|||% names(iterate)[[1L]],
         is.character(.),
         length(.) == 1L,
@@ -630,19 +615,6 @@ crew_class_controller <- R6::R6Class(
         nzchar(.),
         . %in% names(iterate),
         message = "names argument must be NULL or an element of names(iterate)"
-      )
-      crew_assert(
-        warnings,
-        isTRUE(.) || isFALSE(.),
-        message = "'warn' argument must be TRUE or FALSE."
-      )
-      crew_assert(
-        error %in% c("stop", "warn", "silent"),
-        message = "'error' argument must be \"stop\", \"warn\", or \"silent\""
-      )
-      crew_assert(
-        length(private$.tasks) < 1L,
-        message = "cannot map() until all prior tasks are completed and popped"
       )
       crew_assert(scale, isTRUE(.) || isFALSE(.))
       crew_assert(throttle, isTRUE(.) || isFALSE(.))
@@ -667,6 +639,7 @@ crew_class_controller <- R6::R6Class(
       if (!is.null(seed)) {
         seed <- 1L
       }
+      tasks <- list()
       for (index in seq_along(names)) {
         for (name in names_iterate) {
           data[[name]] <- .subset2(.subset2(iterate, name), index)
@@ -676,7 +649,7 @@ crew_class_controller <- R6::R6Class(
         } else {
           task_seed <- seed - (sign * index)
         }
-        .subset2(private, ".shove")(
+        tasks[[index]] <- .subset2(private, ".shove")(
           command = command,
           string = string,
           data = data,
@@ -689,6 +662,153 @@ crew_class_controller <- R6::R6Class(
           name = .subset(names, index)
         )
       }
+      if (scale) {
+        .subset2(self, "scale")(throttle = throttle)
+      }
+      invisible(tasks)
+    },
+    #' @description Apply a single command to multiple inputs,
+    #'   wait for all tasks to complete,
+    #'   and return the results of all tasks.
+    #' @details `map()` cannot be used unless all prior tasks are
+    #'   completed and popped. You may need to wait and then pop them
+    #'   manually. Alternatively, you can start over: either call
+    #'   `terminate()` on the current controller object to reset it, or
+    #'   create a new controller object entirely.
+    #' @return A `tibble` of results and metadata: one row per task
+    #'   and columns corresponding to the output of `pop()`.
+    #' @param command Language object with R code to run.
+    #' @param iterate Named list of vectors or lists to iterate over.
+    #'   For example, to run function calls
+    #'   `f(x = 1, y = "a")` and `f(x = 2, y = "b")`,
+    #'   set `command` to `f(x, y)`, and set `iterate` to
+    #'   `list(x = c(1, 2), y = c("a", "b"))`. The individual
+    #'   function calls are evaluated as
+    #'   `f(x = iterate$x[[1]], y = iterate$y[[1]])` and
+    #'   `f(x = iterate$x[[2]], y = iterate$y[[2]])`.
+    #'   All the elements of `iterate` must have the same length.
+    #'   If there are any name conflicts between `iterate` and `data`,
+    #'   `iterate` takes precedence.
+    #' @param data Named list of constant local data objects in the
+    #'   evaluation environment. Objects in this list are treated as single
+    #'   values and are held constant for each iteration of the map.
+    #' @param globals Named list of constant objects to temporarily
+    #'   assign to the global environment for each task. This list should
+    #'   include any functions you previously defined in the global
+    #'   environment which are required to run tasks.
+    #'   See the `reset_globals` argument of [crew_controller_local()].
+    #'   Objects in this list are treated as single
+    #'   values and are held constant for each iteration of the map.
+    #' @param substitute Logical of length 1, whether to call
+    #'   `base::substitute()` on the supplied value of the
+    #'   `command` argument. If `TRUE` (default) then `command` is quoted
+    #'   literally as you write it, e.g.
+    #'   `push(command = your_function_call())`. If `FALSE`, then `crew`
+    #'   assumes `command` is a language object and you are passing its
+    #'   value, e.g. `push(command = quote(your_function_call()))`.
+    #'   `substitute = TRUE` is appropriate for interactive use,
+    #'   whereas `substitute = FALSE` is meant for automated R programs
+    #'   that invoke `crew` controllers.
+    #' @param seed Integer of length 1 with the pseudo-random number generator
+    #'   seed to set for the evaluation of the task. Passed to the
+    #'   `seed` argument of `set.seed()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
+    #' @param algorithm Integer of length 1 with the pseudo-random number
+    #'   generator algorithm to set for the evaluation of the task.
+    #'   Passed to the `kind` argument of `RNGkind()` if not `NULL`.
+    #'   If `algorithm` and `seed` are both `NULL`,
+    #'   then the random number generator defaults to the
+    #'   recommended widely spaced worker-specific
+    #'   L'Ecuyer streams as supported by `mirai::nextstream()`.
+    #'   See `vignette("parallel", package = "parallel")` for details.
+    #' @param packages Character vector of packages to load for the task.
+    #' @param library Library path to load the packages. See the `lib.loc`
+    #'   argument of `require()`.
+    #' @param seconds_interval Number of seconds to wait between auto-scaling
+    #'   operations while waiting for tasks to complete.
+    #' @param seconds_timeout Optional task timeout passed to the `.timeout`
+    #'   argument of `mirai::mirai()` (after converting to milliseconds).
+    #' @param names Optional character of length 1, name of the element of
+    #'   `iterate` with names for the tasks. If `names` is supplied,
+    #'   then `iterate[[names]]` must be a character vector.
+    #' @param save_command Logical of length 1, whether to store
+    #'   a text string version of the R command in the output.
+    #' @param error Character vector of length 1, choice of action if
+    #'   a task has an error. Possible values:
+    #'   * `"stop"`: throw an error in the main R session instead of returning
+    #'     a value. In case of an error, the results from the last errored
+    #'     `map()` are in the `error` field
+    #'     of the controller, e.g. `controller_object$error`. To reduce
+    #'     memory consumption, set `controller_object$error <- NULL` after
+    #'     you are finished troubleshooting.
+    #'   * `"warn"`: throw a warning. This allows the return value with
+    #'     all the error messages and tracebacks to be generated.
+    #'   * `"silent"`: do nothing special.
+    #' @param warnings Logical of length 1, whether to throw a warning in the
+    #'   interactive session if at least one task encounters an error.
+    #' @param verbose Logical of length 1, whether to print progress messages.
+    #' @param scale Logical, whether to automatically scale workers to meet
+    #'   demand. See also the `throttle` argument.
+    #' @param throttle `TRUE` to skip auto-scaling if it already happened
+    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   every time `scale()` is called. Throttling avoids
+    #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param controller Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    map = function(
+      command,
+      iterate,
+      data = list(),
+      globals = list(),
+      substitute = TRUE,
+      seed = NULL,
+      algorithm = NULL,
+      packages = character(0),
+      library = NULL,
+      seconds_interval = 0.5,
+      seconds_timeout = NULL,
+      names = NULL,
+      save_command = FALSE,
+      error = "stop",
+      warnings = TRUE,
+      verbose = interactive(),
+      scale = TRUE,
+      throttle = TRUE,
+      controller = NULL
+    ) {
+      crew_assert(
+        length(private$.tasks) < 1L,
+        message = "cannot map() until all prior tasks are completed and popped"
+      )
+      crew_assert(substitute, isTRUE(.) || isFALSE(.))
+      if (substitute) {
+        command <- substitute(command)
+      }
+      self$walk(
+        command = command,
+        iterate = iterate,
+        data = data,
+        globals = globals,
+        substitute = FALSE,
+        seed = seed,
+        algorithm = algorithm,
+        packages = packages,
+        library = library,
+        seconds_timeout = seconds_timeout,
+        names = names,
+        save_command = save_command,
+        scale = scale,
+        throttle = throttle
+      )
+      names <- if_any(
+        is.null(names),
+        as.character(seq_along(iterate[[1L]])),
+        iterate[[names]]
+      )
       tasks <- private$.tasks
       total <- length(tasks)
       relay <- .subset2(.subset2(self, "client"), "relay")
@@ -803,22 +923,6 @@ crew_class_controller <- R6::R6Class(
         }
       }
       out
-    },
-    #' @description Deprecated in version 0.5.0.9003 (2023-10-02).
-    #' @return `NULL`.
-    #' @param throttle Deprecated in version 0.5.0.9003 (2023-10-02).
-    #' @param controllers Deprecated in version 0.5.0.9003 (2023-10-02).
-    collect = function(throttle = NULL, controllers = NULL) {
-      crew_deprecate(
-        name = "collect()",
-        date = "2023-10-02",
-        version = "0.5.0.9003",
-        alternative = "none (no longer necessary)",
-        condition = "message",
-        value = "collect",
-        skip_cran = TRUE,
-        frequency = "once"
-      )
     },
     #' @description Pop a completed task from the results data frame.
     #' @details If not task is currently completed, `pop()`
@@ -938,6 +1042,103 @@ crew_class_controller <- R6::R6Class(
       }, add = TRUE)
       out
     },
+    #' @description Pop all available task results and return them in a tidy
+    #'   `tibble`.
+    #' @return A `tibble` of results and metadata of all resolved tasks,
+    #'   with one row per task.
+    #' @param scale Logical of length 1,
+    #'   whether to automatically call `scale()`
+    #'   to auto-scale workers to meet the demand of the task load.
+    #' @param throttle `TRUE` to skip auto-scaling if it already happened
+    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   every time `scale()` is called. Throttling avoids
+    #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    collect = function(scale = TRUE, throttle = TRUE, controllers = NULL) {
+      pop <- .subset2(self, "pop")
+      results <- list()
+      while (!is.null(result <- pop(scale = FALSE))) {
+        results[[length(results) + 1L]] <- result
+      }
+      out <- lapply(results, monad_tibble)
+      out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
+      if_any(nrow(out), out, NULL)
+    },
+    #' @description Create a `promises::promise()` object to asynchronously
+    #'   pop or collect one or more tasks.
+    #' @details Please be aware that `pop()` or `collect()` will happen
+    #'   asynchronously at a some unpredictable time after the promise object
+    #'   is created, even if your local R process appears to be doing
+    #'   something completely different. This behavior is highly desirable
+    #'   in a Shiny reactive context, but please be careful as it may be
+    #'   surprising in other situations.
+    #' @return A `promises::promise()` object whose eventual value will
+    #'   be a `tibble` with results from one or more popped tasks.
+    #'   If `mode = "one"`, only one task is popped and returned (one row).
+    #'   If `mode = "all"`, then all the tasks are returned in a `tibble`
+    #'   with one row per task (or `NULL` is returned if there are no
+    #'   tasks to pop).
+    #' @param mode Character of length 1, what kind of promise to create.
+    #'   `mode` must be `"one"` or `"all"`. Details:
+    #'   * If `mode` is `"one"`, then the promise is fulfilled (or rejected)
+    #'     when at least one task is resolved and available to `pop()`.
+    #'     When that happens, `pop()` runs asynchronously, pops a result off
+    #'     the task list, and returns a value.
+    #'     If the task succeeded, then the promise
+    #'     is fulfilled and its value is the result of `pop()` (a one-row
+    #'     `tibble` with the result and metadata). If the task threw an error,
+    #'     the error message of the task is forwarded to any error callbacks
+    #'     registered with the promise.
+    #'   * If `mode` is `"all"`, then the promise is fulfilled (or rejected)
+    #'     when there are no unresolved tasks left in the controller.
+    #'     (Be careful: this condition is trivially met in the moment
+    #'     if the controller is empty and you have not submitted any tasks,
+    #'     so it is best to create this kind of promise only after you
+    #'     submit tasks.)
+    #'     When there are no unresolved tasks left,
+    #'     `collect()` runs asynchronously, pops all available results
+    #'     off the task list, and returns a value.
+    #'     If the task succeeded, then the promise
+    #'     is fulfilled and its value is the result of `collect()`
+    #'     (a `tibble` with one row per task result). If any of the tasks
+    #'     threw an error, then the first error message detected is forwarded
+    #'     to any error callbacks registered with the promise.
+    #' @param seconds_interval Positive numeric of length 1, delay in the
+    #'   `later::later()` polling interval to asynchronously check if
+    #'   the promise can be resolved.
+    #' @param scale Logical of length 1,
+    #'   whether to automatically call `scale()`
+    #'   to auto-scale workers to meet the demand of the task load.
+    #'   Scaling up on `pop()` may be important
+    #'   for transient or nearly transient workers that tend to drop off
+    #'   quickly after doing little work.
+    #'   See also the `throttle` argument.
+    #' @param throttle `TRUE` to skip auto-scaling if it already happened
+    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   every time `scale()` is called. Throttling avoids
+    #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    promise = function(
+      mode = "one",
+      seconds_interval = 0.1,
+      scale = TRUE,
+      throttle = TRUE,
+      controllers = NULL
+    ) {
+      # Tested in tests/interactive/test-promises.R.
+      # nocov start
+      controller_promise(
+        controller = self,
+        mode = mode,
+        seconds_interval = seconds_interval,
+        scale = scale,
+        throttle = throttle,
+        controllers = controllers
+      )
+      # nocov end
+    },
     #' @description Wait for tasks.
     #' @details The `wait()` method blocks the calling R session and
     #'   repeatedly auto-scales workers for tasks that need them.
@@ -970,7 +1171,7 @@ crew_class_controller <- R6::R6Class(
       crew_assert(mode, identical(., "all") || identical(., "one"))
       mode_all <- identical(mode, "all")
       if (length(private$.tasks) < 1L) {
-        return(mode_all)
+        return(invisible(mode_all))
       }
       envir <- new.env(parent = emptyenv())
       envir$result <- FALSE
@@ -991,6 +1192,45 @@ crew_class_controller <- R6::R6Class(
         error = FALSE
       )
       invisible(envir$result)
+    },
+    #' @description Push the name of a task to the backlog.
+    #' @details `pop_backlog()` pops the tasks that can be pushed
+    #'   without saturating the controller.
+    #' @param name Character of length 1 with the task name to push to
+    #'   the backlog.
+    #' @return `NULL` (invisibly).
+    #' @param controller Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    push_backlog = function(name, controller = NULL) {
+      crew_assert(
+        name,
+        is.character(.),
+        length(.) == 1L,
+        !anyNA(.),
+        nzchar(.),
+        message = "'name' in push_backlog() must be a valid character string"
+      )
+      n <- length(.subset2(private, ".backlog")) + 1L
+      private$.backlog[[n]] <- name
+      invisible()
+    },
+    #' @description Pop the task names from the head of the backlog which
+    #'   can be pushed without saturating the controller.
+    #' @return Character vector of task names which can be pushed to the
+    #'   controller without saturating it. If the controller is saturated,
+    #'   `character(0L)` is returned.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    pop_backlog = function(controllers = NULL) {
+      n <- .subset2(.subset2(self, "client"), "workers") -
+        .subset2(self, "unresolved")()
+      if (n < 1L) {
+        return(character(0L))
+      }
+      backlog <- .subset2(private, ".backlog")
+      out <- utils::head(x = backlog, n = n)
+      private$.backlog <- backlog[-seq_len(n)]
+      out
     },
     #' @description Summarize the workers and tasks of the controller.
     #' @return A data frame of summary statistics on the workers and tasks.

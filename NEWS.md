@@ -1,3 +1,14 @@
+# crew 0.9.0
+
+* Require `nanonext` >= 0.12.0 and `mirai` >= 0.12.0.
+* Return to always re-launching backlogged inactive workers (#79, https://github.com/shikokuchuo/mirai/discussions/95).
+* Implement `push_backlog()` and `pop_backlog()` to manage cases when it is not desirable to push to saturated controllers (https://github.com/ropensci/targets/issues/1220).
+* Invisibly return the `mirai` object of a task pushed to the controller. This allows users to interact with the task directly, e.g. to create a promise object with `promises::as.promise()` (#146, @jcheng5).
+* Add a new `walk()` method for controllers and controller groups to submit tasks in batch and return control immediately without waiting for any task to complete (#148, @jcheng5).
+* Revive the `collect()` method for popping multiple tasks at once (#148, @jcheng5).
+* Add controller group methods `nonempty()`, `resolved()`, `unresolved()`, and `unpopped()` to help with #148.
+* Make the `mirai` dispatcher error message extremely verbose.
+
 # crew 0.8.0
 
 * Configure workers to send themselves a termination signal if the connection to the dispatcher is broken (#141, @psychelzh). Huge thanks to @shikokuchuo for the support through https://github.com/shikokuchuo/mirai/issues/87, https://github.com/shikokuchuo/mirai/pull/88, and https://github.com/shikokuchuo/nanonext/pull/25! The signal itself is platform-dependent and determined by the new function `crew_terminate_signal()`.

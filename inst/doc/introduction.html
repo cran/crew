@@ -434,8 +434,8 @@ recommended widely spaced worker-specific L’Ecuyer streams supported by
 <code>mirai::nextstream()</code>. See
 <code>vignette(&quot;parallel&quot;, package = &quot;parallel&quot;)</code> for details.</p>
 </div>
-<div id="functional-programming" class="section level1">
-<h1>Functional programming</h1>
+<div id="synchronous-functional-programming" class="section level1">
+<h1>Synchronous functional programming</h1>
 <p>The <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-map"><code>map()</code></a>
 method of the controller supports functional programming similar to <a href="https://purrr.tidyverse.org/reference/map.html"><code>purrr::map()</code></a>
 and <a href="https://mschubert.github.io/clustermq/reference/Q.html"><code>clustermq::Q()</code></a>.
@@ -482,37 +482,79 @@ To conserve memory, consider setting
 <code>controller$error &lt;- NULL</code> when you are done
 troubleshooting.</p>
 </div>
+<div id="asynchronous-functional-programming" class="section level1">
+<h1>Asynchronous functional programming</h1>
+<p>The <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-walk"><code>walk()</code></a>
+method is just like <code>map()</code>, but it does not wait for any
+tasks to complete. Instead, it returns control to the local R session
+immediately and lets you do other things while the tasks run in the
+background.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">walk</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">command =</span> a <span class="sc">+</span> b <span class="sc">+</span> c <span class="sc">+</span> d,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">iterate =</span> <span class="fu">list</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>    <span class="at">a =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>    <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">4</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  ),</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">data =</span> <span class="fu">list</span>(<span class="at">c =</span> <span class="dv">5</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">globals =</span> <span class="fu">list</span>(<span class="at">d =</span> <span class="dv">6</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>The <a href="https://wlandau.github.io/crew/reference/crew_class_controller.html#method-crew_class_controller-collect"><code>collect()</code></a>
+pops all completed tasks. Put together, <code>walk()</code>,
+<code>wait(mode = &quot;all&quot;)</code>, and <code>collect()</code> have the
+same overall effect as <code>map()</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">collect</span>()</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 12</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds  seed algorithm error trace warnings</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
+<p>However, there are subtle differences between the synchronous and
+asynchronous functional programming methods:</p>
+<ol style="list-style-type: decimal">
+<li><code>map()</code> requires an empty controller to start with (no
+prior tasks). But with <code>walk()</code>, the controller can have any
+number of running or unpopped tasks beforehand.</li>
+<li><code>wait()</code> does not show a progress bar because it would be
+misleading if there are a lot of prior tasks. Because <code>map()</code>
+requires the controller to be empty initially (i.e. (1)), it shows a
+progress bar while correctly representing the amount of work left to
+do.</li>
+</ol>
+</div>
 <div id="summaries" class="section level1">
 <h1>Summaries</h1>
 <p>The controller summary shows how many tasks each worker ran, how many
 total seconds it spent running tasks, and how many tasks threw warnings
 and errors.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;   controller worker tasks seconds errors warnings</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;    &lt;int&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 1 example         1     2   0.001      0        0</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 2 example         2     1   0          0        0</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   controller worker tasks seconds errors warnings</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1 example         1     2   0.001      0        0</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2 example         2     1   0          0        0</span></span></code></pre></div>
 <p>The launcher summary counts the number of times each worker was
 launched, and it shows the total number of assigned and completed tasks
 from all past terminated instances of each worker. In addition, it shows
 whether the current worker instance was actively connected (“online”) or
 had connected at some point during its life cycle (“discovered”) as of
 the last call to <code>controller$launcher$tally()</code>.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   worker launches online discovered assigned complete</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt; &lt;lgl&gt;  &lt;lgl&gt;         &lt;int&gt;    &lt;int&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2 TRUE   TRUE              0        0</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1 TRUE   TRUE              0        0</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   worker launches online discovered assigned complete</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt; &lt;lgl&gt;  &lt;lgl&gt;         &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2 TRUE   TRUE              0        0</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1 TRUE   TRUE              0        0</span></span></code></pre></div>
 <p>Finally, the client summary shows up-to-date worker status from
 <code>mirai::daemons()</code>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
 </div>
 <div id="termination" class="section level1">
 <h1>Termination</h1>
@@ -520,14 +562,14 @@ the last call to <code>controller$launcher$tally()</code>.</p>
 using it. <code>terminate()</code> tries to close the the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
 dispatcher and any workers that may still be running. It is important to
 free up these resources.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>The <code>mirai</code> dispatcher process should exit on its own, but
 if not, you can manually terminate the process ID at
 <code>controller$client$dispatcher</code> or call
 <code>crew_clean()</code> to terminate any dispatchers from current or
 previous R sessions.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
 </div>
 <div id="monitoring-local-processes" class="section level1">
 <h1>Monitoring local processes</h1>
@@ -554,16 +596,16 @@ session exits or the controller terminates, but under rare circumstances
 they may continue running. The “local monitor” in <code>crew</code>
 makes it easy to list and terminate any of these processes which may be
 running on your local computer. Example:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
 <p><code>crew_monitor_local()</code> only manages processes running on
 your local computer. To manage <code>crew</code> workers running on
 different computers, such as SLURM or AWS Batch, please familiarize

@@ -72,12 +72,13 @@ crew_test("crew_controller_group()", {
   )
   expect_null(x$pop())
   # substitute = TRUE # nolint
-  x$push(
+  task <- x$push(
     command = ps::ps_pid(),
     name = "task_pid",
     controller = "b",
     save_command = TRUE
   )
+  expect_s3_class(task, "mirai")
   expect_false(x$empty())
   expect_true(x$empty(controllers = "a"))
   expect_false(x$empty(controllers = "b"))
@@ -257,6 +258,103 @@ crew_test("crew_controller_group() scale method", {
   expect_true(TRUE)
 })
 
+crew_test("controller walk()", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    workers = 1L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  f <- function(x, y) x + y
+  out <- x$walk(
+    command = f(x, y) + a + b,
+    iterate = list(x = c(1L, 2L), y = c(3L, 4L)),
+    data = list(a = 5L),
+    globals = list(f = f, b = 6L),
+    seed = 0L
+  )
+  expect_true(is.list(out))
+  expect_s3_class(out[[1L]], "mirai")
+  expect_s3_class(out[[2L]], "mirai")
+  x$wait(mode = "all")
+  task1 <- x$pop()
+  task2 <- x$pop()
+  expect_true(tibble::is_tibble(task1))
+  expect_true(tibble::is_tibble(task2))
+  expect_equal(
+    sort(c(task1$result[[1L]], task2$result[[1L]])),
+    c(15L, 17L)
+  )
+})
+
+crew_test("controller group collect() with one active controller", {
+  skip_on_cran()
+  skip_on_os("windows")
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  a <- crew_controller_local(
+    name = "a",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  x$push("done", controller = "a")
+  x$push("done", controller = "a")
+  x$wait(mode = "all")
+  for (index in seq_len(2L)) x$push(Sys.sleep(120))
+  out <- x$collect()
+  expect_equal(nrow(out), 2L)
+  expect_equal(as.character(out$result), rep("done", 2))
+  expect_null(x$collect())
+})
+
+crew_test("controller group collect() with two active controllers", {
+  skip_on_cran()
+  skip_on_os("windows")
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  a <- crew_controller_local(
+    name = "a",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  x$push("done", controller = "a")
+  x$push("done", controller = "b")
+  x$wait(mode = "all")
+  for (index in seq_len(2L)) x$push(Sys.sleep(120))
+  out <- x$collect()
+  expect_equal(nrow(out), 2L)
+  expect_equal(as.character(out$result), rep("done", 2))
+  expect_null(x$collect())
+})
+
 crew_test("controller group map() works", {
   skip_on_cran()
   skip_on_os("windows")
@@ -393,18 +491,191 @@ crew_test("controllers in groups must not already be started", {
   expect_crew_error(crew_controller_group(a, b))
 })
 
-crew_test("crew_controller_group() deprecate collect()", {
+crew_test("backlog with no tasks", {
   skip_on_cran()
   skip_on_os("windows")
   a <- crew_controller_local(
     name = "a",
+    workers = 2L,
     seconds_idle = 360
   )
   b <- crew_controller_local(
     name = "b",
+    workers = 2L,
     seconds_idle = 360
   )
   x <- crew_controller_group(a, b)
-  suppressWarnings(x$collect())
-  expect_true(TRUE)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  expect_equal(a$backlog, character(0L))
+  expect_equal(b$backlog, character(0L))
+  expect_equal(x$pop_backlog(), character(0L))
+  tasks_a <- paste0("a_", seq_len(4L))
+  for (task in tasks_a) {
+    x$push_backlog(name = task, controller = "a")
+  }
+  tasks_b <- paste0("b_", seq_len(4L))
+  for (task in tasks_b) {
+    x$push_backlog(name = task, controller = "b")
+  }
+  expect_equal(a$backlog, tasks_a)
+  expect_equal(b$backlog, tasks_b)
+  expect_equal(
+    sort(x$pop_backlog()),
+    sort(c(tasks_a[seq_len(2L)], tasks_b[seq_len(2L)]))
+  )
+  expect_equal(a$backlog, tasks_a[c(3L, 4L)])
+  expect_equal(b$backlog, tasks_b[c(3L, 4L)])
+  expect_equal(
+    sort(x$pop_backlog()),
+    sort(c(tasks_a[c(3L, 4L)], tasks_b[c(3L, 4L)]))
+  )
+  expect_equal(a$backlog, character(0L))
+  expect_equal(b$backlog, character(0L))
+  expect_equal(x$pop_backlog(), character(0L))
+})
+
+crew_test("backlog with the first controller saturated`", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    name = "a",
+    workers = 2L,
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    workers = 2L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  expect_equal(a$backlog, character(0L))
+  expect_equal(b$backlog, character(0L))
+  expect_equal(x$pop_backlog(), character(0L))
+  tasks_a <- paste0("a_", seq_len(4L))
+  for (task in tasks_a) {
+    x$push_backlog(name = task, controller = "a")
+  }
+  tasks_b <- paste0("b_", seq_len(4L))
+  for (task in tasks_b) {
+    x$push_backlog(name = task, controller = "b")
+  }
+  expect_equal(a$backlog, tasks_a)
+  expect_equal(b$backlog, tasks_b)
+  for (index in c(1L, 2L)) {
+    x$push(Sys.sleep(30), controller = "a")
+  }
+  expect_equal(x$pop_backlog(), tasks_b[seq_len(2L)])
+  expect_equal(a$backlog, tasks_a)
+  expect_equal(b$backlog, tasks_b[c(3L, 4L)])
+  expect_equal(x$pop_backlog(), tasks_b[c(3L, 4L)])
+  expect_equal(a$backlog, tasks_a)
+  expect_equal(b$backlog, character(0L))
+  expect_equal(x$pop_backlog(), character(0L))
+})
+
+crew_test("backlog with the second controller saturated`", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    name = "a",
+    workers = 2L,
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    workers = 2L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  expect_equal(a$backlog, character(0L))
+  expect_equal(b$backlog, character(0L))
+  expect_equal(x$pop_backlog(), character(0L))
+  tasks_a <- paste0("a_", seq_len(4L))
+  for (task in tasks_a) {
+    x$push_backlog(name = task, controller = "a")
+  }
+  tasks_b <- paste0("b_", seq_len(4L))
+  for (task in tasks_b) {
+    x$push_backlog(name = task, controller = "b")
+  }
+  expect_equal(a$backlog, tasks_a)
+  expect_equal(b$backlog, tasks_b)
+  for (index in c(1L, 2L)) {
+    x$push(Sys.sleep(30), controller = "b")
+  }
+  expect_equal(x$pop_backlog(), tasks_a[seq_len(2L)])
+  expect_equal(a$backlog, tasks_a[c(3L, 4L)])
+  expect_equal(b$backlog, tasks_b)
+  expect_equal(x$pop_backlog(), tasks_a[c(3L, 4L)])
+  expect_equal(a$backlog, character(0L))
+  expect_equal(b$backlog, tasks_b)
+  expect_equal(x$pop_backlog(), character(0L))
+})
+
+crew_test("group helper methods (non)empty, (un)resolved, unpopped", {
+  skip_on_cran()
+  skip_on_os("windows")
+  a <- crew_controller_local(
+    name = "a",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  b <- crew_controller_local(
+    name = "b",
+    workers = 1L,
+    seconds_idle = 360
+  )
+  x <- crew_controller_group(a, b)
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  expect_true(x$empty())
+  expect_false(x$nonempty())
+  expect_equal(x$resolved(), 0L)
+  expect_equal(x$unresolved(), 0L)
+  expect_equal(x$unpopped(), 0L)
+  x$push(TRUE, controller = "a")
+  x$push(TRUE, controller = "b")
+  x$wait(mode = "all")
+  expect_false(x$empty())
+  expect_true(x$nonempty())
+  expect_equal(x$resolved(), 2L)
+  expect_equal(x$unresolved(), 0L)
+  expect_equal(x$unpopped(), 2L)
+  tasks <- x$collect()
+  expect_true(x$empty())
+  expect_false(x$nonempty())
+  expect_equal(x$unpopped(), 0L)
+  x$push(Sys.sleep(60), controller = "a")
+  x$push(Sys.sleep(60), controller = "b")
+  expect_false(x$empty())
+  expect_true(x$nonempty())
+  expect_equal(x$resolved(), 2L)
+  expect_equal(x$unresolved(), 2L)
+  expect_equal(x$unpopped(), 0L)
+  x$terminate()
 })

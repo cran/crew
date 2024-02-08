@@ -62,6 +62,28 @@ library(crew)
 #  #> [1] 14 18
 
 ## -----------------------------------------------------------------------------
+#  controller$walk(
+#    command = a + b + c + d,
+#    iterate = list(
+#      a = c(1, 3),
+#      b = c(2, 4)
+#    ),
+#    data = list(c = 5),
+#    globals = list(d = 6)
+#  )
+
+## -----------------------------------------------------------------------------
+#  controller$wait(mode = "all")
+#  
+#  controller$collect()
+#  #> # A tibble: 2 × 12
+#  #>   name  command result    seconds  seed algorithm error trace warnings
+#  #>   <chr> <chr>   <list>      <dbl> <int> <chr>     <chr> <chr> <chr>
+#  #> 1 1     NA      <dbl [1]>       0    NA NA        NA    NA    NA
+#  #> 2 2     NA      <dbl [1]>       0    NA NA        NA    NA    NA
+#  #> # ℹ 3 more variables: launcher <chr>, worker <int>, instance <chr>
+
+## -----------------------------------------------------------------------------
 #  controller$summary()
 #  #> # A tibble: 2 × 6
 #  #>   controller worker tasks seconds errors warnings
