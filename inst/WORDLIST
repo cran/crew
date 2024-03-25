@@ -9,6 +9,7 @@ CloudWatch
 Csárdi
 DVC
 Edmondson
+enqueues
 Fargate
 FitzJohn
 GCP
@@ -124,4 +125,5 @@ websocket
 wlandau
 writeable
 www
+zenodo
 ’

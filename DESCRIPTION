@@ -5,7 +5,7 @@ Description: In computationally demanding analysis projects,
   deploy long-running tasks to distributed systems,
   ranging from traditional clusters to cloud services.
   The 'NNG'-powered 'mirai' R package by Gao (2023)
-  <https://CRAN.R-project.org/package=mirai> is a sleek
+  <doi:10.5281/zenodo.7912722> is a sleek
   and sophisticated scheduler that
   efficiently processes these intense workloads.
   The 'crew' package extends 'mirai' with a unifying
@@ -16,7 +16,7 @@ Description: In computationally demanding analysis projects,
   'clustermq' by Schubert (2019) <doi:10.1093/bioinformatics/btz284>),
   and 'batchtools' by Lang, Bischel, and Surmann (2017)
   <doi:10.21105/joss.00135>.
-Version: 0.9.0
+Version: 0.9.1
 License: MIT + file LICENSE
 URL: https://wlandau.github.io/crew/, https://github.com/wlandau/crew
 BugReports: https://github.com/wlandau/crew/issues
@@ -49,11 +49,11 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 RoxygenNote: 7.3.1
 NeedsCompilation: no
-Packaged: 2024-02-07 13:38:50 UTC; C240390
+Packaged: 2024-03-25 16:17:21 UTC; C240390
 Author: William Michael Landau [aut, cre]
     (<https://orcid.org/0000-0003-1878-3253>),
   Daniel Woodie [ctb],
   Eli Lilly and Company [cph]
 Maintainer: William Michael Landau <will.landau.oss@gmail.com>
 Repository: CRAN
-Date/Publication: 2024-02-08 05:30:02 UTC
+Date/Publication: 2024-03-25 16:40:02 UTC
