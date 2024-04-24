@@ -38,7 +38,9 @@ crew_test("crew_controller_group()", {
   for (index in seq_len(2)) {
     expect_null(x$controllers[[index]]$client$started)
   }
+  expect_false(x$started())
   x$start()
+  expect_true(x$started())
   expect_true(x$empty())
   expect_false(x$saturated())
   expect_true(x$empty(controllers = "a"))
@@ -136,6 +138,7 @@ crew_test("crew_controller_group()", {
   # cleanup
   handle <- x$controllers[[2]]$launcher$workers$handle[[1]]
   x$terminate()
+  expect_false(x$started())
   for (index in seq_len(2)) {
     expect_false(x$controllers[[index]]$client$started)
     crew_retry(
@@ -394,6 +397,66 @@ crew_test("controller group collect() with two active controllers", {
   expect_equal(nrow(out), 2L)
   expect_equal(as.character(out$result), rep("done", 2))
   expect_null(x$collect())
+})
+
+crew_test("controller group collect() silent error", {
+  skip_on_cran()
+  skip_on_os("windows")
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  a <- crew_controller_local(workers = 1L, seconds_idle = 30L)
+  x <- crew_controller_group(a)
+  x$start()
+  x$push("success")
+  x$push(stop("failure 1"))
+  x$push(stop("failure 2"))
+  x$wait(mode = "all")
+  expect_silent(out <- x$collect(error = "silent"))
+  expect_true("failure 1" %in% out$error)
+})
+
+crew_test("controller group collect() error as warning", {
+  skip_on_cran()
+  skip_on_os("windows")
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  a <- crew_controller_local(workers = 1L, seconds_idle = 30L)
+  x <- crew_controller_group(a)
+  x$start()
+  x$push("success")
+  x$push(stop("failure 1"))
+  x$push(stop("failure 2"))
+  x$wait(mode = "all")
+  suppressWarnings(
+    expect_warning(x$collect(error = "warn"), class = "crew_warning")
+  )
+})
+
+crew_test("controller group collect() stop on error", {
+  skip_on_cran()
+  skip_on_os("windows")
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  a <- crew_controller_local(workers = 1L, seconds_idle = 30L)
+  x <- crew_controller_group(a)
+  x$start()
+  x$push("success")
+  x$push(stop("failure 1"))
+  x$push(stop("failure 2"))
+  x$wait(mode = "all")
+  expect_crew_error(x$collect(error = "stop"))
 })
 
 crew_test("controller group map() works", {
@@ -719,4 +782,12 @@ crew_test("group helper methods (non)empty, (un)resolved, unpopped", {
   expect_equal(x$unresolved(), 2L)
   expect_equal(x$unpopped(), 0L)
   x$terminate()
+})
+
+crew_test("descale", {
+  controller <- crew_controller_local()
+  x <- crew_controller_group(controller)
+  expect_null(controller$autoscaling)
+  x$descale()
+  expect_false(controller$autoscaling)
 })

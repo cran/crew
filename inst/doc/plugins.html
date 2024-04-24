@@ -440,7 +440,7 @@ A handle can be any kind of R object: a process ID, a job name, an
 <div id="example" class="section level1" number="8">
 <h1><span class="header-section-number">8</span> Example</h1>
 <p>The following is a custom custom launcher class whose workers are
-local R processes on Unix-like systems.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+local R processes on Unix-like systems.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>custom_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;custom_launcher_class&quot;</span>,</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">inherit =</span> crew<span class="sc">::</span>crew_class_launcher,</span>
@@ -873,14 +873,6 @@ viewing CloudWatch logs.</p>
 <span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
 <span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
 <span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
-</div>
-<div class="footnotes footnotes-end-of-document">
-<hr />
-<ol>
-<li id="fn1"><p>See <a href="https://github.com/wlandau/crew/blob/main/tests/local/test-launcher-system2.R"><code>tests/local/test-launcher-system2.R</code></a>
-for an example launcher without a <code>termiante_worker()</code>
-method.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
-</ol>
 </div>
 
 

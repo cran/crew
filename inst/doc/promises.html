@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span></code></pre></div>
-<p>The <a href="https://wlandau.github.io/crew/articles/shiny.html">Shiny app
+<p>The generative art example from the <a href="https://wlandau.github.io/crew/articles/shiny.html">Shiny app
 vignette</a> shows a simple approach to asynchronous Shiny apps which
 leverages Shiny extended tasks and <code>crew</code> promises. The
 example app relies on Shiny extended tasks and <code>crew</code>
@@ -388,12 +388,17 @@ first.</p>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">save_command =</span> <span class="cn">TRUE</span></span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>)</span></code></pre></div>
 <p>To create a promise specific to the task above, call
-<code>as.promise()</code> on the returned task object.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>promise <span class="ot">&lt;-</span> <span class="fu">as.promise</span>(task)</span></code></pre></div>
+<code>as.promise()</code> on the returned task object, then call
+<code>controller$autoscale()</code> to tell the main event loop to
+periodically launch any necessary <code>crew</code> workers.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>promise <span class="ot">&lt;-</span> <span class="fu">as.promise</span>(task)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">autoscale</span>()</span></code></pre></div>
 <p>To create a promise that resolves when <em>any</em> task in the
 controller completes, use the <code>promise()</code> method of the
-controller. The following promise prints the output value asynchronously
-if the task succeeds.</p>
+controller. <code>controller$promise()</code> always calls
+<code>controller$autoscale()</code> behind the scenes, so there is no
+need to call it manually in this case. The following promise prints the
+output value asynchronously if the task succeeds.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>promise <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">promise</span>(<span class="at">mode =</span> <span class="st">&quot;one&quot;</span>) <span class="sc">%...&gt;%</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">result =</span> <span class="fu">as.character</span>(result)) <span class="sc">%...&gt;%</span></span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">print</span>()</span></code></pre></div>

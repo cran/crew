@@ -67,6 +67,7 @@ crew_class_controller <- R6::R6Class(
     .log = NULL,
     .error = NULL,
     .backlog = NULL,
+    .autoscaling = NULL,
     .shove = function(
       command,
       data = list(),
@@ -81,15 +82,17 @@ crew_class_controller <- R6::R6Class(
     ) {
       task <- mirai::mirai(
         .expr = expr_crew_eval,
-        name = name,
-        command = command,
-        string = string,
-        data = data,
-        globals = globals,
-        seed = seed,
-        algorithm = algorithm,
-        packages = packages,
-        library = library,
+        .args = list(
+          name = name,
+          command = command,
+          string = string,
+          data = data,
+          globals = globals,
+          seed = seed,
+          algorithm = algorithm,
+          packages = packages,
+          library = library
+        ),
         .timeout = .timeout,
         .compute = private$.client$name
       )
@@ -146,6 +149,11 @@ crew_class_controller <- R6::R6Class(
     #' @field backlog Character vector of explicitly backlogged tasks.
     backlog = function() {
       .subset2(private, ".backlog")
+    },
+    #' @field autoscaling `TRUE` or `FALSE`, whether async `later`-based
+    #'   auto-scaling is currently running
+    autoscaling = function() {
+      .subset2(private, ".autoscaling")
     }
   ),
   public = list(
@@ -186,6 +194,7 @@ crew_class_controller <- R6::R6Class(
       )
       crew_assert(private$.log, is.null(.) || is.list(.))
       crew_assert(private$.backlog, is.null(.) || is.character(.))
+      crew_assert(private$.autoscaling, is.null(.) || isTRUE(.) || isFALSE(.))
       invisible()
     },
     #' @description Check if the controller is empty.
@@ -296,6 +305,14 @@ crew_class_controller <- R6::R6Class(
       }
       invisible()
     },
+    #' @description Check whether the controller is started.
+    #' @details Actually checks whether the client is started.
+    #' @return `TRUE` if the controller is started, `FALSE` otherwise.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    started = function(controllers = NULL) {
+      isTRUE(.subset2(.subset2(self, "client"), "started"))
+    },
     #' @description Launch one or more workers.
     #' @return `NULL` (invisibly).
     #' @param n Number of workers to try to launch. The actual
@@ -340,6 +357,40 @@ crew_class_controller <- R6::R6Class(
     #'   compatible with the analogous method of controller groups.
     scale = function(throttle = TRUE, controllers = NULL) {
       private$.launcher$scale(demand = self$unresolved(), throttle = throttle)
+      invisible()
+    },
+    #' @description Run worker auto-scaling in a private `later` loop
+    #'   every `controller$client$seconds_interval` seconds.
+    #' @details Call `controller$descale()` to terminate the
+    #'   auto-scaling loop.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    #' @return `NULL` (invisibly).
+    autoscale = function(controllers = NULL) {
+      # Tested in tests/interactive/test-promises.R
+      # nocov start
+      if (isTRUE(private$.autoscaling)) {
+        return(invisible())
+      }
+      poll <- function() {
+        if (isTRUE(self$client$started) && isTRUE(private$.autoscaling)) {
+          self$scale(throttle = FALSE)
+          later::later(func = poll, delay = self$client$seconds_interval)
+        }
+      }
+      self$start()
+      private$.autoscaling <- TRUE
+      poll()
+      invisible()
+      # nocov end
+    },
+    #' @description Terminate the auto-scaling loop started by
+    #'   `controller$autoscale()`.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    #' @return `NULL` (invisibly).
+    descale = function(controllers = NULL) {
+      private$.autoscaling <- FALSE
       invisible()
     },
     #' @description Push a task to the head of the task list.
@@ -433,15 +484,17 @@ crew_class_controller <- R6::R6Class(
       }
       task <- mirai::mirai(
         .expr = expr_crew_eval,
-        name = name,
-        command = command,
-        string = string,
-        data = data,
-        globals = globals,
-        seed = seed,
-        algorithm = algorithm,
-        packages = packages,
-        library = library,
+        .args = list(
+          name = name,
+          command = command,
+          string = string,
+          data = data,
+          globals = globals,
+          seed = seed,
+          algorithm = algorithm,
+          packages = packages,
+          library = library
+        ),
         .timeout = .timeout,
         .compute = private$.client$name
       )
@@ -965,19 +1018,19 @@ crew_class_controller <- R6::R6Class(
     #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
-    #' @param error Character of length 1, choice of action if
+    #' @param error `NULL` or character of length 1, choice of action if
     #'   the popped task threw an error. Possible values:
     #'   * `"stop"`: throw an error in the main R session instead of returning
     #'     a value.
     #'   * `"warn"`: throw a warning.
-    #'   * `"silent"`: do nothing special.
+    #'   * `NULL` or `"silent"`: do not react to errors.
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     pop = function(
       scale = TRUE,
       collect = NULL,
       throttle = TRUE,
-      error = "silent",
+      error = NULL,
       controllers = NULL
     ) {
       crew_deprecate(
@@ -990,6 +1043,16 @@ crew_class_controller <- R6::R6Class(
         skip_cran = TRUE,
         frequency = "once"
       )
+      if (!is.null(error)) {
+        crew_assert(
+          error,
+          is.character(.),
+          !anyNA(.),
+          nzchar(.),
+          length(.) == 1L,
+          error %in% c("stop", "warn", "silent")
+        )
+      }
       if (scale) {
         .subset2(self, "scale")(throttle = throttle)
       }
@@ -1038,22 +1101,21 @@ crew_class_controller <- R6::R6Class(
         return(out)
       }
       # nocov end
-      error_message <- .subset2(out, "error")
       on.exit({
         index <- .subset2(out, "worker")
         private$.log$tasks[index] <- .subset2(log, "tasks")[index] + 1L
         private$.log$seconds[index] <- .subset2(log, "seconds")[index] +
           .subset2(out, "seconds")
         private$.log$errors[index] <- .subset2(log, "errors")[index] +
-          !anyNA(error_message)
+          !anyNA(.subset2(out, "error"))
         private$.log$warnings[index] <- .subset2(log, "warnings")[index] +
           !anyNA(.subset2(out, "warnings"))
       }, add = TRUE)
-      if (!anyNA(error_message)) {
+      if (!is.null(error) && !anyNA(.subset2(out, "error"))) {
         if (identical(error, "stop")) {
-          crew_error(message = error_message)
+          crew_error(message = .subset2(out, "error"))
         } else if (identical(error, "warn")) {
-          crew_warning(message = error_message)
+          crew_warning(message = .subset2(out, "error"))
         }
       }
       out
@@ -1061,7 +1123,8 @@ crew_class_controller <- R6::R6Class(
     #' @description Pop all available task results and return them in a tidy
     #'   `tibble`.
     #' @return A `tibble` of results and metadata of all resolved tasks,
-    #'   with one row per task.
+    #'   with one row per task. Returns `NULL` if there are no tasks
+    #'   to collect.
     #' @param scale Logical of length 1,
     #'   whether to automatically call `scale()`
     #'   to auto-scale workers to meet the demand of the task load.
@@ -1069,12 +1132,23 @@ crew_class_controller <- R6::R6Class(
     #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param error `NULL` or character of length 1, choice of action if
+    #'   the popped task threw an error. Possible values:
+    #'   * `"stop"`: throw an error in the main R session instead of returning
+    #'     a value.
+    #'   * `"warn"`: throw a warning.
+    #'   * `NULL` or `"silent"`: do not react to errors.
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
-    collect = function(scale = TRUE, throttle = TRUE, controllers = NULL) {
+    collect = function(
+      scale = TRUE,
+      throttle = TRUE,
+      error = NULL,
+      controllers = NULL
+    ) {
       pop <- .subset2(self, "pop")
       results <- list()
-      while (!is.null(result <- pop(scale = FALSE))) {
+      while (!is.null(result <- pop(scale = FALSE, error = error))) {
         results[[length(results) + 1L]] <- result
       }
       out <- lapply(results, monad_tibble)
@@ -1123,34 +1197,46 @@ crew_class_controller <- R6::R6Class(
     #' @param seconds_interval Positive numeric of length 1, delay in the
     #'   `later::later()` polling interval to asynchronously check if
     #'   the promise can be resolved.
-    #' @param scale Logical of length 1,
-    #'   whether to automatically call `scale()`
-    #'   to auto-scale workers to meet the demand of the task load.
-    #'   Scaling up on `pop()` may be important
-    #'   for transient or nearly transient workers that tend to drop off
-    #'   quickly after doing little work.
-    #'   See also the `throttle` argument.
-    #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
-    #'   every time `scale()` is called. Throttling avoids
-    #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param scale Deprecated on 2024-04-10 (version 0.9.1.9003)
+    #'   and no longer used. Now, `promise()` always turns on auto-scaling
+    #'   in a private `later` loop (if not already activated).
+    #' @param throttle Deprecated on 2024-04-10 (version 0.9.1.9003)
+    #'   and no longer used. Now, `promise()` always turns on auto-scaling
+    #'   in a private `later` loop (if not already activated).
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     promise = function(
       mode = "one",
       seconds_interval = 0.1,
-      scale = TRUE,
-      throttle = TRUE,
+      scale = NULL,
+      throttle = NULL,
       controllers = NULL
     ) {
       # Tested in tests/interactive/test-promises.R.
       # nocov start
+      crew_deprecate(
+        name = "scale",
+        date = "2024-04-10",
+        version = "0.9.1.9003",
+        alternative = c(
+          "none. promise() now always makes sure autoscaling is turned on."
+        ),
+        value = scale
+      )
+      crew_deprecate(
+        name = "throttle",
+        date = "2024-04-10",
+        version = "0.9.1.9003",
+        alternative = c(
+          "none. promise() now always makes sure autoscaling is turned on."
+        ),
+        value = throttle
+      )
+      self$autoscale(controllers = controllers)
       controller_promise(
         controller = self,
         mode = mode,
         seconds_interval = seconds_interval,
-        scale = scale,
-        throttle = throttle,
         controllers = controllers
       )
       # nocov end
@@ -1287,6 +1373,7 @@ crew_class_controller <- R6::R6Class(
       private$.tasks <- list()
       private$.pushed <- NULL
       private$.popped <- NULL
+      private$.autoscaling <- FALSE
       invisible()
     }
   )

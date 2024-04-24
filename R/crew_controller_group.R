@@ -22,6 +22,14 @@
 #' }
 crew_controller_group <- function(...) {
   controllers <- unlist(list(...), recursive = TRUE)
+  crew_assert(
+    length(controllers) > 0L,
+    message = "A controller group must have one or more crew controllers."
+  )
+  crew_assert(
+    map_lgl(controllers, inherits, what = "crew_class_controller"),
+    message = "Found invalid controllers while creating a controller group."
+  )
   names(controllers) <- map_chr(controllers, ~.x$client$name)
   walk(
     names(controllers),
@@ -290,6 +298,15 @@ crew_class_controller_group <- R6::R6Class(
       control <- private$.select_controllers(controllers)
       walk(control, ~.x$start())
     },
+    #' @description Check whether all the given controllers are started.
+    #' @details Actually checks whether all the given clients are started.
+    #' @return `TRUE` if the controllers are started, `FALSE` if any are not.
+    #' @param controllers Character vector of controller names.
+    #'   Set to `NULL` to select all controllers.
+    started = function(controllers = NULL) {
+      control <- private$.select_controllers(controllers)
+      all(map_lgl(control, ~.x$started()))
+    },
     #' @description Launch one or more workers on one or more controllers.
     #' @return `NULL` (invisibly).
     #' @param n Number of workers to launch in each controller selected.
@@ -312,6 +329,27 @@ crew_class_controller_group <- R6::R6Class(
     scale = function(throttle = TRUE, controllers = NULL) {
       control <- private$.select_controllers(controllers)
       walk(control, ~.x$scale(throttle = throttle))
+    },
+    #' @description Run worker auto-scaling in a private `later` loop
+    #'   every `controller$client$seconds_interval` seconds.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    #' @return `NULL` (invisibly).
+    autoscale = function(controllers = NULL) {
+      # Tested in tests/interactive/test-promises.R
+      # nocov start
+      control <- private$.select_controllers(controllers)
+      walk(control, ~.x$autoscale())
+      # nocov end
+    },
+    #' @description Terminate the auto-scaling loop started by
+    #'   `controller$autoscale()`.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    #' @return `NULL` (invisibly).
+    descale = function(controllers = NULL) {
+      control <- private$.select_controllers(controllers)
+      walk(control, ~.x$descale())
     },
     #' @description Push a task to the head of the task list.
     #' @return Invisibly return the `mirai` object of the pushed task.
@@ -673,19 +711,19 @@ crew_class_controller_group <- R6::R6Class(
     #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
-    #' @param error Character of length 1, choice of action if
+    #' @param error `NULL` or character of length 1, choice of action if
     #'   the popped task threw an error. Possible values:
     #'   * `"stop"`: throw an error in the main R session instead of returning
     #'     a value.
     #'   * `"warn"`: throw a warning.
-    #'   * `"silent"`: do nothing special.
+    #'   * `NULL` or `"silent"`: do not react to errors.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     pop = function(
       scale = TRUE,
       collect = NULL,
       throttle = TRUE,
-      error = "silent",
+      error = NULL,
       controllers = NULL
     ) {
       control <- private$.select_controllers(controllers)
@@ -713,11 +751,29 @@ crew_class_controller_group <- R6::R6Class(
     #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param error `NULL` or character of length 1, choice of action if
+    #'   the popped task threw an error. Possible values:
+    #'   * `"stop"`: throw an error in the main R session instead of returning
+    #'     a value.
+    #'   * `"warn"`: throw a warning.
+    #'   * `NULL` or `"silent"`: do not react to errors.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
-    collect = function(scale = TRUE, throttle = TRUE, controllers = NULL) {
+    collect = function(
+      scale = TRUE,
+      throttle = TRUE,
+      error = NULL,
+      controllers = NULL
+    ) {
       control <- private$.select_controllers(controllers)
-      out <- map(control, ~.x$collect(scale = scale, throttle = throttle))
+      out <- map(
+        control,
+        ~.x$collect(
+          scale = scale,
+          throttle = throttle,
+          error = error
+        )
+      )
       out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       if_any(nrow(out), out, NULL)
     },
@@ -763,34 +819,46 @@ crew_class_controller_group <- R6::R6Class(
     #' @param seconds_interval Positive numeric of length 1, delay in the
     #'   `later::later()` polling interval to asynchronously check if
     #'   the promise can be resolved.
-    #' @param scale Logical of length 1,
-    #'   whether to automatically call `scale()`
-    #'   to auto-scale workers to meet the demand of the task load.
-    #'   Scaling up on `pop()` may be important
-    #'   for transient or nearly transient workers that tend to drop off
-    #'   quickly after doing little work.
-    #'   See also the `throttle` argument.
-    #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
-    #'   every time `scale()` is called. Throttling avoids
-    #'   overburdening the `mirai` dispatcher and other resources.
+    #' @param scale Deprecated on 2024-04-10 (version 0.9.1.9003)
+    #'   and no longer used. Now, `promise()` always turns on auto-scaling
+    #'   in a private `later` loop (if not already activated).
+    #' @param throttle Deprecated on 2024-04-10 (version 0.9.1.9003)
+    #'   and no longer used. Now, `promise()` always turns on auto-scaling
+    #'   in a private `later` loop (if not already activated).
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     promise = function(
       mode = "one",
       seconds_interval = 0.1,
-      scale = TRUE,
-      throttle = TRUE,
+      scale = NULL,
+      throttle = NULL,
       controllers = NULL
     ) {
       # Tested in tests/interactive/test-promises.R.
       # nocov start
+      crew_deprecate(
+        name = "scale",
+        date = "2024-04-10",
+        version = "0.9.1.9003",
+        alternative = c(
+          "none. promise() now always makes sure autoscaling is turned on."
+        ),
+        value = scale
+      )
+      crew_deprecate(
+        name = "throttle",
+        date = "2024-04-10",
+        version = "0.9.1.9003",
+        alternative = c(
+          "none. promise() now always makes sure autoscaling is turned on."
+        ),
+        value = throttle
+      )
+      self$autoscale(controllers = controllers)
       controller_promise(
         controller = self,
         mode = mode,
         seconds_interval = seconds_interval,
-        scale = scale,
-        throttle = throttle,
         controllers = controllers
       )
       # nocov end

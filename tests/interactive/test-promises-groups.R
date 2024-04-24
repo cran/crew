@@ -1,5 +1,5 @@
 # {later} async has a hard time inside functions that do not relinquish
-# the main event loop, so these tests need to run interactively.
+# the main event loop, so these tests need to run interactively line-by-line.
 crew_test("interactive: promise(mode = \"one\") on controller groups", {
   a <- crew_controller_local(
     name = "a",
@@ -13,6 +13,8 @@ crew_test("interactive: promise(mode = \"one\") on controller groups", {
   )
   x <- crew_controller_group(a, b)
   x$start()
+  expect_null(a$autoscaling)
+  expect_null(b$autoscaling)
   envir <- new.env(parent = emptyenv())
   # Test a good task.
   x$push("done", controller = "b")
@@ -26,6 +28,8 @@ crew_test("interactive: promise(mode = \"one\") on controller groups", {
       envir$error <- conditionMessage(error)
     }
   )
+  expect_true(a$autoscaling)
+  expect_true(b$autoscaling)
   expect_true(tibble::is_tibble(envir$value))
   expect_equal(nrow(envir$value), 1L)
   expect_equal(envir$value$result[[1L]], "done")
@@ -46,6 +50,8 @@ crew_test("interactive: promise(mode = \"one\") on controller groups", {
   expect_equal(envir$error, "error message")
   expect_null(envir$value)
   x$terminate()
+  expect_false(a$autoscaling)
+  expect_false(b$autoscaling)
 })
 
 crew_test("interactive: promise(mode = \"all\") on controller groups", {
@@ -98,5 +104,8 @@ crew_test("interactive: promise(mode = \"all\") on controller groups", {
   x$wait(mode = "all")
   expect_equal(envir$error, "error message")
   expect_null(envir$value)
+  expect_true(a$autoscaling)
+  x$descale()
+  expect_false(a$autoscaling)
   x$terminate()
 })
