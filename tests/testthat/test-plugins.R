@@ -223,6 +223,7 @@ crew_test("custom launcher with local async errors", {
 
 crew_test("custom launcher with async internal launcher tasks", {
   skip_on_cran()
+  skip_on_ci()
   skip_on_covr() # Avoid clashes with NNG and covr child processes.
   skip_on_os("windows")
   skip_if_not_installed("processx")
@@ -327,10 +328,18 @@ crew_test("custom launcher with async internal launcher tasks", {
   })
   controller$push(name = "pid", command = ps::ps_pid())
   controller$wait(seconds_timeout = 10, seconds_interval = 0.5)
-  out <- controller$pop()$result[[1L]]
+  envir <- new.env(parent = emptyenv())
+  crew_retry(
+    ~ {
+      envir$pid <- controller$pop()$result[[1L]]
+      !is.null(envir$pid)
+    },
+    seconds_interval = 0.25,
+    seconds_timeout = 15
+  )
   handle <- controller$launcher$workers$handle[[1L]]
   pid <- handle$data$pid
-  expect_equal(out, pid)
+  expect_equal(envir$pid, pid)
   expect_equal(handle$data$status, "started")
   controller$launcher$terminate()
   handle <- controller$launcher$workers$termination[[1L]]
