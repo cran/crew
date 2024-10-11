@@ -6,7 +6,8 @@ crew_test("abstract launcher class", {
 
 crew_test("active bindings for covr", {
   skip_on_cran()
-  out <- crew_launcher(processes = 1L)
+  skip_on_os("windows")
+  out <- crew_launcher(processes = 1L, r_arguments = "--vanilla")
   expect_equal(out$processes, 1L)
   expect_null(out$async)
   expect_null(out$throttle)
@@ -17,11 +18,17 @@ crew_test("active bindings for covr", {
   expect_s3_class(out$throttle, "crew_class_throttle")
   expect_silent(out$async$validate())
   expect_silent(out$throttle$validate())
+  expect_equal(out$r_arguments, "--vanilla")
   expect_silent(out$validate())
+  expect_s3_class(
+    out$options_metrics,
+    c("crew_options_metrics", "crew_options")
+  )
 })
 
 crew_test("preemptive async termination for covr", {
   skip_on_cran()
+  skip_on_os("windows")
   out <- crew_launcher(processes = 1L)
   private <- crew_private(out)
   private$.async <- crew_async()

@@ -11,12 +11,15 @@ crew_test("crew_client() active bindings", {
     seconds_timeout = 456,
     retry_tasks = FALSE
   )
+  on.exit(client$terminate())
   expect_equal(client$host, "127.0.0.1")
   expect_equal(client$port, 123L)
   expect_equal(client$seconds_interval, 123)
   expect_equal(client$seconds_timeout, 456)
   expect_false(client$retry_tasks)
   expect_true(inherits(client$tls, "crew_class_tls"))
+  expect_null(client$client)
+  expect_null(client$throttle)
   expect_silent(client$validate())
 })
 
@@ -47,10 +50,10 @@ crew_test("crew_client() works", {
       )
     )
   )
-  expect_true(is.integer(client$dispatcher))
+  expect_s3_class(client$client, "ps_handle")
+  expect_s3_class(client$dispatcher, "ps_handle")
   expect_equal(length(client$dispatcher), 1L)
-  expect_false(anyNA(client$dispatcher))
-  handle <- ps::ps_handle(pid = client$dispatcher)
+  handle <- client$dispatcher
   crew_retry(
     ~ps::ps_is_running(handle),
     seconds_interval = 0.01,
@@ -81,7 +84,7 @@ crew_test("crew_client() works", {
   )
   m <- mirai::mirai(ps::ps_pid(), .compute = client$name)
   crew_retry(
-    ~!unresolved(m),
+    ~!mirai::unresolved(m),
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
@@ -110,7 +113,6 @@ crew_test("crew_client() cover a line", {
   private$.started <- TRUE
   expect_null(client$terminate())
 })
-
 
 crew_test("crew_client() deprecate tls_enable", {
   expect_warning(

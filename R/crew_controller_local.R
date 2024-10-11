@@ -37,8 +37,11 @@ crew_controller_local <- function(
   reset_options = FALSE,
   garbage_collection = FALSE,
   launch_max = 5L,
+  r_arguments = c("--no-save", "--no-restore"),
+  options_metrics = crew::crew_options_metrics(),
+  options_local = crew::crew_options_local(),
   local_log_directory = NULL,
-  local_log_join = TRUE
+  local_log_join = NULL
 ) {
   crew_deprecate(
     name = "seconds_exit",
@@ -48,6 +51,26 @@ crew_controller_local <- function(
     condition = "warning",
     value = seconds_exit
   )
+  crew_deprecate(
+    name = "local_log_directory",
+    date = "2024-10-8",
+    version = "0.9.5.9012",
+    alternative = "options_local argument",
+    condition = "warning",
+    value = local_log_directory
+  )
+  crew_deprecate(
+    name = "local_log_join",
+    date = "2024-10-8",
+    version = "0.9.5.9012",
+    alternative = "options_local argument",
+    condition = "warning",
+    value = local_log_join
+  )
+  options_local$log_directory <- local_log_directory %|||%
+    options_local$log_directory
+  options_local$log_join <- local_log_join %|||%
+    options_local$log_join
   client <- crew_client(
     name = name,
     workers = workers,
@@ -75,6 +98,9 @@ crew_controller_local <- function(
     garbage_collection = garbage_collection,
     launch_max = launch_max,
     tls = tls,
+    r_arguments = r_arguments,
+    options_metrics = options_metrics,
+    options_local = options_local,
     local_log_directory = local_log_directory,
     local_log_join = local_log_join
   )

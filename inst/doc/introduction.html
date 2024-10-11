@@ -368,8 +368,7 @@ together to speed up <a href="https://rstudio.github.io/shiny/">Shiny</a> apps.<
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span></code></pre></div>
 <p>Next, start the controller to create the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
 client. Later, when you are done with the controller, call
-<code>controller$terminate()</code> to clean up the workers and
-dispatcher.</p>
+<code>controller$terminate()</code> to clean up your resources.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
 <p>Use <code>push()</code> to submit a new task and <code>pop()</code>
 to return a completed task.</p>
@@ -564,8 +563,8 @@ dispatcher and any workers that may still be running. It is important to
 free up these resources.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>The <code>mirai</code> dispatcher process should exit on its own, but
-if not, you can manually terminate the process ID at
-<code>controller$client$dispatcher</code> or call
+if not, you can manually terminate the process with
+<code>ps::ps_kill(p = controller$client$dispatcher)</code> or call
 <code>crew_clean()</code> to terminate any dispatchers from current or
 previous R sessions.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
@@ -613,6 +612,9 @@ yourself with the given computing platform, and consider using the
 monitor objects in the relevant third-party plugin packages such as <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
 or <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>.
 Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-management" class="uri">https://wlandau.github.io/crew.aws.batch/index.html#job-management</a>.</p>
+</div>
+<div id="logging" class="section level1">
+<h1>Logging</h1>
 </div>
 <div id="tuning-and-auto-scaling" class="section level1">
 <h1>Tuning and auto-scaling</h1>

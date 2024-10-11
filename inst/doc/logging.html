@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Logging</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Logging</h1>
+
+
+
+<p><code>crew</code> facilitates computationally demanding workloads
+that consume a lot of memory and CPU resources, and workloads that
+exhaust these resources may stall or crash. Oftentimes, a crash is
+silent and there are no clues for troubleshooting. But if you
+proactively monitor <code>crew</code> processes in log files, you can
+keep track of resource usage and generated prospective data which is
+useful in diagnosing problems. This vignette describes best practices
+for logging.</p>
+<div id="processes" class="section level1">
+<h1>Processes</h1>
+<p><code>crew</code> runs in 3 different kinds of R processes:</p>
+<ol style="list-style-type: decimal">
+<li>The local R session from which you call
+<code>crew_controller_local()</code> or similar.</li>
+<li>The <code>mirai</code> dispatcher which sends tasks to workers. The
+dispatcher starts on <code>controller$start()</code> and terminates on
+<code>controller$terminate()</code> or when the local R session closes.
+The dispatcher always runs on the same machine as (1).</li>
+<li>The workers that accept tasks from (2). These workers may run on
+different machines, e.g. on a cluster or the cloud, depending on the <a href="https://wlandau.github.io/crew/articles/plugins.html">launcher
+plugin</a> you are using.</li>
+</ol>
+<p>This vignette first covers logging for local the R session and
+dispatcher (1 and 2), then logging for workers (3).</p>
+</div>
+<div id="logging-worker-processes" class="section level1">
+<h1>Logging worker processes</h1>
+<p>Each <a href="https://wlandau.github.io/crew/articles/plugins.html">launcher
+plugin</a> has its own way to turn on logging for workers. In the case
+of the local plugin (<code>crew_controller_local()</code>), the
+<code>crew_options_local()</code> has arguments to configure how
+messages are written to log file, and each worker instance gets its own
+log file in a directory you specify. Other plugins in packages such as
+<a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
+and <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>
+have different arguments to configure platform-specific logging
+mechanisms (e.g. SLURM logs or AWS CloudWatch logs). Example for the
+local plugin:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>log_directory <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">2</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">options_local =</span> <span class="fu">crew_options_local</span>(<span class="at">log_directory =</span> log_directory)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="fu">print</span>(<span class="st">&quot;task 1&quot;</span>))</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="fu">print</span>(<span class="st">&quot;task 2&quot;</span>))</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>log_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(log_directory, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="fu">readLines</span>(log_files[<span class="dv">1</span>]))</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; ... # more session info...</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; [1] &quot;task 1&quot;</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="fu">readLines</span>(log_files[<span class="dv">2</span>]))</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; ... # more session info...</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;task 2&quot;</span></span></code></pre></div>
+<p>To add resource metrics to existing log files, regardless of your
+platform, use the <code>options_metrics</code> argument and set
+<code>path = &quot;/dev/stdout&quot;</code>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>log_directory <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;a&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">2</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">options_local =</span> <span class="fu">crew_options_local</span>(<span class="at">log_directory =</span> log_directory),</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">options_metrics =</span> <span class="fu">crew_options_metrics</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>    <span class="at">path =</span> <span class="st">&quot;/dev/stdout&quot;</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    <span class="at">seconds_interval =</span> <span class="dv">1</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  )</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>({</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="fl">2.5</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;task 1&quot;</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="fl">2.5</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>})</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>({</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="fu">Sys.sleep</span>(<span class="dv">5</span>)</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;task 2&quot;</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>})</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>log_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(log_directory, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="fu">readLines</span>(log_files[<span class="dv">1</span>]))</span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; ... # more session info...</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43098|crew_worker_a_1_c7839a65097de181ee1b2939|0|1728410013.006|2.100|0.210|116834304|420885200896|__AUTOMETRIC__</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43098|crew_worker_a_1_c7839a65097de181ee1b2939|0|1728410014.018|0.000|0.000|116899840|420894638080|__AUTOMETRIC__</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt; [1] &quot;task 1&quot;</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43098|crew_worker_a_1_c7839a65097de181ee1b2939|0|1728410015.020|0.000|0.000|116932608|420903026688|__AUTOMETRIC__</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43098|crew_worker_a_1_c7839a65097de181ee1b2939|0|1728410016.024|0.000|0.000|116932608|420903026688|__AUTOMETRIC__</span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="fu">readLines</span>(log_files[<span class="dv">2</span>]))</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="co">#&gt; R version 4.4.0 (2024-04-24)</span></span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="co">#&gt; ... # more session info...</span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43099|crew_worker_a_2_3647db437624830b7b0491af|0|1728410013.006|2.100|0.210|115671040|420750983168|__AUTOMETRIC__</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43099|crew_worker_a_2_3647db437624830b7b0491af|0|1728410014.014|0.000|0.000|115736576|420760420352|__AUTOMETRIC__</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43099|crew_worker_a_2_3647db437624830b7b0491af|0|1728410015.020|0.000|0.000|115736576|420760420352|__AUTOMETRIC__</span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt; __AUTOMETRIC__|0.0.5|43099|crew_worker_a_2_3647db437624830b7b0491af|0|1728410016.025|0.000|0.000|115736576|420760420352|__AUTOMETRIC__</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt; [1] &quot;task 2&quot;</span></span></code></pre></div>
+<p>The lines with <code>__AUTOMETRIC__</code> record resource usage
+metrics over the life cycle of each worker. Use <a href="https://wlandau.github.io/autometric/reference/log_read.html"><code>autometric::log_read()</code></a>
+to read these metrics and <a href="https://wlandau.github.io/autometric/reference/log_plot.html"><code>autometric::log_plot()</code></a>
+to visualize them. Below, the <code>time</code> column is elapsed time
+in seconds since logging began, and <code>resident</code> is memory
+usage in megabytes. More details are at <a href="https://wlandau.github.io/autometric/reference/log_read.html"><code>autometric::log_read()</code></a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> autometric<span class="sc">::</span><span class="fu">log_read</span>(log_directory)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>data<span class="sc">$</span>name <span class="ot">&lt;-</span> <span class="fu">substr</span>(data<span class="sc">$</span>name, <span class="dv">0</span>, <span class="dv">20</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>data</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;   version   pid                 name status  time core  cpu resident  virtual</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 1   0.0.5 43098 crew_worker_a_1_c783      0 0.000  2.1 0.21 116.8343 420885.2</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; 2   0.0.5 43098 crew_worker_a_1_c783      0 1.012  0.0 0.00 116.8998 420894.6</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; 3   0.0.5 43098 crew_worker_a_1_c783      0 2.014  0.0 0.00 116.9326 420903.0</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; 4   0.0.5 43098 crew_worker_a_1_c783      0 3.018  0.0 0.00 116.9326 420903.0</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 5   0.0.5 43099 crew_worker_a_2_3647      0 0.000  2.1 0.21 115.6710 420751.0</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 6   0.0.5 43099 crew_worker_a_2_3647      0 1.008  0.0 0.00 115.7366 420760.4</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; 7   0.0.5 43099 crew_worker_a_2_3647      0 2.014  0.0 0.00 115.7366 420760.4</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; 8   0.0.5 43099 crew_worker_a_2_3647      0 3.019  0.0 0.00 115.7366 420760.4</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>autometric<span class="sc">::</span><span class="fu">log_plot</span>(data, <span class="at">pid =</span> <span class="dv">43098</span>, <span class="at">metric =</span> <span class="st">&quot;resident&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA34AAAIMCAYAAACqtH5qAAABUmlDQ1BJQ0MgUHJvZmlsZQAAGJV1kLFLAmEYxp8jQxHBCIeGiBskGizKhGpUhwiCjqug2s67U4vz/DhPor3GQGipLWxtrlXoD0gIGiqao6ElEiLl6/286rTo+3h5fjw8vLw8gNTWGLMCAEq266iLGXljc0sOPiGMEP1hTGh6haUVZZki+Nb+17qFJPRmUuy6en8Ze47tLKwcRq17o5n/m+97YcOs6KRtmrjOHBeQZGJl12WCGXHMoaOI9wUXPD4WnPP4vJtZU7PEDeIhvagZxE3iRK7HL/RwyarqXzeI6yOmvb5KGqIZhYok5jDzTybVzWRRBsMeHGyjgCJcyEiTw2DBJF6CDR1TSBAnMU2TEt3+7sz3ynVg/g0YqPle7gS4PABG7nwvfgpEqYuLa6Y52k+TUitQyc8mPY5kgMFHzl/HgeAR0Klx/lHnvHNG+x+Ahv0JHldjJNXBeooAAAA4ZVhJZk1NACoAAAAIAAGHaQAEAAAAAQAAABoAAAAAAAKgAgAEAAAAAQAAA36gAwAEAAAAAQAAAgwAAAAAJwL6ugAAQABJREFUeAHt3Q24VVWdMPA/8ikCSmgoioaYoNObmh9A+FFqJq9lpgMOGKamJlljODVqUy/lR+WklpZOTalYTTppHxZhL5ZaSekrI0Y2Q5qCXyTlIKAiH8J9z1rPnNu9cLjcc+/lsM89v/08x7PP2mvvvdZv3ePlf9faa/VoKm1hI0CAAAECBAgQIECAAIFuK7Bdt62ZihEgQIAAAQIECBAgQIBAFhD4+UEgQIAAAQIECBAgQIBANxcQ+HXzBlY9AgQIECBAgAABAgQICPz8DBAgQIAAAQIECBAgQKCbCwj8unkDqx4BAgQIECBAgAABAgQEfn4GCBAgQIAAAQIECBAg0M0FBH7dvIFVjwABAl0hcNttt0X//v03ee2www6x7777xic/+cl4+eWXu+JW3fIa7373u5vt1q9fn+v4L//yL81pLW0HDhwYo0aNin/4h3+I5cuXd6nHk08+Gffdd19+vfjii116bRcjQIAAgWILCPyK3T5KR4AAgUIIpCVfX3311U1eq1atiscffzyuuOKK2GeffWLlypWFKG/RCvHaa68125XL1jKtpW0KoB977LG45pprYu+9946FCxeWT+nUe7ruW97ylnj729+eXw8++OAm1/uP//iPOP7442OXXXaJnXbaKY466qj41re+FZWW/P3Tn/4UZ511Vuy+++4xaNCgGDNmTNx6662b5H3mmWfi9NNPj6FDh8bgwYPjhBNOiF/+8peb3DslLFiwIE455ZScN13zkEMOiW984xuxYcOGivklEiBAgED7BQR+7beSkwABAgRKAr/5zW/yP+5TMLB69er453/+5+yydOnS+PSnP82oAwJPP/10s+natWvjF7/4RQ68Uq/c2972tkhpnd0uvPDCWLFixWYvM2fOnBxo/d//+3/jhRdeyHlTgJaCtpNPPrnVec8++2zulbz55ptjyZIl8dJLL8X/+3//L6ZMmRJ///d/35z3t7/9bbzxjW/MweOf//zn3IM5e/bsHFCmwLblds8998QBBxwQ3//+9yPlTddMgeg555yTg8GWee0TIECAQPUCAr/qzZxBgACBhhbo1atXc/379u0bH/vYx3KPT0r84Q9/2HzMTvsFevbs2Zy5d+/eceSRR8aNN96Y01JAnYKhzmy///3v4+tf/3qMHz++4mVSEH/aaaflY6nHLfXkpqA+9eilLbXrE088kffTfz760Y/mwCz14qWev9R7+Y//+I/5+Fe+8pWclq6ZhriuWbMmB3TLli3L+//0T/+U86WhrCmALG9nn3123k29fGmIa7rmVVddldPS/f/whz+Us3onQIAAgQ4ICPw6gOYUAgQIEPirQI8ePWKPPfbICX/5y1/yexoumJ5bS8FE6rWaNGlS7LjjjrFu3brmE1Ng8fnPfz4OPPDAHDjuuuuu8Z73vGezwwDTMNKLLrooDylNz8GloaUf/vCHWwUk6eKp96w8BDHd8/DDD9/scMXUe/mud70rD21MeceNGxdXXnllDnyaC/o/O9Xk3fjcjnw++uijm0/7t3/7t+b9tJPKmXxf97rXtUqv9CEFYGX/FPxV2v77v/879/KlY5deemlsv/32kYL6Cy64oDl7CkDTltrwe9/7Xt5PAWBqtxS4lgO6dKAcqKVhnmlLAVwa5tmnT598/VT2tH3nO9/J7+k/qecwbeedd17+WUnXLAeDKb38s5X2bQQIECDQAYHSLwQbAQIECBBoU6D0D/Sm0q+Y/HrooYda5S1NVtJUCsTysREjRuRjxx57bP5cCl6aSpO/NJ9bGrKYj5eCwaZS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CBAgQIBAlQICvyrBZCdAgAABAgQIECBAgEC9CQj86q3FlJcAAQIECBAgQIAAAQJVCvSqMv82y97U1BQrVqyItWvXRv/+/WPAgAHbrCxuTIAAAQIECBAgQIAAgXoSKHyP38KFC2PChAnRr1+/GDx4cAwdOjQGDhwYQ4YMibPOOiuWLFlST97KSoAAAQIECBAgQIAAgZoLFLrHb8GCBTF27NiYNGlSzJw5M0aMGJEDwNWrV8eiRYti1qxZMXr06Jg/f36MHDmy5nhuSIAAAQIECBAgQIAAgXoQ6FEaQtlU1IIec8wxcemll8b48eM3W8TZs2fHl770pZgzZ85m8zhAgAABAgQIECBAgACBRhYodOC34447xosvvhjbbbf5Eakpbk3P+73yyiuN3I7qToAAAQIECBAgQIAAgc0KbD6i2uwptTswfPjwWLx4cZs3XLp0aQwbNqzNPA4SIECAAAECBAgQIECgkQUKHfjNmDEjD/O8/fbb49lnn41169ZF6uFbv359LFu2LO66664YM2ZMXHLJJY3chupOgAABAgQIECBAgACBNgUKPbnLxIkTI03kcu6558by5cs3qUha1uHyyy/Ps3tuclACAQIECBAgQIAAAQIECGSBQj/jV26j1MP32GOP5Vfq6UvP9I0aNSrP6NmnT59ytq3yfv7558evf/3rrXJtFyVAgAABAgQIECBAgEB7BHr37h0//OEPO/yYW6F7/MoAr776aq7gfvvtV05q9Z4mgElr/G2NLQV9Z5xxRhx44IFb4/KuSYAAAQIECBAgQIAAgS0KvP/9789rmHd0fpNCB36ppy8t0v7Nb34zQ5xyyilx6623Rop2W2677757rFq1qmVSl+6noO+oo47q0mu6GAECBAgQIECAAAECBNorsP3227c3a8V8hZ7c5corr4x77rknbrvttrj//vtjhx12iGnTplWsiEQCBAgQIECAAAECBAgQqCxQ6MDvpptuyoHfqaeemmf3vOWWW/LzffPnz69cG6kECBAgQIAAAQIECBAgsIlAoYd6pjX69tlnn1aF/sIXvhDvete74qc//Wn06NGj1bFqPsydOzfOO++8vDxEW+ctWrQoFi5caKhnW0iOESBAgAABAgQIECBQaIFCB34jRozIC7in9/KWnu+76KKL4qqrroqPf/zj5eSq3w877LD4+te/vsXA753vfGdeUqLqGziBAAECBAgQIECAAAECBREodOB34YUX5p62G264IQ444IAYPnx4Zjv66KPjxhtvjLPPPjsuvfTS2LBhQ9WcKYAcO3bsFs/bbrtCj4bdYvllIECAAAECBAgQIECAQKEDv7SMwvPPPx+TJ0+Ol19+uVXv3Le+9a0488wzI83oaSNAgAABAgQIECBAgACBzQsUvjvr4osvjpUrV0Z63q/llnri0mQvf/nLX+LOO+9secg+AQIECBAgQIAAAQIECLQQKHzgl8qaJnF5/etf36LYf93deeed48QTT/xrgj0CBAgQIECAAAECBAgQaCVQF4FfqxJ38w+pZ/Of//mf8zDW9PziE0880c1rrHoEGk/g6aefjnPPPTcOPfTQOPbYY+Oaa67p0LPKjSenxgSKL/C9730vz0+wxx575LkE0jwFTU1NxS+4EhIgsEWBRx99NN7znvfEG97whvhf/+t/xfTp0/PjaFs8sSAZBH4FaYhUjDlz5uRJbB588MEYOXJk/PGPf8y/NG6++eYClVJRCBDojMBvfvObOOSQQ6JXr17xmc98Jk4//fS47bbb8j8U161b15lLO5cAgW0sMGPGjPwPwTQHwc9+9rM8+3gK/KZOnbqNS+b2BAh0ViB9p9/+9rfHW97ylvyY2Ve+8pV48skn8x9x01wk9bD1KP0VqrB/hkrLNaxfv75djukv5ltj22mnnfI/zi644IKtcfnma7744ovxpje9Ka699tr427/92+b0FASmdQt/9atfxejRo5vT7RAgUH8CaQbi/fffP/7hH/4hzjnnnOYKpPQjjjgijj/++PjUpz7VnG6HAIH6EfjP//zP/Aechx56KPcGlEv+0ksv5Z6B66+/Pk444YRysncCBOpIIP2eTmuLf+5zn4tTTz21VclPOumk/J3/0pe+1Cp9a3zYb7/9Ik1wmf6A3JGt0LN69uvXL9KC7WvWrImDDz64Uwu2dwSnlud8//vfj9SY5aAvBbyvvfZaHHjggfkZxptuuikvXbFxmSrF7RunVVruYuM86bodTWvveR0tR3uv39587SlHe6/V0XyVzmtPudrbTpWu35m0jcvWmWt19NxK521crvb6VMpX6fpdmZautWjRoli+fHnu0b/vvvtaDe9M/yD89re/HePHj0/Fa7VVKkerDP/zQb5KKpX/37ZxzvbaVfqZ2/ha6XN7rydfJb32+XW1XWfb9qc//Wnsu+++cf/99+dXy5oddNBBcd1110X6I6+NAIH6E3juuefykM40Mif9ru7Zs2e8+93vjgEDBuRe/vPPP78uKlXowO+yyy7L/wiaMGFCzJs3ry5AO1rIxx9/PAd+5fMPP/zw+O1vf5s/pl9G6Rdc6lJOE91svLUnrVKeja+TPlfKVylt43Mr5amUtvF57b1nV15rc/fcuGyV7tnetI2vVemeXXmt7nj99tapPdaVrlUprb1tUilfe8rxyiuvxOrVq+NjH/tYc/bytVL6M888k4eGNR9ssVPO1yKp4m5X56t4kwqJXX3fbXG9rr5nBaaKSV1930a6XlfXtWIDVUisdN/0h53yPwo3PiU915uGgqV/MNoIEKg/gRUrVuQOmfJ3OK0ukIZ8jho1KgYPHhypZ78etkIHfgkwBUCNsKUfnG9+85vNVU3PAZW3D3zgA7HrrrvGFVdcUU7yToBAHQq88MILeahI6hnYeKbiNKnTL37xi/jJT35ShzVTZAIE0nc3DeP+8Y9/HL17924GSX+4TZM4pV79Cy+8sDndDgEC9SOQ/nCTJmz68pe/HG984xtbFfxHP/pRvPnNb26VVtQPhZ/cJXWhfuc73ymqX5eV6+STT86TuaRxuy239Gxf+oE666yzWibbJ0CgDgXS8jOTJk2Kv/u7v4tly5Y11yAN+7zqqqvi//yf/9OcZocAgfoS+N//+3/HLrvskidsKv/1P/UApvWIU2/+tGnT6qtCSkuAQLNAikc+8pGPxMSJE1vNuH/77bfn+TnqpXOm8D1+SXzy5MnN8N11Z8cdd8xDQE477bT4t3/7t9x9/Nhjj8Uvf/nL/NeFNMunjQCB+hdIEzidd955eXjIAQcckJ/5e/bZZ/MvjjFjxtR/BdWAQIMKpOGf6Xn9tFTLnnvuGXvttVek54LSxGypl3/77bdvUBnVJtA9BD796U/niqR5R1LvX/oDT/rep+Gf9dLjV+hZPYvwY1KrWT3LdU0PfqcezjQ72N57753/spB+gdgIEOheAmmNzjSkO/UCvvWtb41BgwZ1rwqqDYEGFkhr8i5YsCD/gcfv8Ab+QVD1bimQhn0+/PDD8brXvS7P1J2e96vV1q1n9awVYpHukx4QrZeZgYrkpiwE6k0g9eLrya+3VlNeAu0TGDp0aLzjHe9oX2a5CBCoK4E07PPII4+sqzKXC1u7ELV8R+8ECBAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQUwGBX0253YwAAQIECBAgQIAAAQK1FxD41d7cHQkQIECAAAECBAgQIFBTAYFfTbndjAABAgQIECBAgAABArUXEPjV3twdCRAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQUwGBX0253YwAAQIECBAgQIAAAQK1FxD41d7cHQkQIECAAAECBAgQIFBTAYFfTbndjAABAgQIECBAgAABArUXEPjV3twdCRAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQUwGBX0253YwAAQIECBAgQIAAAQK1FxD41d7cHQkQIECAAAECBAgQIFBTAYFfTbndjAABAgQIECBAgAABArUXEPjV3twdCRAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQUwGBX0253YwAAQIECBAgQIAAAQK1FxD41d7cHQkQIECAAAECBAgQIFBTAYFfTbndjAABAgQIECBAgAABArUXEPjV3twdCRAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQUwGBX0253YwAAQIECBAgQIAAAQK1FxD41d7cHQkQIECAAAECBAgQIFBTAYFfTbndjAABAgQIECBAgAABArUXEPjV3twdCRAgQIAAAQIECBAgUFMBgV9Nud2MAAECBAgQIECAAAECtRcQ+NXe3B0JECBAgAABAgQIECBQU4FeNb1bJ27W1NQUK1asiLVr10b//v1jwIABnbiaUwkQIECAAAECBAgQINA4AoXv8Vu4cGFMmDAh+vXrF4MHD46hQ4fGwIEDY8iQIXHWWWfFkiVLGqe11JQAAQIECBAgQIAAAQIdECh0j9+CBQti7NixMWnSpJg5c2aMGDEiB4CrV6+ORYsWxaxZs2L06NExf/78GDlyZAeq7xQCBAgQIECAAAECBAh0f4FCB37Tp0+Pu+++O8aPH79JS6SAcPLkyTF79uyYNm1azJkzZ5M8EggQIECAAAEC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OZvkkUCAAAECBAgQIECAAAECEYUe6jlv3rwYN25cm+2UhoHOnTu3zTwOEiBAgAABAgQIECBAoJEFCh34DR8+PBYvXtxm+yxdujSGDRvWZh4HCRAgQIAAAQIECBAg0MgChQ78ZsyYkYd53n777fHss8/GunXrIs3uuX79+li2bFncddddMWbMmLjkkksauQ3VnQABAgQIECBAgAABAm0KFPoZv4kTJ0aayOXcc8+N5cuXb1KRtKzD5Zdfnmf33OSgBAIECBAgQIAAAQIECBDIAoUO/FIJp06dGlOmTInHHnssv1JPX1rDb9SoUXlGzz59+nSoKTds2BCPPvpo7kFs6wIpn40AAQIECBAgQIAAAQL1LFD4wC/h9uzZM/bbb7/8KmO//PLL0Zmg7Ne//nXuKUxDR9va1qxZEytXrmwri2MECBAgQIAAAQIECBAotEDhA780s+fnP//5jPjRj3403vrWt+ZlHL773e/mtA996EPx5S9/ObbbrrrHFQ8//PDcg7il1tlpp51i0KBBW8rmOAECBAgQIECAAAECBAorUF20VONq3HfffXHooYfGK6+8Ei+99FIcccQRcfLJJ8d//Md/5PX7fv7zn8cDDzwQ//Iv/1LjkrkdAQIECBAgQIAAAQIE6keg0D1+n/zkJ/PMnccff3wWTYu5H3fccbFw4cL8jF9KnDVrVrzjHe+I888/v37UlZQAAQIECBAgQIAAAQI1FCh0j9/vfve7HOiVPY499ti8u++++5aTYrfddotFixY1f7ZDgAABAgQIECBAgAABAq0FCh34DR06NF544YXmEv/lL3/J+ytWrGhOSxOvpHw2AgQIECBAgAABAgQIEKgsUOjAb/r06fG2t70t0gLuP/jBD/L+nnvumYd1puAvBX0f/vCHI633ZyNAgAABAgQIECBAgACBygKFfsbvvPPOixTgnXPOOfn9Ax/4QHzxi1+Mv/mbv4k022badt111/iv//qvyrWTSoAAAQIECBAgQIAAAQJR6MCvR48ecfHFF8dFF10Ur732WvTu3Ts3WVrMPc3ombZjjjkm+vXrl/f9hwABAgQIECBAgAABAgQ2FSh04FcubgoAy0FfSkuB3gknnFA+7J0AAQIECBAgQIAAAQIE2hAo9DN+bZTbIQIECBAgQIAAAQIECBBop4DAr51QshEgQIAAAQIECBAgQKBeBQR+9dpyyk2AAAECBAgQIECAAIF2Cgj82gklGwECBAgQIECAAAECBOpVQOBXry2n3AQIECBAgAABAgQIEGingMCvnVCyESBAgAABAgQIECBAoF4FBH712nLKTYAAAQIECBAgQIAAgXYKCPzaCSUbAQIECBAgQIAAAQIE6lVA4FevLafcBAgQIECAAAECBAgQaKeAwK+dULIRIECAAAECBAgQIECgXgUEfvXacspNgAABAgQIECBAgACBdgoI/NoJJRsBAgQIECBAgAABAgTqVUDgV68tp9wECBAgQIAAAQIECBBop4DAr51QshEgQIAAAQIECBAgQKBeBQR+9dpyyk2AAAECBAgQIECAAIF2Cgj82gklGwECBAgQIECAAAECBOpVQOBXry2n3AQIECBAgAABAgQIEGingMCvnVCyESBAgAABAgQIECBAoF4FBH712nLKTYAAAQIECBAgQIAAgXYKCPzaCSUbAQIECBAgQIAAAQIE6lVA4FevLafcBAgQIECAAAECBAgQaKeAwK+dULIRIECAAAECBAgQIECgXgUEfvXacspNgAABAgQIECBAgACBdgoI/NoJJRsBAgQIECBAgAABAgTqVUDgV68tp9wECBAgQIAAAQIECBBop4DAr51QshEgQIAAAQIECBAgQKBeBQR+9dpyyk2AAAECBAgQIECAAIF2CuTAb/369VvM3p48W7yIDAQIECBAgAABAgQIECBQc4Ec+A0cOHCLN+7fv/8W88hAgAABAgQIECBAgAABAsUT6HX66afHq6++Gqeddlr07NmzYgmfeuqp2G233Soek0iAAAECBAgQIECAAAECxRbYrnfv3rmE6X1zryOOOCLuvffeYtdE6QgQIECAAAECBAgQIECgokCvG2+8MR5//PGYOXNmxQwSCRAgQIAAAQIECBAgQKC+BfIzfr/85S/ruxZKT4AAAQIECBAgQIAAAQKbFeiVjjQ1NcW3v/3tuPPOO+Ppp5/Onyud8dBDD1VKlkaAAAECBAgQIECAAAECBRbIgd+nPvWpuP7662PixIlx4IEHxnbb5Y7AAhdb0QgQIECAAAECBAgQIECgvQI58Pv6178ev/vd72KPPfZo73nyESBAgAABAgQIECBAgECdCOSuvV69esWwYcPqpMiKSYAAAQIECBAgQIAAAQLVCOTAb8qUKXH77bdXc568BAgQIECAAAECBAgQIFAnAnmo5/jx4+Pv/u7v4gc/+EGcdNJJMWjQoIrP+R1//PF1Ui3FJECAAAECBAgQIECAAIGyQA78Tj/99Bzo/ehHP4r02ty2atWqzR2SToAAAQIECBAgQIAAAQIFFciB38qVKwtaPMUiQIAAAQIECBAgQIAAgc4KbLJuw5o1a2LZsmWdva7zCRAgQIAAAQIECBAgQKAgAs2B33333Rf7779/9OvXL4YMGdJcvL322it+8pOfNH+2Q4AAAQIECBAgQIAAAQL1JZADv3nz5sWJJ54YZ555ZsyfPz/69u3bXIvPfvazMXXq1EiB4bbcmpqaYvny5fHnP/85Xn755W1ZFPcmQIAAAQIECBAgQIBAXQnkwO9jH/tY3HvvvfHxj388DjzwwFYzep522mlx9913x/Tp07dJxRYuXBgTJkzIPZGDBw+OoUOHxsCBA3Ov5FlnnRVLlizZJuVyUwIECBAgQIAAAQIECNSLQJ7c5eGHH46DDjpos2U++OCD4w9/+MNmj2+tAwsWLIixY8fGpEmTYubMmTFixIgcAK5evToWLVoUs2bNitGjR+deypEjR26tYrguAQIECBAgQIAAAQIE6logB35vetOb4tFHH403v/nNFSvz1FNPxR577FHx2NZMTL2MqbcxrTO48ZYCwsmTJ8fs2bNj2rRpMWfOnI2z+EyAAAECBAgQIECAAAECJYE81POLX/xiHHPMMXHHHXfk5+g2bNgQqVdt8eLFcfPNN8dhhx0Wn/vc52oOlp49HDduXJv3TcNA586d22YeBwkQIECAAAECBAgQINDIArnHb8yYMTnoe9/73hfPPvts9th+++3z+4ABA+Lqq6+OU045peZOw4cPz8Hn3nvvvdl7L126NIYNG7bZ4w4QIECAAAECBAgQIECg0QVy4JcQjjrqqHj66afjySefjMcffzxee+21PLwzLfHQp0+fbeI0Y8aMPMzzuuuuyz1/aWKXXr16ReqRXLFiRTz44INx3nnnRcpnI0CAAAECBAgQIECAAIHKAs2BXzrco0ePSJOkFGWilIkTJ+Yhp+eee24egrpxFfr37x+XX355pNk9bQQIECBAgAABAgQIECBQWaDXoYceWvlIhdSHHnqoQurWTUprCE6ZMiUee+yx/Fq2bFmk4aejRo3KM3p2tDfyxRdfjDvvvDPS+oBtbevXr8+9n23lcYwAAQIECBAgQIAAAQJFFuiVhkqmWTsvu+yyOOCAA/KzfCmoSsMp00yf3//+9+O5556Lr33ta9usHj179oz99tsvv1Ih0kLuKXDrzPbMM8/kum0p8EtDXtesWdOZWzmXAAECBAgQIECAAAEC21SgRynwafrgBz8Y++yzT17AvVJprrnmmkiTqFx55ZWVDm+1tBR8poll0uv555+P1Pt26qmnxve+9718z759+8all14a//iP/7jVyrDTTjvFZz7zmbjgggu22j1cmAABAgQIECBAgAABAm0JpI6wb33rW3HIIYe0lW2zx/IzfqlXLwVWm9vSenpp5sxaB36f/exnc09jeSmJr3zlK5EWdb/rrrsiTTrz+9//Pj7ykY/ErrvuGqeffvrmii+dAAECBAgQIECAAAECDS2QA79+/frFkiVLIi2fUGlLwyrXrl1b6dBWTfvGN74R999/f+y11175Ptdff33cc889zYvJ77nnnnHffffFO9/5ToHfVm0JFydAgAABAgQIECBAoJ4F8gLuF154YV7O4Te/+U2rAG/dunUxf/78ePvb3x4f/ehHa17PFHC2DEb//Oc/x+67796qHHvssUc88cQTrdJ8IECAAAECBAgQIECAAIG/CuTALwV1Z599dg7w0nNzu+22Ww6w0oyZb3nLW+LII4+MT37yk389q0Z7hx9+eNx9993NdzvssMPyzJ7NCaWdNNvn6NGjWybZJ0CAAAECBAgQIECAAIEWAnmoZ1q/7xOf+ESknr958+bFb3/729zzt/fee8cRRxwRr3vd61qcUrvdNKnMQQcdlCdvSWv6pTKecMIJkYZ8pocbH3nkkfjwhz8c6dk/GwECBAgQIECAAAECBAhUFmi1gHt61i/1sqVXEba0rERaUiJN3JJm1ixvxx9/fN5NC7hfddVVceKJJ5YPeSdAgAABAgQIECBAgACBjQRy4PfDH/5wiwuZp/Pe+973bnT61v+Yeh3TBC8vv/xyXk/wT3/6U75pmslz5MiR0bt3761fCHcgQIAAAQIECBAgQIBAHQvkwC/1qKWFyre0rVq1aktZttrxAQMGROoBTC8bAQIECBAgQIAAAQIECLRfIAd+K1eubP8ZchIgQIAAAQIECBAgQIBAXQnkWT3LJU7LN5S3tP/AAw/k5Rw2bNhQTvZOgAABAgQIECBAgAABAnUmkAO/FOSddtppkZZvSFtarD0NqRw3blxezuENb3hDpDX0bAQIECBAgAABAgQIECBQfwI58Etr9K1YsSJ+//vf5xrceeedsWjRoli4cGGk3r6Pfexj8aEPfaj+aqfEBAgQIECAAAECBAgQIBD5Gb9vf/vbOcgbOHBgJrnpppvyYu7liVTOP//8mDFjBi4CBAgQIECAAAECBAgQqEOB3OO3evXqSGvipS0N87z33nvz0M9yfdIC757zK2t4J0CAAAECBAgQIECAQH0J5MDvpJNOiquvvjqef/75mD59eqxZs6bVoui33HJLft6vvqqmtAQIECBAgAABAgQIECCQBPJQzy9+8YtxzDHHxEUXXZRVrrjiithll13y/u677x4vvfRSPPjgg/mz/xAgQIAAAQIECBAgQIBAfQnkwG/QoEHx0EMPxdKlS/PMnoMHD26uRXre76ijjop+/fo1p9khQIAAAQIECBAgQIAAgfoRyEM9y8UdOnRoftZv2bJl5aR45zvfKehr1rBDgAABAgQIECBAgACB+hNoDvzuu+++2H///XOQN2TIkOaa7LXXXvGTn/yk+bMdAgQIECBAgAABAgQIEKgvgRz4zZs3L0/mcuaZZ8b8+fOjb9++zbX47Gc/G1OnTo0UGNoIECBAgAABAgQIECBAoP4E8jN+aYH2tITDwQcfnGuw3XbNHYF5WYfRo0fH2WefnYPC+quiEhMgQIAAAQIECBAgQKCxBXKE9/DDD8dBBx20WYkUEP7hD3/Y7HEHCBAgQIAAAQIECBAgQKC4Ajnwe9Ob3hSPPvroZkv51FNPxR577LHZ4w4QIECAAAECBAgQIECAQHEFcuBXXsfvjjvuiOXLl8eGDRti9erVsXjx4rj55pvjsMMOi8997nPFrYWSESBAgAABAgQIECBAgMBmBfIzfmPGjIkU9L3vfe+LZ599Nmfefvvt8/uAAQPi6quvjlNOOWWzF3GAAAECBAgQIECAAAECBIorkAO/VatW5UXan3766XjyySfj8ccfj9deey0P70xLPPTp06e4NVAyAgQIECBAgAABAgQIEGhTIAd+w4YNi7Roe5rNc+TIkfnV5lkOEiBAgAABAgQIECBAgEDdCORn/CZNmhTf//7366bQCkqAAAECBAgQIECAAAEC7RfIPX5HHHFEfr7vtttui3e9612xww47VLzCxIkTK6ZLJECAAAECBAgQIECAAIHiCuTA7+KLL46ddtop7r///vzaXHEFfpuTkU6AAAECBAgQIECAAIHiCuTA77nnnituCZWMAAECBAgQIECAAAECBDolkJ/x69QVnEyAAAECBAgQIECAAAEChRYQ+BW6eRSOAAECBAgQIECAAAECnRcQ+HXe0BUIECBAgAABAgQIECBQaAGBX6GbR+EIECBAgAABAgQIECDQeQGBX+cNXYEAAQIECBAgQIAAAQKFFhD4Fbp5FI4AAQIECBAgQIAAAQKdFxD4dd7QFQgQIECAAAECBAgQIFBoAYFfoZtH4QgQIECAAAECBAgQINB5AYFf5w1dgQABAgQIECBAgAABAoUWEPgVunkUjgABAgQIECBAgAABAp0XEPh13tAVCBAgQIAAAQIECBAgUGgBgV+hm0fhCBAgQIAAAQIECBAg0HkBgV/nDV2BAAECBAgQIECAAAEChRYQ+BW6eRSOAAECBAgQIECAAAECnRcQ+HXe0BUIECBAgAABAgQIECBQaAGBX6GbR+EIECBAgAABAgQIECDQeQGBX+cNXYEAAQIECBAgQIAAAQKFFhD4Fbp5FI4AAQIECBAgQIAAAQKdFxD4dd7QFQgQIECAAAECBAgQIFBoAYFfoZtH4QgQIECAAAECBAgQINB5gV6dv0RtrtDU1BQrVqyItWvXRv/+/WPAgAG1ubG7ECBAgAABAgQIECBAoM4FCt/jt3DhwpgwYUL069cvBg8eHEOHDo2BAwfGkCFD4qyzzoolS5bUeRMoPgECBAgQIECAAAECBLauQKF7/BYsWBBjx46NSZMmxcyZM2PEiBE5AFy9enUsWrQoZs2aFaNHj4758+fHyJEjt66UqxMgQIAAAQIECBAgQKBOBQod+E2fPj3uvvvuGD9+/Ca8KSCcPHlyzJ49O6ZNmxZz5szZJI8EAgQIECBAgAABAgQIEIgo9FDPefPmxbhx49pspzQMdO7cuW3mcZAAAQIECBAgQIAAAQKNLFDowG/48OGxePHiNttn6dKlMWzYsDbzOEiAAAECBAgQIECAAIFGFih04Ddjxow8zPP222+PZ599NtatWxdpds/169fHsmXL4q677ooxY8bEJZdc0shtqO4ECBAgQIAAAQIECBBoU6DQz/hNnDgx0kQu5557bixfvnyTiqRlHS6//PI8u+cmByUQIECAAAECBAgQIECAQBYodOCXSjh16tSYMmVKPPbYY/mVevrSGn6jRo3KM3r26dOnQ02ZZgW97rrrcg9iWxdIvYwp+LQRIECAAAECBAgQIECgXgUKH/gl2J49e8Z+++2XX2XoBx54IDoa9JWvmXoM09DRLW09evTYUhbHCRAgQIAAAQIECBAgUFiBugj8KukdffTRsWrVqkqH2pW25557xhVXXLHFvDfccEP07dt3i/lkIECAAAECBAgQIECAQFEFCh34pWf70kQulbZXX301zjjjjNwbmI7feOONlbJJI0CAAAECBAgQIECAQMMLFDrwS8/1/eIXv4i0WPsb3/jGhm8sAAQIECBAgAABAgQIEOiIQKEDv3vvvTc+97nPxZe//OX46le/GgcccEBzHe+4446YOXNm82c7BAgQIECAAAECBAgQIFBZoNDr+KVJVT7xiU/Ej3/84zj22GPj6quvbtdkLJWrKpUAAQIECBAgQIAAAQKNKVDowK/cJIccckg88cQTOQA87rjj4uWXXy4f8k6AAAECBAgQIECAAAECWxCoi8Av1WHQoEGRhn6mnr+RI0dGmtzFRoAAAQIECBAgQIAAAQJbFij0M34bFz8N/bzooosi9fr96Ec/2viwzwQIECBAgAABAgQIECBQQaCuAr9y+Q866KBILxsBAgQIECBAgAABAgQIbFmgboZ6brkqchAgQIAAAQIECBAgQIBAJQGBXyUVaQQIECBAgAABAgQIEOhGAgK/btSYqkKAAAECBAgQIECAAIFKAgK/SirSCBAgQIAAAQIECBAg0I0EBH7dqDFVhQABAgQIECBAgAABApUEBH6VVKQRIECAAAECBAgQIECgGwkI/LpRY6oKAQIECBAgQIAAAQIEKgkI/CqpSCNAgAABAgQIECBAgEA3EhD4daPGVBUCBAgQIECAAAECBAhUEhD4VVKRRoAAAQIECBAgQIAAgW4kIPDrRo2pKgQIECBAgAABAgQIEKgkIPCrpCKNAAECBAgQIECAAAEC3UhA4NeNGlNVCBAgQIAAAQIECBAgUElA4FdJRRoBAgQIECBAgAABAgS6kYDArxs1pqoQIECAAAECBAgQIECgkoDAr5KKNAIECBAgQIAAAQIECHQjAYFfN2pMVSFAgAABAgQIECBAgEAlAYFfJRVpBAgQIECAAAECBAgQ6EYCAr9u1JiqQoAAAQIECBAgQIAAgUoCAr9KKtIIECBAgAABAgQIECDQjQQEft2oMVWFAAECBAgQIECAAAEClQQEfpVUpBEgQIAAAQIECBAgQKAbCQj8ulFjqgoBAgQIECBAgAABAgQqCQj8KqlII0CAAAECBAgQIECAQDcSEPh1o8ZUFQIECBAgQIAAAQIECFQSEPhVUpFGgAABAgQIECBAgACBbiQg8OtGjakqBAgQIECAAAECBAgQqCQg8KukIo0AAQIECBAgQIAAAQLdSEDg140aU1UIECBAgAABAgQIECBQSUDgV0lFGgECBAgQIECAAAECBLqRgMCvGzWmqhAgQIAAAQIECBAgQKCSgMCvkoo0AgQIECBAgAABAgQIdCMBgV83akxVIUCAAAECBAgQIECAQCUBgV8lFWkECBAgQIAAAQIECBDoRgICv27UmKpCgAABAgQIECBAgACBSgICv0oq0ggQIECAAAECBAgQINCNBAR+3agxVYUAAQIECBAgQIAAAQKVBAR+lVSkESBAgAABAgQIECBAoBsJCPy6UWOqCgECBAgQIECAAAECBCoJCPwqqUgjQIAAAQIECBAgQIBANxIQ+HWjxlQVAgQIECBAgAABAgQIVBIQ+FVSkUaAAAECBAgQIECAAIFuJCDw60aNqSoECBAgQIAAAQIECBCoJNCrUmIR05qammLFihWxdu3a6N+/fwwYMKCIxVQmAgQIECBAgAABAgQIFE6g8D1+CxcujAkTJkS/fv1i8ODBMXTo0Bg4cGAMGTIkzjrrrFiyZEnhUBWIAAECBAgQIECAAAECRRIodI/fggULYuzYsTFp0qSYOXNmjBgxIgeAq1evjkWLFsWsWbNi9OjRMX/+/Bg5cv2X48QAABrESURBVGSRXJWFAAECBAgQIECAAAEChREodOA3ffr0uPvuu2P8+PGbgKWAcPLkyTF79uyYNm1azJkzZ5M8EggQIECAAAECBAgQIEAgotBDPefNmxfjxo1rs53SMNC5c+e2mcdBAgQIECBAgAABAgQINLJAoQO/4cOHx+LFi9tsn6VLl8awYcPazOMgAQIECBAgQIAAAQIEGlmg0IHfjBkz8jDP22+/PZ599tlYt25dpNk9169fH8uWLYu77rorxowZE5dcckkjt6G6EyBAgAABAgQIECBAoE2BQj/jN3HixEgTuZx77rmxfPnyTSqSlnW4/PLL8+yemxyU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dOA3b968GDduXJvtlIaBTpw4sc08lQ7+6le/itNOOy3Ss4Ntba+++mqsWbOmrSyOESBAgAABAgQIECBAoNAChQ78hg8fHosXL4699957s4hLly6NYcOGbfb45g4cfvjhcd99920x8DvxxBNjzJgxm7uMdAIECBAgQIAAAQIECBReoNCB34wZM/Iwz+uuuy73/KWJXXr16hUbNmzIM3w++OCDcd5550XKV+3Wo0ePNgPK8vX69OlT3vVOgAABAgQIECBAgACBuhQodOCXhnCmiVzOPffcWL58+SbAaVmHyy+/PM/uuclBCQQIECBAgAABAgQIECCQBQod+KUSTp06NaZMmRKPPfZYfi1btiyv4Tdq1Kg8o6ceOT/JBAgQIECAAAECBAgQaFug8IFfKn7Pnj1jv/32y6+2q+MoAQIECBAgQIAAAQIECGwsUPgF3DcusM8ECBAgQIAAAQIECBAgUJ2AwK86L7kJECBAgAABAgQIECBQdwICv7prMgUmQIAAAQIECBAgQIBAdQICv+q85CZAgAABAgQIECBAgEDdCQj86q7JFJgAAQIECBAgQIAAAQLVCQj8qvOSmwABAgQIECBAgAABAnUnIPCruyZTYAIECBAgQIAAAQIECFQnIPCrzktuAgQIECBAgAABAgQI1J1AXSzgvq1Vb7311njggQdqWoy77747+vbtGz169Kjpfd2s9gLr1q2LVatWxY477lj7m7tjzQVWrFgR/fv3j969e9f83m5Ye4EXXnghdt5559rf2B1rLrBmzZpYu3ZtDBw4sOb3dsPaC7z44osxaNCg6NmzZ+1v7o41FWhqaor0b7VjjjmmpvetdLPly5dXSm53msBvC1Rnn312zJs3LxYuXLiFnF17eO7cuTF8+HD/Q+la1kJe7ZVXXomVK1fGbrvtVsjyKVTXCixdujQHfv5x2LWuRbxa+sfCE088Efvss08Ri6dMXSyQ/j+egr9ddtmli6/sckUUWLJkSQwePDi23377IhZPmbpQIAV9zz//fOy+++5deNWOXerd7353p36n9Cj9Ymrq2K2dtTUFhgwZkoNNv0C2pnIxrn3HHXfEDTfcEPfcc08xCqQUW1Ug/U/75JNPjjPPPHOr3sfFt73A6tWrI/2/PP1xx9b9Ba699to8OiiNErJ1f4HDDjssLr/88jjuuOO6f2UbvIbpD3hve9vb4plnnql7Cc/41X0TqgABAgQIECBAgAABAgTaFhD4te3jKAECBAgQIECAAAECBOpeQOBX902oAgQIECBAgAABAgQIEGhbQODXto+jBAgQIECAAAECBAgQqHsBgV/dN6EKECBAgAABAgQIECBAoG0BgV/bPo4SIECAAAECBAgQIECg7gUEfnXfhCpAgAABAgQIECBAgACBtgUEfm37bLOj/fr1i969e2+z+7tx7QRSW/fp06d2N3SnbSrQt2/fSG1u6/4C2223XfTv37/7V1QNs0D6Xqfvt60xBPy/vDHaOdUy/Rutu/w7zQLuBf25feGFF2LnnXcuaOkUqysF1q9fHytXrozBgwd35WVdq6ACK1asyMGAP+wUtIG6uFj+X97FoAW+3Jo1ayK9Bg0aVOBSKlpXCSxbtiz/3u7Ro0dXXdJ1CizQXf5fLvAr8A+ZohEgQIAAAQIECBAgQKArBAz17ApF1yBAgAABAgQIECBAgECBBQR+BW4cRSNAgAABAgQIECBAgEBXCAj8ukLRNQgQIECAAAECBAgQIFBgAYFfgRtH0QgQIECAAAECBAgQINAVAgK/rlB0DQIECBAgQIAAAQIECBRYQOBX4MZRNAIECBAgQIAAAQIECHSFgMCvKxRdgwABAgQIECBAgAABAgUWEPgVuHEUjQABAgQIECBAgAABAl0hIPDrCkXXIECAAAECBAgQIECAQIEFBH4FbhxFI0CAAAECBAgQIECAQFcICPy6QtE1CBAgQIAAAQIECBAgUGABgV+BG0fRCBAgQIAAAQIECBAg0BUCAr+uUKzyGt/73vfizW9+c+y4445x9NFHxyOPPNKuK3T0vHZdXKatJlBtuy1cuDD69++/yevzn//8ViujC3e9wKWXXhof/ehH23Xhan9G2nVRmWomUE1b+37XrFm6/Ebf/OY348ADD4yBAwfGPvvsE6nd161b1+Z9fLfb5Cn0wWrb23e70M252cJt2LAhPvvZz8Yb3vCG/O/yI488Mn76059uNn/LA3X5/W6y1VTgtttua3r961/f9Mc//rFp/fr1Tb/+9a+btt9++6ZHH320zXJ09Lw2L+rgVhfoSLvNmjWr6cQTT9zqZXODrSPw0ksvNc2ZMyd/rz/84Q9v8SYd+RnZ4kVlqIlAtW2dCuX7XZOm6fKbXHXVVU3Dhg3Lv7tL/1DM73vuuWfTlClTNnsv3+3N0hT+QEfa23e78M1asYAf/OAHmw499NCmP//5z/nf5aWgr6kU3DX9/Oc/r5i/nFiv3+8oV8D71hdIgd7gwYObvvOd77S62TnnnNN07LHHtkpr+aGj57W8hv3aC3S03a688sqmSy65pPYFdsdOC3z3u9/NvzDSL4302lLg19GfkU4X1AU6LVBtW5dv6Ptdlqif9xToDRo0qOkHP/hBq0Lffvvt+Xu+YsWKVunpg+/2JiR1k9CR9k6V892umyZuLuiqVavyd3jjzpcTTjihzT/q1PP321DPln22W3m/1MsXL774Yrz1rW9tdadS0Bc/+9nPInU3V9o6el6la0mrnUBH223BggUxatSo2hXUnbpMYOLEiemPafk1duzYLV63oz8jW7ywDFtdoNq2LhfI97ssUT/v//3f/x0rV67Mwzxblnr48OH5Y+kfgS2T877v9iYkdZPQkfZOlfPdrpsmbi7ookWL8v7IkSOb09JOr169okePHq3SWn6o5++3wK9lS27l/ccffzzfYdddd211p7333jt/Xr58eav08oeOnlc+3/u2Eehou/3ud7+L0l+W401velMeb37QQQfFrbfeum0q4a4dFmjrl0b5oh39GSmf770YAu1p63JJfb/LEvXzvvPOO+c/5qRngFpu//qv/xrvec97ojSSp2Vy3vfd3oSkbhI60t6pcr7bddPEzQXdf//983e7X79+OS394Xbu3Llx1113xQUXXNCcb+Odev5+C/w2bs2t+HnZsmX56n369Gl1l/IP3Nq1a1ullz909Lzy+d63jUBH2i39T+cPf/hDpD8O/OY3v8k9xNdff32UhgzGJz/5yW1TEXfdagId+RnZaoVx4a0u4Pu91YlrcoM0ocuFF14YqaevNNyz4j19tyuy1GVie9rbd7sum7ZVoa+99trYbrvt4vDDD4+jjjoqT8LYKkOLD/X8/Rb4tWjIrb27ww475Fu89tprrW61evXq/DnN5Fhp6+h5la4lrXYCHWm31HOQfh6++tWv5pnj0v+E0tDg0oPmccUVV+RjtauBO21tgY78jGztMrn+1hPw/d56trW68i9+8Yt417veFaVJXWLmzJnRu3fvirf23a7IUneJ7W1v3+26a9pNCpx6+NIfc9IwzqVLl+YAcJNM/5NQz99vgd/mWnUrpJef29p4SOeTTz4ZO+20U5QeHq94146eV/FiEmsm0JXtloZ7pi09Z2LrPgJd+TPSfVQarya+38Vv8/QM/umnn55HYqSp3g855JA2C+273SZP4Q9W296bq5Dv9uZkipF+zTXXRPlxq1Si9Mf29Lzf1VdfHfPmzcujriqVtJ6/3wK/Si26ldL23XffGDBgQP7F0fIWs2fPjtIMQi2TWu139LxWF/Gh5gIdabf77rsvr99X7gUuFzoN+0zrPqZnD2zdR6AjPyPdp/aNVxPf7/pt83PPPTdP9nDxxRe3OelDuYa+22WJ+nyvtr19t+uznQ877LBIE7yUZvdsVYHy+pyl5dZapZc/1PX3uzQu2VZDgeuuu65pjz32aHruueea0pTBpQdIm0rBYNMzzzzTZik6el6bF3VwqwtU225r1qzJa0WdeeaZTa+++mou3/z585tKPcJN3/jGN7Z6ed2g6wTGjRu3xeUc0t2q/RnpuhK6UlcJtLetfb+7Sry21yk9z5OnfH/66aerurHvdlVchcnckfb23S5M81VVkLQswz777NP0/ve/v/nfXKV5FppGjBjRVHqOt81r1ev3O81mY6uxwM0339z0xje+san0TF9evy/9kLXcPvWpT+XFn1umpf0tnbdxfp+LIbCldtu4vUtLfjSVxpo3lSZ4yX8UKC0L0PTDH/6wGJVRinYLbC4Y2Li90wW39DPS7pvKuE0Eqmlr3+9t0kSduulPfvKTHPj17ds3/24u9QK0ek8LP6fNd7tTzIU5uaPt7btdmCasqiClx6+a0h/bSyOq8r+5Sr2ATaXnd3PnTPlClb7b6Vg9/u7ukQpe7rr0ToAAAQIECBAgQIAAAQLdT8Azft2vTdWIAAECBAgQIECAAAECrQQEfq04fCBAgAABAgQIECBAgED3ExD4db82VSMCBAgQIECAAAECBAi0EhD4teLwgQABAgQIECBAgAABAt1PQODX/dpUjQgQIECAAAECBAgQINBKQODXisMHAgQIECBAgAABAgQIdD8BgV/3a1M1IkCAAAECBAgQIECAQCsBgV8rDh8IECBAgAABAgQIECDQ/QQEft2vTdWIAAECBAgQIECAAAECrQQEfq04fCBAgAABAgQIECBAgED3ExD4db82VSMCBAgQIECAAAECBAi0EhD4teLwgQABAgQIECBAgAABAt1PQODX/dpUjQgQIECAAAECBAgQINBKQODXisMHAgQIECBAgAABAgQIdD8BgV/3a1M1IkCAAAECBAgQIECAQCsBgV8rDh8IECBAgAABAgQIECDQ/QQEft2vTdWIAAECBAgQIECAAAECrQQEfq04fCBAgAABAgQIECBAgED3ExD4db82VSMCBAgQIECAAAECBAi0EhD4teLwgQABAgQIECBAgAABAt1PQODX/dpUjQgQIECAAAECBAgQINBKQODXisMHAgQIECBAgAABAgQIdD8BgV/3a1M1IkCAAAECBAgQIECAQCsBgV8rDh8IECBAgAABAgQIECDQ/QQEft2vTdWIAAECBAgQIECAAAECrQQEfq04fCBAgAABAm0LnH/++XHaaac1Z3rd614Xd9xxR/NnOwQIECBAoIgCvYpYKGUiQIAAAQJFFVi/fn2kV3lbtmxZedc7AQIECBAorIAev8I2jYIRIECAQNEEjjnmmPja174W//7v/x79+/ePdevWxcY9funzzJkz48ILL4yhQ4fG8OHD40tf+lI8/vjj8Y53vCN23HHHOOSQQ/LnlvWbN29eHH744TFo0KA46qij4sEHH2x52D4BAgQIEOiUgMCvU3xOJkCAAIFGEvj5z38e55xzTkycODFWrVoVvXv3zr1/TU1NzQypN/CDH/xgDuL+9Kc/xWWXXRbTp0+Pww47LK666qp48cUX46STToojjjgiyufdf//9MWHChPjKV74Sy5cvj2uvvTaOO+64+NnPftZ8XTsECBAgQKAzAgK/zug5lwABAgQaTmC77baL9Gpre+973xsnn3xyznfqqafmrBdccEEccMABOe3ss8+OpUuXRgoMU/D3vve9Lwd9Bx54YD6e3j/zmc/Ehz70obZu4xgBAgQIEGi3QNu/udp9GRkJECBAgACBskAa0lne+vTpk3ff+ta3lpOib9++eX/FihWxePHieOqpp/Iw0OYMpZ1jjz02Dwd99dVXWybbJ0CAAAECHRIwuUuH2JxEgAABAgQ2L7DzzjtvcjA9E7jxlnr7/vjHP+bkYcOGtepJ3LBhQ05/+eWXY/vtt9/4VJ8JECBAgEBVAgK/qrhkJkCAAAECWxbo2bPnljP9T47XXnst76XZQSsFh+2+kIwECBAgQKANAUM928BxiAABAgQIbG2B3XffPd/i+eef39q3cn0CBAgQaGABgV8DN76qEyBAgMC2F9hvv/1i4MCBkWYMbbl997vfjXJQ2DLdPgECBAgQ6IiAwK8jas4hQIAAgYYV2G233eLpp5/usvqnJSG++MUvxic+8YlYtGhRvu4jjzwS06ZNixtuuKHL7uNCBAgQINDYAp7xa+z2V3sCBAgQqFLgjDPOiFtuuSXPzJkmXumK7QMf+EAMGTIkjj/++HjmmWdi3333zYvEp5k9bQQIECBAoCsEepRmFPvrqrNdcUXXIECAAAECBAgQIECAAIFCCRjqWajmUBgCBAgQIECAAAECBAh0vYDAr+tNXZEAAQIECBAgQIAAAQKFEhD4Fao5FIYAAQIECBAgQIAAAQJdLyDw63pTVyRAgAABAgQIECBAgEChBAR+hWoOhSFAgAABAgQIECBAgEDXCwj8ut7UFQkQIECAAAECBAgQIFAogf8PHEXVdBY5R7gAAAAASUVORK5CYII=" /></p>
+</div>
+<div id="logging-local-processes" class="section level1">
+<h1>Logging local processes</h1>
+<p>You can use the <a href="https://wlandau.github.io/autometric/"><code>autometric</code></a>
+package directly to monitor local <code>crew</code> processes (including
+the <code>mirai</code> dispatcher). To begin, you need the process IDs
+of the local processes. As of <code>crew</code> version
+<code>0.9.5.9012</code>, every controller has a <code>pids()</code>
+method to get the process IDs of all the local processes.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>()</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">pids</span>()</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;                               local dispatcher-e07cd32eeac18cb9e1dd59fb </span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;                             2104319                             2104731</span></span></code></pre></div>
+<p>You can pass this named vector of process IDs directly into <a href="https://wlandau.github.io/autometric/reference/log_start.html"><code>autometric::log_start()</code></a>,
+which starts a background thread which logs resource usage metrics to
+the text file of your choice.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> Remember to call <a href="https://wlandau.github.io/autometric/reference/log_stop.html"><code>autometric::log_stop()</code></a>
+when you are done (or restart R) to stop logging.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>path <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>autometric<span class="sc">::</span><span class="fu">log_start</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">path =</span> path,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">seconds =</span> <span class="dv">1</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">pids =</span> controller<span class="sc">$</span><span class="fu">pids</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="fu">Sys.sleep</span>(<span class="dv">5</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>autometric<span class="sc">::</span><span class="fu">log_stop</span>()</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<p>Use <a href="https://wlandau.github.io/autometric/reference/log_read.html"><code>autometric::log_read()</code></a>
+to read these metrics and <a href="https://wlandau.github.io/autometric/reference/log_plot.html"><code>autometric::log_plot()</code></a>
+to visualize them. Below, the <code>time</code> column is elapsed time
+in seconds since logging began, and <code>resident</code> is memory
+usage in megabytes. More details are at <a href="https://wlandau.github.io/autometric/reference/log_read.html"><code>autometric::log_read()</code></a>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> autometric<span class="sc">::</span><span class="fu">log_read</span>(path)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>data<span class="sc">$</span>name <span class="ot">&lt;-</span> <span class="fu">substr</span>(data<span class="sc">$</span>name, <span class="dv">0</span>, <span class="dv">10</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>data</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;    version     pid       name status  time  core   cpu resident   virtual</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; 1    0.0.1 2104319      local      0 0.000 0.000 0.000 195.1007  9708.073</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 2    0.0.1 2104731 dispatcher      0 0.000 0.000 0.000  31.7399  9514.222</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 3    0.0.1 2104319      local      0 1.000 4.998 0.078 195.1007  9842.328</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 4    0.0.1 2104731 dispatcher      0 1.000 0.000 0.000  31.7399  9849.901</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 5    0.0.1 2104319      local      0 2.000 0.000 0.000 195.1007  9909.436</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 6    0.0.1 2104731 dispatcher      0 2.000 0.000 0.000  31.7399  9984.119</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; 7    0.0.1 2104319      local      0 3.001 0.000 0.000 195.1007  9909.436</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 8    0.0.1 2104731 dispatcher      0 3.001 0.000 0.000  31.7399 10118.337</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 9    0.0.1 2104319      local      0 4.001 0.000 0.000 195.1007  9976.545</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 10   0.0.1 2104731 dispatcher      0 4.001 0.000 0.000  31.7399 10185.445</span></span></code></pre></div>
+</div>
+<div id="in-targets" class="section level1">
+<h1>In <code>targets</code></h1>
+<p>As explained at <a href="https://books.ropensci.org/targets/crew.html" class="uri">https://books.ropensci.org/targets/crew.html</a>,
+<code>crew</code> helps <code>targets</code> orchestrate pipelines. For
+a <code>targets</code> pipeline, to log all local processes as in the
+previous section, you will need to pass an already started controller to
+<code>tar_option_set()</code>. To do this safely:</p>
+<ol style="list-style-type: decimal">
+<li>Only start the controller if you are actually running a pipeline.
+You can use <a href="https://docs.ropensci.org/targets/reference/tar_active.html"><code>targets::tar_active()</code></a>
+in <code>_targets.R</code> to check if <a href="https://docs.ropensci.org/targets/reference/tar_make.html"><code>tar_make()</code></a>
+is running.</li>
+<li>Do not run <a href="https://docs.ropensci.org/targets/reference/tar_make.html"><code>tar_make()</code></a>
+with <code>callr_function = NULL</code>. This ensures the logging thread
+quits when the <a href="https://docs.ropensci.org/targets/reference/tar_make.html"><code>tar_make()</code></a>
+isolated <code>callr</code> R process quits.</li>
+</ol>
+<p>Example <code>_targets.R</code> file:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(autometric)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">library</span>(targets)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">library</span>(tarchetypes)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">tar_active</span>()) {</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>(<span class="at">workers =</span> <span class="dv">2</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="fu">log_start</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>    <span class="at">path =</span> <span class="st">&quot;log.txt&quot;</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>    <span class="at">seconds =</span> <span class="dv">1</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>    <span class="at">pids =</span> controller<span class="sc">$</span><span class="fu">pids</span>()</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  )</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>}</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="fu">tar_option_set</span>(<span class="at">controller =</span> controller)</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="fu">list</span>(</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>  <span class="fu">tar_target</span>(<span class="at">name =</span> sleep1, <span class="at">command =</span> <span class="fu">Sys.sleep</span>(<span class="dv">5</span>)),</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>  <span class="fu">tar_target</span>(<span class="at">name =</span> sleep2, <span class="at">command =</span> <span class="fu">Sys.sleep</span>(<span class="dv">5</span>))</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>Windows does not have <code>/dev/stdout</code>, but
+<code>path</code> can be a directory on disk as well. In that case,
+<code>crew</code> will write the log files there, instead of to the
+existing log files specified in <code>options_local</code>.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>On Mac OS, you may not get usable metrics for the
+dispatcher because of security restrictions on low-level system calls.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

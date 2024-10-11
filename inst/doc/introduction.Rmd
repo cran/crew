@@ -26,7 +26,7 @@ controller <- crew_controller_local(
 )
 ```
 
-Next, start the controller to create the [`mirai`](https://github.com/shikokuchuo/mirai) client. Later, when you are done with the controller, call `controller$terminate()` to clean up the workers and dispatcher.
+Next, start the controller to create the [`mirai`](https://github.com/shikokuchuo/mirai) client. Later, when you are done with the controller, call `controller$terminate()` to clean up your resources.
 
 ```r
 controller$start()
@@ -205,7 +205,7 @@ Call `terminate()` on the controller after you finish using it. `terminate()` tr
 controller$terminate()
 ```
 
-The `mirai` dispatcher process should exit on its own, but if not, you can manually terminate the process ID at `controller$client$dispatcher` or call `crew_clean()` to terminate any dispatchers from current or previous R sessions.
+The `mirai` dispatcher process should exit on its own, but if not, you can manually terminate the process with `ps::ps_kill(p = controller$client$dispatcher)` or call `crew_clean()` to terminate any dispatchers from current or previous R sessions.
 
 ```r
 crew_clean()
@@ -236,6 +236,10 @@ monitor$workers()
 ```
 
 `crew_monitor_local()` only manages processes running on your local computer. To manage `crew` workers running on different computers, such as SLURM or AWS Batch, please familiarize yourself with the given computing platform, and consider using the monitor objects in the relevant third-party plugin packages such as [`crew.cluster`](https://wlandau.github.io/crew.cluster/) or [`crew.aws.batch`](https://wlandau.github.io/crew.aws.batch/). Example: <https://wlandau.github.io/crew.aws.batch/index.html#job-management>.
+
+# Logging
+
+
 
 # Tuning and auto-scaling
 

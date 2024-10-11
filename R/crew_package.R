@@ -18,17 +18,19 @@
 #'   [`rrq`](https://mrc-ide.github.io/rrq/),
 #'   [`clustermq`](https://mschubert.github.io/clustermq/),
 #'   and [`batchtools`](https://mllg.github.io/batchtools/).
+#' @importFrom autometric log_start log_stop
 #' @importFrom cli cli_progress_bar cli_progress_done cli_progress_update
 #' @importFrom data.table rbindlist
 #' @importFrom getip getip
 #' @importFrom later create_loop current_loop destroy_loop exists_loop later
 #' @importFrom mirai call_mirai_ daemon daemons is_mirai is_mirai_error
-#'   mirai nextget nextstream saisei status
+#'   mirai nextget nextstream saisei status stop_mirai
 #' @importFrom nanonext %~>% cv cv_value mclock msleep nng_error random
 #'   unresolved until_ tls_config
 #' @importFrom processx process
 #' @importFrom promises promise
-#' @importFrom ps ps_cmdline ps_handle ps_is_running ps_status ps_username
+#' @importFrom ps ps_cmdline ps_handle ps_pid ps_is_running
+#'   ps_status ps_username
 #' @importFrom R6 R6Class
 #' @importFrom rlang abort as_function enquo is_installed is_named quo_squash
 #' @importFrom stats runif
@@ -36,7 +38,8 @@
 #' @importFrom tidyselect all_of any_of contains ends_with eval_select
 #'   everything last_col matches num_range one_of starts_with
 #' @importFrom tools pskill SIGINT SIGQUIT SIGTERM
-#' @importFrom utils compareVersion globalVariables head
+#' @importFrom utils capture.output compareVersion globalVariables head
+#'   sessionInfo
 NULL
 
 utils::globalVariables(".")

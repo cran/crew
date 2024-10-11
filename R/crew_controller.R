@@ -64,7 +64,7 @@ crew_class_controller <- R6::R6Class(
     .tasks = NULL,
     .pushed = NULL,
     .popped = NULL,
-    .log = NULL,
+    .summary = NULL,
     .error = NULL,
     .backlog = NULL,
     .autoscaling = NULL,
@@ -137,10 +137,6 @@ crew_class_controller <- R6::R6Class(
     popped = function() {
       .subset2(private, ".popped")
     },
-    #' @field log Tibble with per-worker metadata about tasks.
-    log = function() {
-      .subset2(private, ".log")
-    },
     #' @field error Tibble of task results (with one result per row)
     #'   from the last call to `map(error = "stop)`.
     error = function() {
@@ -192,7 +188,7 @@ crew_class_controller <- R6::R6Class(
         identical(private$.client$name, private$.launcher$name),
         message = "client and launcher must have the same name"
       )
-      crew_assert(private$.log, is.null(.) || is.list(.))
+      crew_assert(private$.summary, is.null(.) || is.list(.))
       crew_assert(private$.backlog, is.null(.) || is.character(.))
       crew_assert(private$.autoscaling, is.null(.) || isTRUE(.) || isFALSE(.))
       invisible()
@@ -293,7 +289,7 @@ crew_class_controller <- R6::R6Class(
         private$.tasks <- list()
         private$.pushed <- 0L
         private$.popped <- 0L
-        private$.log <- list(
+        private$.summary <- list(
           controller = rep(private$.client$name, workers),
           worker = seq_len(workers),
           tasks = rep(0L, workers),
@@ -328,6 +324,7 @@ crew_class_controller <- R6::R6Class(
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     launch = function(n = 1L, controllers = NULL) {
+      .subset2(self, "start")()
       private$.launcher$tally()
       private$.launcher$rotate()
       walk(
@@ -445,7 +442,8 @@ crew_class_controller <- R6::R6Class(
     #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
-    #' @param name Optional name of the task.
+    #' @param name Optional name of the task. Must be a character string
+    #'   or `NA`.
     #' @param save_command Logical of length 1. If `TRUE`, the controller
     #'   deparses the command and returns it with the output on `pop()`.
     #'   If `FALSE` (default), the controller skips this step to
@@ -499,7 +497,9 @@ crew_class_controller <- R6::R6Class(
         .compute = private$.client$name
       )
       on.exit({
-        private$.tasks[[length(.subset2(self, "tasks")) + 1L]] <- task
+        n <- length(.subset2(self, "tasks")) + 1L
+        private$.tasks[[n]] <- task
+        names(private$.tasks)[n] <- name
         private$.pushed <- .subset2(self, "pushed") + 1L
       })
       if (scale) {
@@ -598,6 +598,7 @@ crew_class_controller <- R6::R6Class(
       throttle = TRUE,
       controller = NULL
     ) {
+      .subset2(self, "start")()
       crew_assert(substitute, isTRUE(.) || isFALSE(.))
       if (substitute) {
         command <- substitute(command)
@@ -908,8 +909,13 @@ crew_class_controller <- R6::R6Class(
       if (verbose) {
         cli::cli_progress_done(.envir = progress_envir)
       }
-      results <- map(tasks, ~.subset2(.x, "data"))
-      out <- lapply(results, monad_tibble)
+      out <- list()
+      for (index in seq_along(tasks)) {
+        out[[length(out) + 1L]] <- as_monad(
+          task = tasks[[index]],
+          name = names[[index]]
+        )
+      }
       out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       out <- out[match(x = names, table = out$name),, drop = FALSE] # nolint
       out <- out[!is.na(out$name),, drop = FALSE] # nolint
@@ -931,18 +937,20 @@ crew_class_controller <- R6::R6Class(
         FUN = sum
       )
       index <- as.integer(names(tasks))
-      log <- .subset2(self, "log")
+      summary <- .subset2(private, ".summary")
       on.exit({
         private$.tasks <- list()
         private$.popped <- .subset2(self, "popped") + total
-        private$.log$tasks[index] <- .subset2(log, "tasks")[index] +
+        private$.summary$tasks[index] <- .subset2(summary, "tasks")[index] +
           tasks
-        private$.log$seconds[index] <- .subset2(log, "seconds")[index] +
-          seconds
-        private$.log$errors[index] <- .subset2(log, "errors")[index] +
+        private$.summary$seconds[index] <- .subset2(
+          summary, "seconds"
+        )[index] + seconds
+        private$.summary$errors[index] <- .subset2(summary, "errors")[index] +
           summary_errors
-        private$.log$warnings[index] <- .subset2(log, "warnings")[index] +
-          summary_warnings
+        private$.summary$warnings[index] <- .subset2(
+          summary, "warnings"
+        )[index] + summary_warnings
       })
       warning_messages <- .subset2(out, "warnings")
       if (!all(is.na(warning_messages)) && isTRUE(warnings)) {
@@ -999,6 +1007,14 @@ crew_class_controller <- R6::R6Class(
     #'      just prior to the task can be restored using
     #'      `set.seed(seed = seed, kind = algorithm)`, where `seed` and
     #'      `algorithm` are part of this output.
+    #'   * `status`: a character string. `"success"` if the task did not
+    #'     throw an error, `"cancel"` if the task was canceled with
+    #'     the `cancel()` controller method, or `"error"` if the task
+    #'     threw an error.
+    #'   * `code`: an integer code denoting the specific exit status:
+    #'     `0` for successful tasks, `1` for tasks with an error in the R
+    #'     command of the task, and another positive integer with an NNG
+    #'     status code if there is an error at the NNG/`nanonext` level.
     #'   * `error`: the first 2048 characters of the error message if
     #'     the task threw an error, `NA` otherwise.
     #'   * `trace`: the first 2048 characters of the text of the traceback
@@ -1062,11 +1078,13 @@ crew_class_controller <- R6::R6Class(
         return(NULL)
       }
       task <- NULL
+      name <- NULL
       index_delete <- NULL
       for (index in seq(n_tasks)) {
         object <- .subset2(tasks, index)
         if (!nanonext::unresolved(object)) {
           task <- object
+          name <- names(tasks)[index]
           index_delete <- index
           break
         }
@@ -1074,42 +1092,27 @@ crew_class_controller <- R6::R6Class(
       if (is.null(task)) {
         return(NULL)
       }
-      out <- task$data
-      # The contents of the if() statement below happen
-      # if mirai cannot evaluate the command.
-      # I cannot cover this in automated tests, but
-      # I did test it by hand.
-      # nocov start
-      if (!is.list(out)) {
-        out <- monad_init(
-          error = paste(
-            utils::capture.output(print(out), type = "output"),
-            collapse = "\n"
-          )
-        )
-      }
-      # nocov end
-      out <- monad_tibble(out)
-      log <- .subset2(self, "log")
-      # Same as above.
+      out <- as_monad(task, name = name)
+      summary <- .subset2(private, ".summary")
       on.exit({
         private$.tasks[[index_delete]] <- NULL
         private$.popped <- .subset2(self, "popped") + 1L
       })
-      # nocov start
       if (anyNA(.subset2(out, "launcher"))) {
         return(out)
       }
-      # nocov end
       on.exit({
         index <- .subset2(out, "worker")
-        private$.log$tasks[index] <- .subset2(log, "tasks")[index] + 1L
-        private$.log$seconds[index] <- .subset2(log, "seconds")[index] +
-          .subset2(out, "seconds")
-        private$.log$errors[index] <- .subset2(log, "errors")[index] +
+        private$.summary$tasks[index] <- .subset2(summary, "tasks")[index] +
+          1L
+        private$.summary$seconds[index] <- .subset2(
+          summary, "seconds"
+        )[index] + .subset2(out, "seconds")
+        private$.summary$errors[index] <- .subset2(summary, "errors")[index] +
           !anyNA(.subset2(out, "error"))
-        private$.log$warnings[index] <- .subset2(log, "warnings")[index] +
-          !anyNA(.subset2(out, "warnings"))
+        private$.summary$warnings[index] <- .subset2(
+          summary, "warnings"
+        )[index] + !anyNA(.subset2(out, "warnings"))
       }, add = TRUE)
       if (!is.null(error) && !anyNA(.subset2(out, "error"))) {
         if (identical(error, "stop")) {
@@ -1147,11 +1150,10 @@ crew_class_controller <- R6::R6Class(
       controllers = NULL
     ) {
       pop <- .subset2(self, "pop")
-      results <- list()
-      while (!is.null(result <- pop(scale = FALSE, error = error))) {
-        results[[length(results) + 1L]] <- result
+      out <- list()
+      while (!is.null(task <- pop(scale = FALSE, error = error))) {
+        out[[length(out) + 1L]] <- task
       }
-      out <- lapply(results, monad_tibble)
       out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       if_any(nrow(out), out, NULL)
     },
@@ -1350,20 +1352,58 @@ crew_class_controller <- R6::R6Class(
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     summary = function(controllers = NULL) {
-      out <- .subset2(self, "log")
+      out <- .subset2(private, ".summary")
       if (!is.null(out)) {
         out <- tibble::new_tibble(out)
       }
       out
+    },
+    #' @description Cancel one or more tasks.
+    #' @param names Character vector of names of tasks to cancel.
+    #'   Those names must have been manually supplied by `push()`.
+    #' @param all `TRUE` to cancel all tasks, `FALSE` otherwise.
+    #'   `all = TRUE` supersedes the `names` argument.
+    cancel = function(names = character(0L), all = FALSE) {
+      crew_assert(
+        all,
+        isTRUE(.) || isFALSE(.),
+        message = "'all' must be TRUE or FALSE"
+      )
+      crew_assert(
+        names,
+        is.character(.),
+        !anyNA(.),
+        nzchar(.),
+        message = paste(
+          "'names' must be a character vector",
+          "with no missing or empty strings"
+        )
+      )
+      tasks <- .subset2(private, ".tasks")
+      if (!all) {
+        tasks <- tasks[names(tasks) %in% names]
+      }
+      mirai::stop_mirai(tasks)
+      invisible()
+    },
+    #' @description Get the process IDs of the local process and the
+    #'   `mirai` dispatcher (if started).
+    #' @return An integer vector of process IDs of the local process and the
+    #'   `mirai` dispatcher (if started).
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    pids = function(controllers = NULL) {
+      private$.client$pids()
     },
     #' @description Terminate the workers and the `mirai` client.
     #' @return `NULL` (invisibly).
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     terminate = function(controllers = NULL) {
-      private$.client$terminate()
-      private$.launcher$terminate()
+      self$cancel(all = TRUE)
       private$.tasks <- list()
+      private$.launcher$terminate()
+      private$.client$terminate()
       private$.pushed <- NULL
       private$.popped <- NULL
       private$.autoscaling <- FALSE

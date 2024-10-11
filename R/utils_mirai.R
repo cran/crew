@@ -17,11 +17,7 @@ daemons_info <- function(name, seconds_interval, seconds_timeout) {
 }
 
 daemons_error <- function(daemons, name) {
-  message <- sprintf(
-    "'errorValue' int %d | %s\n",
-    daemons,
-    nanonext::nng_error(daemons)
-  )
+  message <- sprintf("'errorValue' int %s\n", nanonext::nng_error(daemons))
   pid <- mirai::nextget("pid", .compute = name)
   exists <- !is.null(pid) &&
     !inherits(
@@ -31,14 +27,18 @@ daemons_error <- function(daemons, name) {
   lines_common <- c(
     "Please also try upgrading R packages {nanonext}, {mirai}, and {crew}",
     "to their latest versions on CRAN. (Likewise with {targets} if you are",
-    "using it.) Upgrading these packages solves many kinds of errors.\n\n",
-    "Another possibility is an out-of-memory error.",
-    "The dispatcher can run out of memory if it is overwhelmed with",
+    "using it.) Upgrading these packages solves many kinds of errors.",
+    "\n\nAnother possibility is an out-of-memory error.",
+    "The dispatcher process can run out of memory if it is overwhelmed with",
     "data objects too large or too many to comfortably fit inside a single",
-    "R process. As a workaround, each task could save or load large files",
-    "instead of sending or returning large objects in R.",
-    "Those large files could either live locally on disk or in a cloud",
-    "bucket. If you are using {targets}, you might consider",
+    "R process. Please read",
+    "https://wlandau.github.io/crew/articles/logging.html to learn",
+    "about proactive resource usage logging which can provide useful",
+    "data in the event of a crash.",
+    "\n\nIf memory consumption is a problem, then as a workaround,",
+    "you could make each task save/load files instead of using/returning",
+    "large R objects in memory.",
+    "If you are using {targets}, you might consider",
     "storage = \"worker\", retrieval = \"worker\", and/or",
     "cloud storage as documented at",
     "https://books.ropensci.org/targets/performance.html and",

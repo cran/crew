@@ -55,8 +55,6 @@ Other controller:
 \item{\code{popped}}{Number of tasks popped
 since the controller was started.}
 
-\item{\code{log}}{Tibble with per-worker metadata about tasks.}
-
 \item{\code{error}}{Tibble of task results (with one result per row)
 from the last call to \verb{map(error = "stop)}.}
 
@@ -94,6 +92,8 @@ auto-scaling is currently running}
 \item \href{#method-crew_class_controller-push_backlog}{\code{crew_class_controller$push_backlog()}}
 \item \href{#method-crew_class_controller-pop_backlog}{\code{crew_class_controller$pop_backlog()}}
 \item \href{#method-crew_class_controller-summary}{\code{crew_class_controller$summary()}}
+\item \href{#method-crew_class_controller-cancel}{\code{crew_class_controller$cancel()}}
+\item \href{#method-crew_class_controller-pids}{\code{crew_class_controller$pids()}}
 \item \href{#method-crew_class_controller-terminate}{\code{crew_class_controller$terminate()}}
 }
 }
@@ -570,7 +570,8 @@ within the last \code{seconds_interval} seconds. \code{FALSE} to auto-scale
 every time \code{scale()} is called. Throttling avoids
 overburdening the \code{mirai} dispatcher and other resources.}
 
-\item{\code{name}}{Optional name of the task.}
+\item{\code{name}}{Optional name of the task. Must be a character string
+or \code{NA}.}
 
 \item{\code{save_command}}{Logical of length 1. If \code{TRUE}, the controller
 deparses the command and returns it with the output on \code{pop()}.
@@ -936,6 +937,14 @@ originally supplied to \code{push()},
 just prior to the task can be restored using
 \code{set.seed(seed = seed, kind = algorithm)}, where \code{seed} and
 \code{algorithm} are part of this output.
+\item \code{status}: a character string. \code{"success"} if the task did not
+throw an error, \code{"cancel"} if the task was canceled with
+the \code{cancel()} controller method, or \code{"error"} if the task
+threw an error.
+\item \code{code}: an integer code denoting the specific exit status:
+\code{0} for successful tasks, \code{1} for tasks with an error in the R
+command of the task, and another positive integer with an NNG
+status code if there is an error at the NNG/\code{nanonext} level.
 \item \code{error}: the first 2048 characters of the error message if
 the task threw an error, \code{NA} otherwise.
 \item \code{trace}: the first 2048 characters of the text of the traceback
@@ -1220,6 +1229,50 @@ and then retrieved with \code{pop()}. Note: \code{warnings}
 is actually the number of \emph{tasks}, not the number of warnings.
 (A task could throw more than one warning.
 }
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-cancel"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-cancel}{}}}
+\subsection{Method \code{cancel()}}{
+Cancel one or more tasks.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$cancel(names = character(0L), all = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{names}}{Character vector of names of tasks to cancel.
+Those names must have been manually supplied by \code{push()}.}
+
+\item{\code{all}}{\code{TRUE} to cancel all tasks, \code{FALSE} otherwise.
+\code{all = TRUE} supersedes the \code{names} argument.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_controller-pids"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_controller-pids}{}}}
+\subsection{Method \code{pids()}}{
+Get the process IDs of the local process and the
+\code{mirai} dispatcher (if started).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_controller$pids(controllers = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{controllers}}{Not used. Included to ensure the signature is
+compatible with the analogous method of controller groups.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An integer vector of process IDs of the local process and the
+\code{mirai} dispatcher (if started).
 }
 }
 \if{html}{\out{<hr>}}

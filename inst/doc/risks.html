@@ -268,10 +268,11 @@ license</a>.</p>
 <ol style="list-style-type: decimal">
 <li>Worker processes to run tasks, which may include expensive jobs on
 cloud services like AWS Batch or traditional clusters like SLURM.</li>
-<li>A local <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
-dispatcher process to schedule the tasks. If <code>x</code> is a
-<code>crew</code> controller, the process ID of the dispatcher is
-<code>x$client$dispatcher</code>.</li>
+<li>The <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+dispatcher, an R process which send tasks to workers and retrieves
+results back. If <code>x</code> is a <code>crew</code> controller, a
+<code>ps::ps_handle()</code> process handle of the dispatcher is
+retained in <code>x$client$dispatcher</code>.</li>
 </ol>
 <p>In the event of a poorly-timed crash or network error, these
 processes may not terminate properly. If that happens, they will
@@ -289,14 +290,26 @@ Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-manage
 </div>
 <div id="crashes" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Crashes</h2>
+<p>The local process or <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+dispatcher process could crash. A common cause of crashes is running out
+of computer memory. The “Resources” section of the <a href="https://wlandau.github.io/crew/articles/introduction.html">introduction</a>
+explains how to monitor memory usage. If you are running
+<code>crew</code> in a <a href="https://docs.ropensci.org/targets/"><code>targets</code></a>
+pipeline (as explained <a href="https://books.ropensci.org/targets/crew.html">here in the
+<code>targets</code> user manual</a>), consider setting
+<code>storage = &quot;worker&quot;</code> and <code>retrieval = &quot;worker</code> in
+<code>tar_option_set()</code> to minimize memory consumption of the
+local processes (see also the <a href="https://books.ropensci.org/targets/performance.html">performance
+chapter</a>).</p>
 <p>In addition, <code>crew</code> worker processes may crash silently at
 runtime, or they may fail to launch or connect at all. The reasons may
 be platform-specific, but here are some common possibilities:</p>
 <ul>
 <li>Memory: if a worker exhausts the available memory limits, it will
 crash, and there is no way to relay an informative error message. Please
-grant your workers more computer memory if you think that might have
-happened. <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>
+read <a href="https://wlandau.github.io/crew/articles/logging.html" class="uri">https://wlandau.github.io/crew/articles/logging.html</a> to
+learn about proactive resource logging, which can generate data to help
+troubleshoot in the event of a crash. If you need more memory, <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>
 and <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
 expose special platform-specific parameters in the controllers to do
 this.</li>

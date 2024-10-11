@@ -57,6 +57,8 @@ condition variable.}
 
 \item{\code{started}}{Whether the client is started.}
 
+\item{\code{client}}{Process ID of the local process running the client.}
+
 \item{\code{dispatcher}}{Process ID of the \code{mirai} dispatcher}
 }
 \if{html}{\out{</div>}}
@@ -71,6 +73,7 @@ condition variable.}
 \item \href{#method-crew_class_client-condition}{\code{crew_class_client$condition()}}
 \item \href{#method-crew_class_client-resolved}{\code{crew_class_client$resolved()}}
 \item \href{#method-crew_class_client-summary}{\code{crew_class_client$summary()}}
+\item \href{#method-crew_class_client-pids}{\code{crew_class_client$pids()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -197,10 +200,6 @@ Get the true value of the \code{nanonext} condition variable.
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_client$resolved()}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Subtracts a safety offset which was padded on start.
-}
-
 \subsection{Returns}{
 The value of the \code{nanonext} condition variable.
 }
@@ -230,6 +229,21 @@ during the life cycle of the listener.
 \item \code{socket}: websocket URL. \code{crew} changes the token at the end of the
 URL path periodically as a safeguard while managing workers.
 }
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-crew_class_client-pids"></a>}}
+\if{latex}{\out{\hypertarget{method-crew_class_client-pids}{}}}
+\subsection{Method \code{pids()}}{
+Get the process IDs of the local process and the
+\code{mirai} dispatcher (if started).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{crew_class_client$pids()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+An integer vector of process IDs of the local process and the
+\code{mirai} dispatcher (if started).
 }
 }
 }

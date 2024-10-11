@@ -15,6 +15,7 @@ crew_test("crew_controller_local()", {
   expect_false(x$started())
   expect_null(x$summary())
   expect_null(x$autoscaling)
+  expect_equal(length(x$pids()), 1L)
   x$start()
   expect_true(x$empty())
   expect_false(x$saturated())
@@ -45,6 +46,7 @@ crew_test("crew_controller_local()", {
   expect_equal(s$tasks, 0L)
   expect_true(x$client$started)
   expect_true(x$started())
+  expect_equal(length(x$pids()), 2L)
   # first task
   expect_equal(x$pushed, 0L)
   expect_equal(x$popped, 0L)
@@ -139,7 +141,8 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   skip_on_cran()
   skip_on_os("windows")
   x <- crew_controller_local(
-    seconds_idle = 360
+    seconds_idle = 360,
+    r_arguments = c("--no-save", "--no-restore")
   )
   on.exit({
     x$terminate()
@@ -201,134 +204,6 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   )
 })
 
-crew_test("crew_controller_local() warnings and errors", {
-  skip_on_cran()
-  skip_on_os("windows")
-  x <- crew_controller_local(
-    seconds_idle = 360
-  )
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  expect_silent(x$validate())
-  expect_null(x$client$started)
-  x$start()
-  expect_equal(x$summary()$tasks, 0L)
-  expect_equal(x$summary()$errors, 0L)
-  expect_equal(x$summary()$warnings, 0L)
-  x$push(command = {
-    warning("this is a warning")
-    stop("this is an error")
-  }, name = "warnings_and_errors")
-  x$wait(seconds_timeout = 5)
-  out <- x$pop(scale = FALSE)
-  expect_equal(x$summary()$tasks, 1L)
-  expect_equal(x$summary()$errors, 1L)
-  expect_equal(x$summary()$warnings, 1L)
-  expect_equal(out$name, "warnings_and_errors")
-  expect_true(is.numeric(out$seconds))
-  expect_false(anyNA(out$seconds))
-  expect_true(out$seconds >= 0)
-  expect_equal(out$error, "this is an error")
-  expect_equal(out$warnings, "this is a warning")
-  expect_false(anyNA(out$trace))
-  handle <- x$launcher$workers$handle[[1]]
-  x$terminate()
-  expect_false(x$client$started)
-  crew_retry(
-    ~!handle$is_alive(),
-    seconds_interval = 0.1,
-    seconds_timeout = 5
-  )
-})
-
-crew_test("crew_controller_local() can relay task errors as local errors", {
-  skip_on_cran()
-  skip_on_os("windows")
-  x <- crew_controller_local(
-    seconds_idle = 360
-  )
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  x$start()
-  x$push(command =  stop("this is an error"), name = "warnings_and_errors")
-  x$wait(seconds_timeout = 5)
-  expect_crew_error(x$pop(scale = FALSE, error = "stop"))
-})
-
-crew_test("crew_controller_local() can relay task errors as local warnings", {
-  skip_on_cran()
-  skip_on_os("windows")
-  x <- crew_controller_local(
-    seconds_idle = 360
-  )
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  x$start()
-  x$push(command =  stop("this is an error"), name = "warnings_and_errors")
-  x$wait(seconds_timeout = 5)
-  expect_warning(
-    x$pop(scale = FALSE, error = "warn"),
-    class = "crew_warning"
-  )
-})
-
-crew_test("crew_controller_local() can terminate a lost worker", {
-  skip_on_cran()
-  skip_on_os("windows")
-  if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
-    skip_on_os("mac")
-  }
-  x <- crew_controller_local(
-    workers = 1L,
-    seconds_idle = 360,
-    seconds_launch = 180
-  )
-  x$start()
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  private <- crew_private(x$launcher)
-  private$.workers$launches <- 1L
-  bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
-  path <- file.path(R.home("bin"), bin)
-  call <- "Sys.sleep(300)"
-  handle <- processx::process$new(command = path, args = c("-e", call))
-  crew_retry(
-    ~handle$is_alive(),
-    seconds_interval = 0.1,
-    seconds_timeout = 5
-  )
-  private$.workers$handle[[1L]] <- handle
-  private$.workers$socket[1L] <- x$client$summary()$socket
-  private$.workers$start[1L] <- - Inf
-  private$.workers$launches[1L] <- 1L
-  private$.workers$launched[1L] <- TRUE
-  private$.workers$terminated[1L] <- FALSE
-  expect_true(handle$is_alive())
-  x$launcher$rotate()
-  crew_retry(
-    ~!handle$is_alive(),
-    seconds_interval = 0.1,
-    seconds_timeout = 60
-  )
-  expect_false(handle$is_alive())
-})
-
 crew_test("crew_controller_local() launch method", {
   skip_on_cran()
   skip_on_os("windows")
@@ -357,6 +232,95 @@ crew_test("crew_controller_local() launch method", {
     seconds_timeout = 5
   )
   expect_false(handle$is_alive())
+})
+
+crew_test("exit status and code", {
+  skip_on_cran()
+  skip_on_os("windows")
+  x <- crew_controller_local()
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  x$push(Sys.sleep(0.01), name = "short")
+  x$wait(mode = "one")
+  task <- x$pop()
+  expect_equal(task$status, "success")
+  expect_equal(task$code, 0L)
+  x$push(stop("message"), name = "broken")
+  x$wait(mode = "one")
+  task <- x$pop()
+  expect_equal(task$status, "error")
+  expect_equal(task$code, 1L)
+  x$push(Sys.sleep(10000), name = "long")
+  x$cancel(names = "long")
+  x$wait()
+  task <- x$pop()
+  expect_equal(task$status, "canceled")
+  expect_equal(task$code, 20L)
+  expect_equal(x$client$resolved(), 3L)
+})
+
+crew_test("crew_controller_local() resource usage metric logging", {
+  skip_on_cran()
+  skip_on_os("windows")
+  log <- tempfile()
+  x <- crew_controller_local(
+    seconds_idle = 360,
+    options_metrics = crew_options_metrics(
+      path = log,
+      seconds_interval = 0.25
+    )
+  )
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  x$push(Sys.sleep(2))
+  x$wait(mode = "all", seconds_timeout = 30)
+  x$terminate()
+  expect_true(dir.exists(log))
+  data <- autometric::log_read(log)
+  expect_true(is.data.frame(data))
+  expect_gt(nrow(data), 0L)
+  expect_equal(unique(data$status), 0L)
+})
+
+crew_test("crew_controller_local() resource usage metrics with stdout", {
+  skip_on_cran()
+  skip_on_os("windows")
+  log <- tempfile()
+  x <- crew_controller_local(
+    seconds_idle = 360,
+    options_metrics = crew_options_metrics(
+      path = "/dev/stdout",
+      seconds_interval = 0.25
+    ),
+    options_local = crew_options_local(
+      log_directory = log
+    )
+  )
+  on.exit({
+    x$terminate()
+    rm(x)
+    gc()
+    crew_test_sleep()
+  })
+  x$start()
+  x$push(Sys.sleep(2))
+  x$wait(mode = "all", seconds_timeout = 30)
+  x$terminate()
+  expect_true(dir.exists(log))
+  data <- autometric::log_read(log)
+  expect_true(is.data.frame(data))
+  expect_gt(nrow(data), 0L)
+  expect_equal(unique(data$status), 0L)
 })
 
 crew_test("deprecate seconds_exit", {

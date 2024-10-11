@@ -13,7 +13,8 @@ test_that("backlog of tasks completes with finite tasks_max", {
   controller <- crew_controller_local(
     workers = 20L,
     tasks_max = 100,
-    tls = crew_tls(mode = "automatic")
+    tls = crew_tls(mode = "automatic"),
+    seconds_interval = 0.5
   )
   on.exit(controller$terminate(), add = TRUE)
   utils::capture.output(suppressMessages(controller$start()))
