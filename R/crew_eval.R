@@ -49,8 +49,10 @@ crew_eval <- function(
   if (anyNA(name)) {
     name <- basename(tempfile(pattern = "unnamed_task_"))
   }
-  autometric::log_phase_set(phase = name)
-  on.exit(autometric::log_phase_reset())
+  if (package_installed("autometric (>= 0.1.0)")) {
+    autometric::log_phase_set(phase = name)
+    on.exit(autometric::log_phase_reset())
+  }
   old_algorithm <- RNGkind()[1L]
   old_seed <- .subset2(.GlobalEnv, ".Random.seed")
   if (!is.null(algorithm) || !is.null(seed)) {

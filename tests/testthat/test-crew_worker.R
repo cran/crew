@@ -63,6 +63,7 @@ crew_test("crew_worker() can run mirai tasks and assigns env vars", {
 crew_test("crew_worker() metrics logging to a directory", {
   skip_on_cran()
   skip_on_os("windows")
+  skip_if_not_installed("autometric", minimum_version = "0.1.0")
   envvars <- c("CREW_LAUNCHER", "CREW_WORKER", "CREW_INSTANCE")
   previous <- Sys.getenv(envvars)
   Sys.unsetenv(envvars)
@@ -93,7 +94,7 @@ crew_test("crew_worker() metrics logging to a directory", {
       is.matrix(envir$daemons) && all(dim(envir$daemons) > 0L)
     },
     seconds_interval = 0.1,
-    seconds_timeout = 5
+    seconds_timeout = 30
   )
   url <- rownames(envir$daemons)[1]
   settings <- list(url = url, maxtasks = 1L, cleanup = 0L)

@@ -1,4 +1,13 @@
-# crew 0.10.1 (development)
+# crew 0.10.2
+
+* Eliminate spurious `launch_max` error from underutilized workers (#189).
+* Deprecate `launch_max` in favor of `crashes_error` (#189).
+* Look for crashes of all workers in `rotate()` instead of looking for crashes of a specific worker in `launch()` (#189).
+* Add a `crashes()` launcher method to allow plugins to detect and respond to crashes more easily.
+* Change default `seconds_idle` to 300.
+* Move `autometric` to `Suggests:`.
+
+# crew 0.10.1
 
 * Instrument `crew_eval()` with `autometric::log_phase_set()` and `autometric::log_phase_reset()`.
 

@@ -17,3 +17,14 @@ load_packages <- function(packages, library) {
   )
   crew_assert(all(out), message = msg)
 }
+
+package_installed <- function(package) {
+  result <- .subset2(packages_installed, package)
+  if (is.null(result)) {
+    result <- rlang::is_installed(pkg = package)
+    packages_installed[[package]] <- result
+  }
+  result
+}
+
+packages_installed <- new.env(parent = emptyenv(), hash = TRUE)

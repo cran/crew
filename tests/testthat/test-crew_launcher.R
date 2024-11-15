@@ -19,6 +19,7 @@ crew_test("active bindings for covr", {
   expect_silent(out$async$validate())
   expect_silent(out$throttle$validate())
   expect_equal(out$r_arguments, "--vanilla")
+  expect_true(out$crashes_error >= 0L)
   expect_silent(out$validate())
   expect_s3_class(
     out$options_metrics,
@@ -183,21 +184,22 @@ crew_test("launcher start()", {
   workers <- launcher$workers
   expect_equal(nrow(workers), 2L)
   expect_equal(
-    colnames(workers),
-    cols <- c(
-      "handle",
-      "termination",
-      "socket",
-      "start",
-      "launches",
-      "futile",
-      "launched",
-      "terminated",
-      "history",
-      "online",
-      "discovered",
-      "assigned",
-      "complete"
+    sort(colnames(workers)),
+    sort(
+      c(
+        "handle",
+        "termination",
+        "socket",
+        "start",
+        "launches",
+        "crashes",
+        "launched",
+        "terminated",
+        "online",
+        "discovered",
+        "assigned",
+        "complete"
+      )
     )
   )
   expect_equal(workers$handle, list(crew_null, crew_null))
@@ -207,6 +209,10 @@ crew_test("launcher start()", {
   expect_equal(workers$launched, rep(FALSE, 2L))
   expect_equal(workers$assigned, rep(0L, 2L))
   expect_equal(workers$complete, rep(0L, 2L))
+  expect_equal(workers$crashes, rep(0L, 2L))
+  for (index in seq_len(2L)) {
+    expect_equal(launcher$crashes(index), 0L)
+  }
 })
 
 crew_test("launcher done()", {
