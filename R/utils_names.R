@@ -1,10 +1,13 @@
-name_worker <- function(launcher, worker, instance) {
-  paste("crew", launcher, worker, instance, sep = "-")
+name_worker <- function(launcher, worker) {
+  paste("crew", launcher, worker, sep = "-")
 }
 
-parse_instance <- function(socket) {
-  split <- strsplit(socket, split = "/", fixed = TRUE)[[1]]
-  split[length(split)]
+name_task_tempfile <- function() {
+  basename(tempfile(pattern = "unnamed_task_"))
+}
+
+name_task_nanonext <- function() {
+  paste0("unnamed_task_", nanonext::random(n = 32L))
 }
 
 is_named <- function(x) {

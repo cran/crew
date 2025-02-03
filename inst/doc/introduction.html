@@ -383,11 +383,11 @@ times to make sure enough workers are always available.</p>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>task <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>() <span class="co"># Worker started, task complete.</span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>task</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 12</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;   name    command result seconds  seed algorithm error trace warnings</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt;   &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1 get pid NA      &lt;int&gt;        0    NA NA        NA    NA    NA</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 13</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;   name    command    result status error  code trace warnings seconds  seed</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;chr&gt;      &lt;list&gt; &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1 get pid ps::ps_pi… &lt;int&gt;  succe… NA        0 NA    NA             0    NA</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: algorithm &lt;chr&gt;, controller &lt;chr&gt;, worker &lt;chr&gt;</span></span></code></pre></div>
 <p>Alternatively, <code>wait()</code> is a loop that repeatedly checks
 tasks and launches workers until all tasks complete.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span></code></pre></div>
@@ -398,28 +398,48 @@ column.</p>
 <p>Here is the full list of output in the <code>task</code> object
 returned by <code>pop()</code>.</p>
 <ul>
-<li><code>name</code>: the task name if given.</li>
-<li><code>command</code>: a character string with the R command if
-<code>save_command</code> was set to <code>TRUE</code> in
-<code>push()</code>.</li>
+<li><code>name</code>: the task name.</li>
+<li><code>command</code>: a character string with the R command.</li>
 <li><code>result</code>: a list containing the return value of the R
-command.</li>
-<li><code>seconds</code>: number of seconds that the task ran.</li>
-<li><code>seed</code>: the single integer originally supplied to
-<code>push()</code>, <code>NA</code> if <code>seed</code> was supplied
-as <code>NULL</code>.</li>
-<li><code>algorithm</code>: name of the pseudo-random number generator
-algorithm originally supplied to <code>push()</code>, <code>NA</code> if
-<code>algorithm</code> was supplied as <code>NULL</code>.</li>
+command. <code>NA</code> if the task failed.</li>
+<li><code>status</code>: a character string. <code>&quot;success&quot;</code> if
+the task succeeded, <code>&quot;cancel&quot;</code> if the task was canceled with
+the <code>cancel()</code> controller method, <code>&quot;crash&quot;</code> if the
+worker running the task exited before completing the task, and
+<code>&quot;error&quot;</code> for any other kind of error. (See the “Crashes and
+retries” section below for more on crashes.)</li>
 <li><code>error</code>: the first 2048 characters of the error message
-if the task threw an error, <code>NA</code> otherwise.</li>
+if the task status is not <code>&quot;success&quot;</code>, <code>NA</code>
+otherwise.</li>
+<li><code>code</code>: an integer code denoting the specific exit
+status: <code>0</code> for successful tasks, <code>-1</code> for tasks
+with an error in the R command of the task, and another positive integer
+with an NNG status code if there is an error at the
+NNG/<code>nanonext</code> level. <code>nanonext::nng_error()</code> can
+interpret these codes.</li>
 <li><code>trace</code>: the first 2048 characters of the text of the
 traceback if the task threw an error, <code>NA</code> otherwise.</li>
 <li><code>warnings</code>: the first 2048 characters. of the text of
 warning messages that the task may have generated, <code>NA</code>
 otherwise.</li>
-<li><code>launcher</code>: name of the <code>crew</code> launcher where
-the task ran.</li>
+<li><code>seconds</code>: number of seconds that the task ran.</li>
+<li><code>seed</code>: the single integer originally supplied to
+<code>push()</code>, <code>NA</code> otherwise. The pseudo-random number
+generator state just prior to the task can be restored using
+<code>set.seed(seed = seed, kind = algorithm)</code>, where
+<code>seed</code> and <code>algorithm</code> are part of this
+output.</li>
+<li><code>algorithm</code>: name of the pseudo-random number generator
+algorithm originally supplied to <code>push()</code>, <code>NA</code>
+otherwise. The pseudo-random number generator state just prior to the
+task can be restored using
+<code>set.seed(seed = seed, kind = algorithm)</code>, where
+<code>seed</code> and <code>algorithm</code> are part of this
+output.</li>
+<li><code>controller</code>: name of the <code>crew</code> controller
+where the task ran.</li>
+<li><code>worker</code>: name of the <code>crew</code> worker that ran
+the task.</li>
 </ul>
 <p>If <code>seed</code> and <code>algorithm</code> are both non-missing
 in the output, then you can recover the pseudo-random number generator
@@ -462,12 +482,12 @@ tasks.</p>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
 <span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>results</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 12</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds  seed algorithm error trace warnings</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 13</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;   name       command result status error  code trace warnings seconds  seed</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;   &lt;list&gt; &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 1 unnamed_t… a + b … &lt;dbl&gt;  succe… NA        0 NA    NA             0    NA</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 2 unnamed_t… a + b … &lt;dbl&gt;  succe… NA        0 NA    NA             0    NA</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: algorithm &lt;chr&gt;, controller &lt;chr&gt;, worker &lt;chr&gt;</span></span>
 <span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a></span>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="fu">as.numeric</span>(results<span class="sc">$</span>result)</span>
 <span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; [1] 14 18</span></span></code></pre></div>
@@ -504,12 +524,12 @@ same overall effect as <code>map()</code>.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">collect</span>()</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 12</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;   name  command result    seconds  seed algorithm error trace warnings</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;   &lt;list&gt;      &lt;dbl&gt; &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 1 1     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 2 2     NA      &lt;dbl [1]&gt;       0    NA NA        NA    NA    NA</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: launcher &lt;chr&gt;, worker &lt;int&gt;, instance &lt;chr&gt;</span></span></code></pre></div>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 13</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;   name       command result status error  code trace warnings seconds  seed</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;   &lt;list&gt; &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 1 unnamed_t… a + b … &lt;dbl&gt;  succe… NA        0 NA    NA             0    NA</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 2 unnamed_t… a + b … &lt;dbl&gt;  succe… NA        0 NA    NA             0    NA</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: algorithm &lt;chr&gt;, controller &lt;chr&gt;, worker &lt;chr&gt;</span></span></code></pre></div>
 <p>However, there are subtle differences between the synchronous and
 asynchronous functional programming methods:</p>
 <ol style="list-style-type: decimal">
@@ -525,35 +545,14 @@ do.</li>
 </div>
 <div id="summaries" class="section level1">
 <h1>Summaries</h1>
-<p>The controller summary shows how many tasks each worker ran, how many
-total seconds it spent running tasks, and how many tasks threw warnings
-and errors.</p>
+<p>The controller summary shows how many tasks were completed and
+popped, how many total seconds the workers spent running tasks, how many
+tasks threw warnings or errors, etc.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   controller worker tasks seconds errors warnings</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;    &lt;int&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1 example         1     2   0.001      0        0</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 2 example         2     1   0          0        0</span></span></code></pre></div>
-<p>The launcher summary counts the number of times each worker was
-launched, and it shows the total number of assigned and completed tasks
-from all past terminated instances of each worker. In addition, it shows
-whether the current worker instance was actively connected (“online”) or
-had connected at some point during its life cycle (“discovered”) as of
-the last call to <code>controller$launcher$tally()</code>.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   worker launches online discovered assigned complete</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt;    &lt;int&gt; &lt;lgl&gt;  &lt;lgl&gt;         &lt;int&gt;    &lt;int&gt;</span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1      1        2 TRUE   TRUE              0        0</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2      2        1 TRUE   TRUE              0        0</span></span></code></pre></div>
-<p>Finally, the client summary shows up-to-date worker status from
-<code>mirai::daemons()</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; 1      1 FALSE          1        2        2 ws://10.0.0.32:58685/1/15e07250…</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          1        1        1 ws://10.0.0.32:58685/2/cb45b3d4…</span></span></code></pre></div>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 8</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;   controller tasks seconds success error crash cancel warning</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;int&gt;   &lt;dbl&gt;   &lt;int&gt; &lt;int&gt; &lt;int&gt;  &lt;int&gt;   &lt;int&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1 example        5       0       5     0     0      0       0</span></span></code></pre></div>
 </div>
 <div id="termination" class="section level1">
 <h1>Termination</h1>
@@ -561,14 +560,14 @@ the last call to <code>controller$launcher$tally()</code>.</p>
 using it. <code>terminate()</code> tries to close the the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
 dispatcher and any workers that may still be running. It is important to
 free up these resources.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>The <code>mirai</code> dispatcher process should exit on its own, but
 if not, you can manually terminate the process with
 <code>ps::ps_kill(p = controller$client$dispatcher)</code> or call
-<code>crew_clean()</code> to terminate any dispatchers from current or
-previous R sessions.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
+<code>crew_clean()</code> to terminate any dispatchers and local workers
+running on your local machine.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">crew_clean</span>()</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; nothing to clean up</span></span></code></pre></div>
 </div>
 <div id="monitoring-local-processes" class="section level1">
 <h1>Monitoring local processes</h1>
@@ -595,16 +594,16 @@ session exits or the controller terminates, but under rare circumstances
 they may continue running. The “local monitor” in <code>crew</code>
 makes it easy to list and terminate any of these processes which may be
 running on your local computer. Example:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
 <p><code>crew_monitor_local()</code> only manages processes running on
 your local computer. To manage <code>crew</code> workers running on
 different computers, such as SLURM or AWS Batch, please familiarize
@@ -612,9 +611,6 @@ yourself with the given computing platform, and consider using the
 monitor objects in the relevant third-party plugin packages such as <a href="https://wlandau.github.io/crew.cluster/"><code>crew.cluster</code></a>
 or <a href="https://wlandau.github.io/crew.aws.batch/"><code>crew.aws.batch</code></a>.
 Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-management" class="uri">https://wlandau.github.io/crew.aws.batch/index.html#job-management</a>.</p>
-</div>
-<div id="logging" class="section level1">
-<h1>Logging</h1>
 </div>
 <div id="tuning-and-auto-scaling" class="section level1">
 <h1>Tuning and auto-scaling</h1>
@@ -654,14 +650,80 @@ the computation as a whole.</li>
 </div>
 <div id="asynchronous-management-of-workers" class="section level1">
 <h1>Asynchronous management of workers</h1>
-<p>Some launchers support local processes to launch and terminate
-workers asynchronously. For example, a cloud-based launcher may need to
-make HTTP requests to launch and terminate workers on e.g. AWS Batch,
+<p>Some controllers support local processes to launch and terminate
+workers asynchronously. For example, a cloud-based controller may need
+to make HTTP requests to launch and terminate workers on e.g. AWS Batch,
 and these time-consuming requests should happen in the background.
 Controllers that support this will have a <code>processes</code>
 argument to specify the number of local R processes to churn through
 worker launches and terminations. Set <code>processes = NULL</code> to
 disable async, which can be helpful for troubleshooting.</p>
+</div>
+<div id="crashes-and-retries" class="section level1">
+<h1>Crashes and retries</h1>
+<p>In rare cases, a worker may exit unexpectedly before it completes its
+current task. This could happen for any number of reasons: for example,
+the worker could run out of memory, the task could cause a segmentation
+fault, the <a href="https://wlandau.github.io/crew.aws.batch/">AWS
+Batch</a> spot instance could exit because of a spike in price, etc. To
+troubleshoot, it is best to consult the worker log files and <a href="https://wlandau.github.io/crew/articles/logging.html"><code>autometric</code>
+resource logs</a>.</p>
+<p>If a worker crashes, the task will return a status of
+<code>&quot;crashed&quot;</code> in <code>pop()</code> (and <code>collect()</code>
+and <code>map()</code>). You can simulate a crash for yourself:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_local</span>(<span class="at">name =</span> <span class="st">&quot;my_controller&quot;</span>, <span class="at">crashes_max =</span> 5L)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co"># Submit a task and wait for it to start.</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">command =</span> <span class="fu">Sys.sleep</span>(<span class="dv">300</span>), <span class="at">name =</span> <span class="st">&quot;my_task&quot;</span>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="fu">Sys.sleep</span>(<span class="dv">2</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co"># Terminate the worker in the middle of the task.</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">terminate_workers</span>()</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co"># Wait for the task to resolve.</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co"># Retrieve the result.</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>task <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>()</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>task[, <span class="fu">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;result&quot;</span>, <span class="st">&quot;status&quot;</span>, <span class="st">&quot;error&quot;</span>, <span class="st">&quot;code&quot;</span>, <span class="st">&quot;controller&quot;</span>)]</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 6</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt;   name    result    status error                  code controller   </span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;   &lt;list&gt;    &lt;chr&gt;  &lt;chr&gt;                 &lt;int&gt; &lt;chr&gt;        </span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; 1 my_task &lt;lgl [1]&gt; crash  19 | Connection reset    19 my_controller</span></span></code></pre></div>
+<p>In the event of a crash like this one, you can choose to abandon the
+workflow and troubleshoot, or you can choose to retry the task on a
+different (possibly new) worker. Simply push the task again and use the
+same task name.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">command =</span> <span class="fu">Sys.sleep</span>(<span class="dv">300</span>), <span class="at">name =</span> <span class="st">&quot;my_task&quot;</span>)</span></code></pre></div>
+<p>The controller enforces a maximum number of retries, given by the
+<code>crashes_max</code> argument to
+<code>crew_controller_local()</code>. If a task’s worker crashes more
+than <code>crashes_max</code> times in a row in the same controller,
+then a subsequent <code>pop()</code> (or <code>collect()</code> or
+<code>map()</code>) throws an informative error:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">pop</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; ! the crew worker of task &#39;my_task&#39; crashed 6 consecutive time(s)</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; in controller &#39;my_controller&#39;.</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; For details and advice, please see the crashes_max argument of</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; crew::crew_controller(), as well as</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; https://wlandau.github.io/crew/articles/risks.html#crashes and</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; https://wlandau.github.io/crew/articles/logging.html.</span></span></code></pre></div>
+<p>With multiple controllers in a <a href="https://wlandau.github.io/crew/articles/groups.html">controller
+group</a>, you can configure tasks to run in a different controller if
+the task crashes in the original controller <code>crashes_max</code>
+times. For details, see the <a href="https://wlandau.github.io/crew/articles/groups.html">controller
+group vignette</a>.</p>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>As of <code>targets</code> &gt;= 1.10.0.9002,
+<code>targets</code> pipelines automatically retry tasks whose workers
+crash.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+</ol>
 </div>
 
 

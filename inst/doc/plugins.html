@@ -342,20 +342,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="TOC">
 <ul>
 <li><a href="#about" id="toc-about"><span class="toc-section-number">1</span> About</a></li>
-<li><a href="#request-for-community-contributions" id="toc-request-for-community-contributions"><span class="toc-section-number">2</span> 📣 Request for community
-contributions 📣</a></li>
-<li><a href="#how-it-works" id="toc-how-it-works"><span class="toc-section-number">3</span> How it works</a></li>
-<li><a href="#scope" id="toc-scope"><span class="toc-section-number">4</span> Scope</a></li>
-<li><a href="#implementation" id="toc-implementation"><span class="toc-section-number">5</span> Implementation</a></li>
-<li><a href="#network" id="toc-network"><span class="toc-section-number">6</span> Network</a></li>
-<li><a href="#termination" id="toc-termination"><span class="toc-section-number">7</span> Termination</a></li>
-<li><a href="#example" id="toc-example"><span class="toc-section-number">8</span> Example</a></li>
-<li><a href="#worker-retries" id="toc-worker-retries"><span class="toc-section-number">9</span> Worker retries</a></li>
-<li><a href="#helper" id="toc-helper"><span class="toc-section-number">10</span> Helper</a></li>
-<li><a href="#informal-testing" id="toc-informal-testing"><span class="toc-section-number">11</span> Informal testing</a></li>
-<li><a href="#load-testing" id="toc-load-testing"><span class="toc-section-number">12</span> Load testing</a></li>
-<li><a href="#asynchrony" id="toc-asynchrony"><span class="toc-section-number">13</span> Asynchrony</a></li>
-<li><a href="#managing-workers" id="toc-managing-workers"><span class="toc-section-number">14</span> Managing workers</a></li>
+<li><a href="#how-it-works" id="toc-how-it-works"><span class="toc-section-number">2</span> How it works</a></li>
+<li><a href="#scope" id="toc-scope"><span class="toc-section-number">3</span> Scope</a></li>
+<li><a href="#implementation" id="toc-implementation"><span class="toc-section-number">4</span> Implementation</a></li>
+<li><a href="#network" id="toc-network"><span class="toc-section-number">5</span> Network</a></li>
+<li><a href="#termination" id="toc-termination"><span class="toc-section-number">6</span> Termination</a></li>
+<li><a href="#example" id="toc-example"><span class="toc-section-number">7</span> Example</a></li>
+<li><a href="#helper" id="toc-helper"><span class="toc-section-number">8</span> Helper</a></li>
+<li><a href="#informal-testing" id="toc-informal-testing"><span class="toc-section-number">9</span> Informal testing</a></li>
+<li><a href="#load-testing" id="toc-load-testing"><span class="toc-section-number">10</span> Load testing</a></li>
+<li><a href="#asynchrony" id="toc-asynchrony"><span class="toc-section-number">11</span> Asynchrony</a></li>
+<li><a href="#managing-workers" id="toc-managing-workers"><span class="toc-section-number">12</span> Managing workers</a></li>
 </ul>
 </div>
 
@@ -368,18 +365,8 @@ package already has plugins for traditional high-performance computing
 schedulers (<a href="https://slurm.schedmd.com/">SLURM</a>, SGE, LSF,
 and PBS/TORQUE).</p>
 </div>
-<div id="request-for-community-contributions" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> 📣 Request for
-community contributions 📣</h1>
-<p><span style="color: blue"><strong>The launcher plugin framework aims
-to extend <code>crew</code> to modern platforms and services like <a href="https://cloud.google.com/run/">Google Cloud Run</a>, <a href="https://kubernetes.io/">Kubernetes</a>, and beyond. At the time of
-writing, plugins for cloud computing do not yet exist. So if you have
-access to these services and know how to use them, please consider
-contributing a package with plugins of your own. The maintainer of
-<code>crew</code> would love to work with you!</strong></span></p>
-</div>
-<div id="how-it-works" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> How it works</h1>
+<div id="how-it-works" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> How it works</h1>
 <p>These <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launcher</a>
 plugins need not become part of the <code>crew</code> package itself.
 You can write your plugin in a simple R script, or you write it in a
@@ -387,17 +374,18 @@ custom R package that <a href="https://r-pkgs.org/dependencies-in-practice.html"
 <code>crew</code>. Published packages with <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html">launcher</a>
 plugins are powerful extensions that enhance <code>crew</code> for the
 entire open-source community. See <a href="https://r-pkgs.org/">R
-Packages</a> by <a href="https://hadley.nz/">Hadley Wickham</a> and <a href="https://jennybryan.org/">Jenny Bryan</a> for how to write an R
-package.</p>
+Packages</a> by <a href="https://github.com/hadley">Hadley Wickham</a>
+and <a href="https://github.com/jennybc">Jenny Bryan</a> for how to
+write an R package.</p>
 </div>
-<div id="scope" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Scope</h1>
+<div id="scope" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Scope</h1>
 <p>This vignette demonstrates how to write a <code>crew</code> launcher
 plugin. It assumes prior familiarity with <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code>
 classes</a> and the computing platform of your plugin.</p>
 </div>
-<div id="implementation" class="section level1" number="5">
-<h1><span class="header-section-number">5</span> Implementation</h1>
+<div id="implementation" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Implementation</h1>
 <p>To create your own launcher plugin, write an <a href="https://r6.r-lib.org/articles/Introduction.html"><code>R6</code></a>
 subclass of <a href="https://wlandau.github.io/crew/reference/crew_class_launcher.html"><code>crew_class_launcher</code></a>
 with a <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-launch-worker-"><code>launch_worker()</code></a>
@@ -407,8 +395,8 @@ arguments as the <a href="https://wlandau.github.io/crew/reference/crew_class_la
 process <code>launch_worker()</code> method</a>, generate a call to <a href="https://wlandau.github.io/crew/reference/crew_worker.html"><code>crew_worker()</code></a>,
 and then submit a new job or process to run that call.</p>
 </div>
-<div id="network" class="section level1" number="6">
-<h1><span class="header-section-number">6</span> Network</h1>
+<div id="network" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Network</h1>
 <p>Each worker that launches must be able to dial into the client over
 the local network. The <code>host</code> argument of
 <code>crew_client()</code> provides the local IP address, and the
@@ -421,8 +409,8 @@ one</a>.</p>
 time to assess the network security risks of your computing environment.
 Use at your own risk.</p>
 </div>
-<div id="termination" class="section level1" number="7">
-<h1><span class="header-section-number">7</span> Termination</h1>
+<div id="termination" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Termination</h1>
 <p>We recommend you implement an optional <a href="https://wlandau.github.io/crew/reference/crew_class_launcher_local.html#method-terminate-worker-"><code>terminate_worker()</code></a>
 method. Although <code>mirai</code> has its own way of terminating
 workers, it only works if the worker already connected, and it cannot
@@ -438,8 +426,8 @@ return value of the previous call to <a href="https://wlandau.github.io/crew/ref
 A handle can be any kind of R object: a process ID, a job name, an
 <code>R6</code> object returned by <code>callr::r_bg()</code>, etc.</p>
 </div>
-<div id="example" class="section level1" number="8">
-<h1><span class="header-section-number">8</span> Example</h1>
+<div id="example" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Example</h1>
 <p>The following is a custom custom launcher class whose workers are
 local R processes on Unix-like systems.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>custom_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
@@ -493,36 +481,12 @@ in the launcher at the given worker index.</li>
 launcher and run the <code>call()</code> method.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>launcher <span class="ot">&lt;-</span> <span class="fu">crew_launcher_local</span>()</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>launcher<span class="sc">$</span><span class="fu">call</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">socket =</span> <span class="st">&quot;ws://127.0.0.1:5000/3/aa9c59ea&quot;</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">launcher =</span> <span class="st">&quot;my_launcher&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">worker =</span> 3L,</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">instance =</span> <span class="st">&quot;aa9c59ea&quot;</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>)</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;ws://127.0.0.1:5000/3/aa9c59ea\&quot;, asyncdial = FALSE, autoexit = 15L, cleanup = 1L, output = TRUE, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, tls = NULL, rs = NULL), launcher = \&quot;my_launcher\&quot;, worker = 3L, instance = \&quot;aa9c59ea\&quot;, options_metrics = crew::crew_options_metrics(path = NULL, seconds_interval = 5))&quot;</span></span></code></pre></div>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>launcher<span class="sc">$</span><span class="fu">start</span>(<span class="at">url =</span> <span class="st">&quot;tcp://127.0.0.1:57000&quot;</span>, <span class="at">profile =</span> <span class="st">&quot;example_profile&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>launcher<span class="sc">$</span><span class="fu">call</span>(<span class="at">worker =</span> <span class="st">&quot;worker_name&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;crew::crew_worker(settings = list(url = \&quot;tcp://127.0.0.1:57000\&quot;, dispatcher = TRUE, asyncdial = FALSE, autoexit = 15L, cleanup = 1L, output = TRUE, maxtasks = Inf, idletime = Inf, walltime = Inf, timerstart = 0L, id = 1L, tls = NULL, rs = NULL), launcher = \&quot;27548330\&quot;, worker = \&quot;worker_name\&quot;, options_metrics = crew::crew_options_metrics(path = NULL, seconds_interval = 5))&quot;</span></span></code></pre></div>
 </div>
-<div id="worker-retries" class="section level1" number="9">
-<h1><span class="header-section-number">9</span> Worker retries</h1>
-<p>The <code>launch_worker()</code> method can call
-<code>self$crashes(index = worker)</code> to get the number of
-consecutive times the worker has crashed (exited without completing all
-its tasks). When a worker crashes, its crash count increments by 1. The
-next time a worker does not crash (exits only after completing all its
-tasks) the crash count resets back to zero.</p>
-<p>You can use the crash count to assign more memory, CPU cores, or
-other resources to a worker launch. Here is a pseudo-code sketch which
-increases available memory by 4 GB each time a worker crashes, then
-resets back to the original 16 GB when the worker succeeds:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>launch_worker <span class="ot">=</span> <span class="cf">function</span>(call, name, launcher, worker, instance) {</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  gigabytes_memory <span class="ot">&lt;-</span> <span class="dv">16</span> <span class="sc">+</span> <span class="dv">4</span> <span class="sc">*</span> self<span class="sc">$</span><span class="fu">crashes</span>(<span class="at">index =</span> worker)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">submit_job</span>(call, name, gigabytes_memory)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>}</span></code></pre></div>
-<p>This mechanism is similar to <a href="https://wlandau.github.io/crew.cluster/reference/crew_options_slurm.html#retryable-options">retryable
-options in <code>crew.cluster</code></a> and <a href="https://wlandau.github.io/crew.aws.batch/reference/crew_options_aws_batch.html#retryable-options">in
-<code>crew.aws.batch</code></a>.</p>
-</div>
-<div id="helper" class="section level1" number="10">
-<h1><span class="header-section-number">10</span> Helper</h1>
+<div id="helper" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Helper</h1>
 <p>It is useful to have a helper function that creates controllers with
 your custom launcher. It should:</p>
 <ol style="list-style-type: decimal">
@@ -541,68 +505,70 @@ inherit the documentation of all the arguments instead of writing it by
 hand. You may want to adjust the default arguments based on the
 specifics of your platform, especially <code>seconds_launch</code> if
 workers take a long time to launch.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co">#&#39; @title Create a controller with the custom launcher.</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&#39; @description Create an `R6` object to submit tasks and</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&#39;   launch workers.</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&#39; @inheritParams crew::crew_controller_local</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>crew_controller_custom <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;custom controller name&quot;</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">host =</span> <span class="cn">NULL</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">tls =</span> crew<span class="sc">::</span><span class="fu">crew_tls</span>(),</span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">30</span>,</span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">retry_tasks =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>  <span class="at">crashes_error =</span> 5L,</span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>  <span class="at">r_arguments =</span> <span class="cn">NULL</span>,</span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>  <span class="at">options_metrics =</span> crew<span class="sc">::</span><span class="fu">crew_options_metrics</span>()</span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>) {</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout,</span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a>    <span class="at">retry_tasks =</span> retry_tasks</span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a>  )</span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout,</span>
-<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
-<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
-<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
-<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
-<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
-<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
-<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
-<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
-<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection,</span>
-<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a>    <span class="at">crashes_error =</span> crashes_error,</span>
-<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
-<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a>    <span class="at">r_arguments =</span> r_arguments,</span>
-<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a>    <span class="at">options_metrics =</span> options_metrics</span>
-<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a>  )</span>
-<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(<span class="at">client =</span> client, <span class="at">launcher =</span> launcher)</span>
-<span id="cb4-57"><a href="#cb4-57" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
-<span id="cb4-58"><a href="#cb4-58" tabindex="-1"></a>  controller</span>
-<span id="cb4-59"><a href="#cb4-59" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co">#&#39; @title Create a controller with the custom launcher.</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&#39; @description Create an `R6` object to submit tasks and</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&#39;   launch workers.</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&#39; @inheritParams crew::crew_controller_local</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>crew_controller_custom <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;custom controller name&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">host =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">tls =</span> crew<span class="sc">::</span><span class="fu">crew_tls</span>(),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">30</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  <span class="at">r_arguments =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  <span class="at">options_metrics =</span> crew<span class="sc">::</span><span class="fu">crew_options_metrics</span>(),</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>  <span class="at">crashes_max =</span> 5L,</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  <span class="at">backup =</span> <span class="cn">NULL</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>) {</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>  )</span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> custom_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout,</span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection,</span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a>    <span class="at">r_arguments =</span> r_arguments,</span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a>    <span class="at">options_metrics =</span> options_metrics</span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a>  )</span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(</span>
+<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a>    <span class="at">client =</span> client,</span>
+<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a>    <span class="at">launcher =</span> launcher,</span>
+<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a>    <span class="at">crashes_max =</span> crashes_max,</span>
+<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a>    <span class="at">backup =</span> backup</span>
+<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a>  )</span>
+<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a>  controller</span>
+<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a>}</span></code></pre></div>
 </div>
-<div id="informal-testing" class="section level1" number="11">
-<h1><span class="header-section-number">11</span> Informal testing</h1>
+<div id="informal-testing" class="section level1" number="9">
+<h1><span class="header-section-number">9</span> Informal testing</h1>
 <p>Before you begin testing, please begin monitoring local processes and
 remote jobs on your platform. In the case of the above <code>crew</code>
 launcher which only creates local processes, it is sufficient to start
@@ -617,20 +583,20 @@ use your your custom controller helper instead of <a href="https://wlandau.githu
 <p>First, create and start a controller. You may wish to monitor local
 processes on your computer to make sure the <code>mirai</code>
 dispatcher starts.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(<span class="at">workers =</span> <span class="dv">2</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(<span class="at">workers =</span> <span class="dv">2</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
 <p>Try pushing a task that gets the local IP address and process ID of
 the worker instance.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;get worker IP address and process ID&quot;</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">command =</span> <span class="fu">paste</span>(getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>), ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;get worker IP address and process ID&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">command =</span> <span class="fu">paste</span>(getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>), ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>)</span></code></pre></div>
 <p>Wait for the task to complete and look at the result.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>()</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>result<span class="sc">$</span>result[[<span class="dv">1</span>]]</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;192.168.0.2 27336&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>()</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>result<span class="sc">$</span>result[[<span class="dv">1</span>]]</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;192.168.0.2 27336&quot;</span></span></code></pre></div>
 <p>Please use the result to verify that the task really ran on a worker
 as intended. The process ID above should agree with the one from the
 handle (<a href="https://github.com/r-lib/processx/issues/364">except on
@@ -640,86 +606,72 @@ worker is running on a different computer, the worker IP address should
 be different than the local IP address. Since our custom launcher
 creates local processes, the IP addresses are the same in this case, but
 they should be different for a <a href="https://slurm.schedmd.com/">SLURM</a> or <a href="https://aws.amazon.com/batch/">AWS Batch</a> launcher.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; &quot;192.168.0.2&quot;</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span>workers<span class="sc">$</span>handle[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">get_pid</span>()</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] 27336</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; &quot;192.168.0.2&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span>instances<span class="sc">$</span>handle[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">get_pid</span>()</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] 27336</span></span></code></pre></div>
 <p>If you did not set any timeouts or task limits, the worker that ran
-the task should still be online. The other worker had no tasks, so it
+the task should still be running. The other worker had no tasks, so it
 did not need to launch.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 6</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;   worker online instances assigned complete socket</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;    &lt;int&gt; &lt;lgl&gt;      &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;chr&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; 1      1 TRUE           1        1        1 ws://10.0.0.32:50258/1/571bcda7…</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 2      2 FALSE          0        0        0 ws://10.0.0.32:50258/2/daf88d6e…</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span>instances<span class="sc">$</span>handle[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">is_alive</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>When you are done, terminate the controller. This terminates the
 <code>mirai</code> dispatcher process and the <code>crew</code>
 workers.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>Finally, use the process monitoring interface of your computing
 platform or operating system to verify that all <code>mirai</code>
 dispatchers and <code>crew</code> workers are terminated.</p>
 </div>
-<div id="load-testing" class="section level1" number="12">
-<h1><span class="header-section-number">12</span> Load testing</h1>
+<div id="load-testing" class="section level1" number="10">
+<h1><span class="header-section-number">10</span> Load testing</h1>
 <p>If the informal testing succeeded, we recommend you scale up testing
 to more ambitious scenarios. As one example, you can test that your
 workers can auto-scale and quickly churn through a large number of
 tasks.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">seconds_idle =</span> 2L,</span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">workers =</span> 2L</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>)</span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co"># Push 100 tasks</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> <span class="fu">seq_len</span>(100L)) {</span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>}</span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co"># Wait for the tasks to complete.</span></span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co"># Wait for the workers to idle out and exit on their own.</span></span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="fu">crew_retry</span>(</span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="sc">~</span><span class="fu">all</span>(controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()<span class="sc">$</span>online <span class="sc">==</span> <span class="cn">FALSE</span>),</span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="dv">1</span>,</span>
-<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">60</span></span>
-<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>)</span>
-<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co"># Do the same for 100 more tasks.</span></span>
-<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> (<span class="fu">seq_len</span>(100L) <span class="sc">+</span> 100L)) {</span>
-<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
-<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
-<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
-<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>}</span>
-<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
-<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="fu">crew_retry</span>(</span>
-<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>  <span class="sc">~</span><span class="fu">all</span>(controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()<span class="sc">$</span>online <span class="sc">==</span> <span class="cn">FALSE</span>),</span>
-<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="dv">1</span>,</span>
-<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">60</span></span>
-<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>)</span>
-<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co"># Collect the results.</span></span>
-<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="cf">while</span> (<span class="sc">!</span><span class="fu">is.null</span>(result <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">pop</span>(<span class="at">scale =</span> <span class="cn">FALSE</span>))) {</span>
-<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(result)) {</span>
-<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>    results <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(results, result)</span>
-<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>  }</span>
-<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a>}</span>
-<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co"># Check the results</span></span>
-<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">sort</span>(<span class="fu">unlist</span>(results<span class="sc">$</span>result)) <span class="sc">==</span> <span class="fu">seq_len</span>(200L))</span>
-<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a><span class="co"># View worker and task summaries.</span></span>
-<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a>controller<span class="sc">$</span>client<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span><span class="fu">summary</span>()</span>
-<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="co"># Terminate the controller.</span></span>
-<span id="cb11-48"><a href="#cb11-48" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span>
-<span id="cb11-49"><a href="#cb11-49" tabindex="-1"></a><span class="co"># Now outside crew, verify that the mirai dispatcher</span></span>
-<span id="cb11-50"><a href="#cb11-50" tabindex="-1"></a><span class="co"># and crew workers successfully terminated.</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(crew)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_custom</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">seconds_idle =</span> 2L,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">workers =</span> 2L</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co"># Push 100 tasks</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> <span class="fu">seq_len</span>(100L)) {</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>}</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Wait for the tasks to complete.</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co"># Do the same for 100 more tasks.</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="cf">for</span> (index <span class="cf">in</span> (<span class="fu">seq_len</span>(100L) <span class="sc">+</span> 100L)) {</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;task_&quot;</span>, index)</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> name, <span class="at">command =</span> index, <span class="at">data =</span> <span class="fu">list</span>(<span class="at">index =</span> index))</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="fu">message</span>(<span class="fu">paste</span>(<span class="st">&quot;push&quot;</span>, name))</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>}</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co"># Collect the results.</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>results <span class="ot">&lt;-</span> controller<span class="sc">$</span><span class="fu">collect</span>()</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co"># Check the results</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">sort</span>(<span class="fu">unlist</span>(results<span class="sc">$</span>result)) <span class="sc">==</span> <span class="fu">seq_len</span>(200L))</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co"># View the controller summary.</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">summary</span>()</span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co"># Terminate the controller.</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co"># Now outside crew, verify that the mirai dispatcher</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co"># and crew workers successfully terminated.</span></span></code></pre></div>
 </div>
-<div id="asynchrony" class="section level1" number="13">
-<h1><span class="header-section-number">13</span> Asynchrony</h1>
+<div id="asynchrony" class="section level1" number="11">
+<h1><span class="header-section-number">11</span> Asynchrony</h1>
 <p>Depending on the launcher plugin, worker launches and terminations
 can be time-consuming. For example, each HTTP request to AWS Batch can
 take a couple seconds, and this latency becomes burdensome when it there
@@ -745,86 +697,84 @@ Batch and you replace the process IDs with AWS Batch job IDs.</p>
 send to local async <code>mirai</code> daemons. The
 <code>self$async$eval()</code> function accepts R code, data, and
 packages to run a quick local asynchronous task, and it returns a
-<code>mirai::mirai()</code> task object as the handle.
-<code>handle$data</code> returns the results if available, and
-<code>crew</code> uses <code>mirai::call_mirai()</code> to make sure any
-tasks submitted by <code>launch_worker()</code> have resolved before
-they are used by <code>terminate_worker()</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>async_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;custom_launcher_class&quot;</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">inherit =</span> crew<span class="sc">::</span>crew_class_launcher,</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="at">launch_worker =</span> <span class="cf">function</span>(call, name, launcher, worker, instance) {</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>      self<span class="sc">$</span>async<span class="sc">$</span><span class="fu">eval</span>(</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>        <span class="at">command =</span> <span class="fu">list</span>(<span class="at">pid =</span> process<span class="sc">$</span><span class="fu">new</span>(bin, <span class="at">args =</span> <span class="fu">c</span>(<span class="st">&quot;-e&quot;</span>, call))<span class="sc">$</span><span class="fu">get_pid</span>()),</span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>        <span class="at">data =</span> <span class="fu">list</span>(<span class="at">bin =</span> <span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">&quot;bin&quot;</span>), <span class="st">&quot;R&quot;</span>), <span class="at">call =</span> call),</span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>        <span class="at">packages =</span> <span class="st">&quot;processx&quot;</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>      )</span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>    },</span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>    <span class="at">terminate_worker =</span> <span class="cf">function</span>(handle) {</span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>      self<span class="sc">$</span>async<span class="sc">$</span><span class="fu">eval</span>(</span>
-<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>        <span class="at">command =</span> crew<span class="sc">::</span><span class="fu">crew_terminate_process</span>(handle<span class="sc">$</span>data<span class="sc">$</span>pid),</span>
-<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>        <span class="at">data =</span> <span class="fu">list</span>(<span class="at">pid =</span> handle<span class="sc">$</span>data<span class="sc">$</span>pid)</span>
-<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>      )</span>
-<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>    }</span>
-<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>  )</span>
-<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>)</span></code></pre></div>
+<code>mirai::mirai()</code> task object as the handle. <code>crew</code>
+internally resolves launch tasks so the handles you accept in
+<code>terminate_worker()</code> are the exact objects returned from
+<code>async$eval()</code> in <code>launcher_worker()</code>.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>async_launcher_class <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;custom_launcher_class&quot;</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">inherit =</span> crew<span class="sc">::</span>crew_class_launcher,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>    <span class="at">launch_worker =</span> <span class="cf">function</span>(call, name, launcher, worker, instance) {</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>      self<span class="sc">$</span>async<span class="sc">$</span><span class="fu">eval</span>(</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>        <span class="at">command =</span> <span class="fu">list</span>(<span class="at">pid =</span> process<span class="sc">$</span><span class="fu">new</span>(bin, <span class="at">args =</span> <span class="fu">c</span>(<span class="st">&quot;-e&quot;</span>, call))<span class="sc">$</span><span class="fu">get_pid</span>()),</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>        <span class="at">data =</span> <span class="fu">list</span>(<span class="at">bin =</span> <span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">&quot;bin&quot;</span>), <span class="st">&quot;R&quot;</span>), <span class="at">call =</span> call),</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>        <span class="at">packages =</span> <span class="st">&quot;processx&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>      )</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>    },</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>    <span class="at">terminate_worker =</span> <span class="cf">function</span>(handle) {</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>      self<span class="sc">$</span>async<span class="sc">$</span><span class="fu">eval</span>(</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>        <span class="at">command =</span> crew<span class="sc">::</span><span class="fu">crew_terminate_process</span>(handle<span class="sc">$</span>pid),</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>        <span class="at">data =</span> <span class="fu">list</span>(<span class="at">pid =</span> handle<span class="sc">$</span>pid)</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>      )</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>    }</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  )</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>)</span></code></pre></div>
 <p>The controller helper includes a <code>processes</code> argument
 which sets how many asynchronous <code>mirai</code> daemons to create.
 Set <code>processes</code> to <code>NULL</code> to disable async and use
 it like an ordinary synchronous controller.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>crew_controller_async <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;async controller name&quot;</span>,</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">host =</span> <span class="st">&quot;127.0.0.1&quot;</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">tls =</span> crew<span class="sc">::</span><span class="fu">crew_tls</span>(<span class="at">mode =</span> <span class="st">&quot;none&quot;</span>),</span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">30</span>,</span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>  <span class="at">crashes_error =</span> 5L,</span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>  <span class="at">processes =</span> <span class="cn">NULL</span> <span class="co"># Number of local async daemons for worker launches etc.</span></span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>) {</span>
-<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
-<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
-<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
-<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
-<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
-<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
-<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  )</span>
-<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> async_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
-<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
-<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
-<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
-<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
-<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
-<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
-<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
-<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
-<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
-<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
-<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection,</span>
-<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a>    <span class="at">crashes_error =</span> crashes_error,</span>
-<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
-<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a>    <span class="at">processes =</span> processes</span>
-<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a>  )</span>
-<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(</span>
-<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a>    <span class="at">client =</span> client,</span>
-<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a>    <span class="at">launcher =</span> launcher</span>
-<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a>  )</span>
-<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
-<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a>  controller</span>
-<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>crew_controller_async <span class="ot">&lt;-</span> <span class="cf">function</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;async controller name&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">workers =</span> 1L,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">host =</span> <span class="st">&quot;127.0.0.1&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">port =</span> <span class="cn">NULL</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">tls =</span> crew<span class="sc">::</span><span class="fu">crew_tls</span>(<span class="at">mode =</span> <span class="st">&quot;none&quot;</span>),</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">seconds_interval =</span> <span class="fl">0.5</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="at">seconds_timeout =</span> <span class="dv">30</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="at">seconds_launch =</span> <span class="dv">30</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="cn">Inf</span>,</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="at">seconds_wall =</span> <span class="cn">Inf</span>,</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">tasks_max =</span> <span class="cn">Inf</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">tasks_timers =</span> 0L,</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  <span class="at">reset_globals =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  <span class="at">reset_packages =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  <span class="at">reset_options =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>  <span class="at">garbage_collection =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>  <span class="at">processes =</span> <span class="cn">NULL</span> <span class="co"># Number of local async daemons for worker launches etc.</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>) {</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>  client <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_client</span>(</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>    <span class="at">host =</span> host,</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>    <span class="at">port =</span> port,</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a>  )</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>  launcher <span class="ot">&lt;-</span> async_launcher_class<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>    <span class="at">name =</span> name,</span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>    <span class="at">workers =</span> workers,</span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>    <span class="at">seconds_interval =</span> seconds_interval,</span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>    <span class="at">seconds_timeout =</span> seconds_timeout,</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>    <span class="at">seconds_launch =</span> seconds_launch,</span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>    <span class="at">seconds_idle =</span> seconds_idle,</span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>    <span class="at">seconds_wall =</span> seconds_wall,</span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>    <span class="at">tasks_max =</span> tasks_max,</span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>    <span class="at">tasks_timers =</span> tasks_timers,</span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>    <span class="at">reset_globals =</span> reset_globals,</span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a>    <span class="at">reset_packages =</span> reset_packages,</span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a>    <span class="at">reset_options =</span> reset_options,</span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a>    <span class="at">garbage_collection =</span> garbage_collection,</span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>    <span class="at">crashes_error =</span> crashes_error,</span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>    <span class="at">tls =</span> tls,</span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>    <span class="at">processes =</span> processes</span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>  )</span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>  controller <span class="ot">&lt;-</span> crew<span class="sc">::</span><span class="fu">crew_controller</span>(</span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>    <span class="at">client =</span> client,</span>
+<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a>    <span class="at">launcher =</span> launcher</span>
+<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a>  )</span>
+<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a>  controller<span class="sc">$</span><span class="fu">validate</span>()</span>
+<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a>  controller</span>
+<span id="cb12-51"><a href="#cb12-51" tabindex="-1"></a>}</span></code></pre></div>
 <p>Creating a controller is the same as before, except the user sets
 both the <code>workers</code> and <code>processes</code> arguments.
 Remember, these are two different things: <code>workers</code> is the
@@ -833,14 +783,14 @@ number of serious workers that run serious tasks from
 <code>mirai</code> daemons that asynchronously launch and terminate
 those serious workers. Workers may or may not be local, but
 <code>processes</code> are always local.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>async_controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_async</span>(<span class="at">workers =</span> <span class="dv">12</span>, <span class="at">processes =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>async_controller <span class="ot">&lt;-</span> <span class="fu">crew_controller_async</span>(<span class="at">workers =</span> <span class="dv">12</span>, <span class="at">processes =</span> <span class="dv">4</span>)</span></code></pre></div>
 <p><code>async_controller$start()</code> automatically launches 4 local
 processes to asynchronously auto-scale the workers, and
 <code>async_controller$terminate()</code> automatically shuts down those
 4 processes. Beyond that, usage is the exactly same as before.</p>
 </div>
-<div id="managing-workers" class="section level1" number="14">
-<h1><span class="header-section-number">14</span> Managing workers</h1>
+<div id="managing-workers" class="section level1" number="12">
+<h1><span class="header-section-number">12</span> Managing workers</h1>
 <p>Usually <code>crew</code> workers terminate themselves when the
 parent R session exits or the controller terminates, but under rare
 circumstances they may continue running. To help users of your plugin
@@ -857,49 +807,49 @@ implements <a href="https://wlandau.github.io/crew.aws.batch/reference/crew_clas
 methods</a> for listing and terminating AWS Batch jobs, as well as
 viewing CloudWatch logs.</p>
 <p>The source code for the local monitor is copied below:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>crew_monitor_local <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  crew_class_monitor_local<span class="sc">$</span><span class="fu">new</span>()</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>}</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>crew_class_monitor_local <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;crew_class_monitor_local&quot;</span>,</span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">cloneable =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>    <span class="at">dispatchers =</span> <span class="cf">function</span>() {</span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;mirai::dispatcher&quot;</span>)</span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>    },</span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>    <span class="at">daemons =</span> <span class="cf">function</span>() {</span>
-<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;mirai::daemon&quot;</span>)</span>
-<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>    },</span>
-<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>    <span class="at">workers =</span> <span class="cf">function</span>() {</span>
-<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;crew::crew_worker&quot;</span>)</span>
-<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>    },</span>
-<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>    <span class="at">terminate =</span> <span class="cf">function</span>(pids) {</span>
-<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a>      <span class="fu">lapply</span>(<span class="fu">as.integer</span>(pids), crew<span class="sc">::</span>crew_terminate_process)</span>
-<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a>    }</span>
-<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>  )</span>
-<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>)</span>
-<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a></span>
-<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>crew_monitor_pids <span class="ot">&lt;-</span> <span class="cf">function</span>(pattern) {</span>
-<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a>  processes <span class="ot">&lt;-</span> ps<span class="sc">::</span><span class="fu">ps</span>()</span>
-<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>  commands <span class="ot">&lt;-</span> <span class="fu">map</span>(</span>
-<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>    processes<span class="sc">$</span>ps_handle,</span>
-<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>    <span class="sc">~</span><span class="fu">tryCatch</span>(ps<span class="sc">::</span><span class="fu">ps_cmdline</span>(.x), <span class="at">error =</span> <span class="cf">function</span>(condition) <span class="st">&quot;&quot;</span>)</span>
-<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a>  )</span>
-<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a>  filter <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="at">pattern =</span> pattern, <span class="at">x =</span> <span class="fu">as.character</span>(commands), <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a>  <span class="fu">as.integer</span>(<span class="fu">sort</span>(processes<span class="sc">$</span>pid[filter]))</span>
-<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>crew_monitor_local <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  crew_class_monitor_local<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>}</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>crew_class_monitor_local <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="at">classname =</span> <span class="st">&quot;crew_class_monitor_local&quot;</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="at">cloneable =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>    <span class="at">dispatchers =</span> <span class="cf">function</span>() {</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;mirai::dispatcher&quot;</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>    },</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>    <span class="at">daemons =</span> <span class="cf">function</span>() {</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;mirai::daemon&quot;</span>)</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>    },</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>    <span class="at">workers =</span> <span class="cf">function</span>() {</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>      <span class="fu">crew_monitor_pids</span>(<span class="at">pattern =</span> <span class="st">&quot;crew::crew_worker&quot;</span>)</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>    },</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>    <span class="at">terminate =</span> <span class="cf">function</span>(pids) {</span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>      <span class="fu">lapply</span>(<span class="fu">as.integer</span>(pids), crew<span class="sc">::</span>crew_terminate_process)</span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>    }</span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>  )</span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a>)</span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>crew_monitor_pids <span class="ot">&lt;-</span> <span class="cf">function</span>(pattern) {</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>  processes <span class="ot">&lt;-</span> ps<span class="sc">::</span><span class="fu">ps</span>()</span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>  commands <span class="ot">&lt;-</span> <span class="fu">map</span>(</span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>    processes<span class="sc">$</span>ps_handle,</span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>    <span class="sc">~</span><span class="fu">tryCatch</span>(ps<span class="sc">::</span><span class="fu">ps_cmdline</span>(.x), <span class="at">error =</span> <span class="cf">function</span>(condition) <span class="st">&quot;&quot;</span>)</span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>  )</span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a>  filter <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="at">pattern =</span> pattern, <span class="at">x =</span> <span class="fu">as.character</span>(commands), <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>  <span class="fu">as.integer</span>(<span class="fu">sort</span>(processes<span class="sc">$</span>pid[filter]))</span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a>}</span></code></pre></div>
 <p>Example usage:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pid =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
-<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
-<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>monitor <span class="ot">&lt;-</span> <span class="fu">crew_monitor_local</span>()</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">dispatchers</span>() <span class="co"># List PIDs of all local {mirai} dispatcher processes.</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; [1] 31215</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">daemons</span>()</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; [1] 57001 57002</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">terminate</span>(<span class="at">pids =</span> <span class="fu">c</span>(<span class="dv">57001</span>, <span class="dv">57002</span>))</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>monitor<span class="sc">$</span><span class="fu">workers</span>()</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; integer(0)</span></span></code></pre></div>
 </div>
 
 

@@ -7,18 +7,6 @@ crew_test("is_named", {
   expect_false(is_named(list(a = 1, 2)))
 })
 
-crew_test("parse_instance() with index ", {
-  socket <- "ws://10.0.0.9:56546/3/a6f9411a4b98c2e851f08387345c722597a9b5b7"
-  out <- parse_instance(socket)
-  expect_equal(out, "a6f9411a4b98c2e851f08387345c722597a9b5b7")
-})
-
-crew_test("parse_instance() without index ", {
-  socket <- "ws://10.0.0.9:56546/cba033e58a8561d7f49ab87d72b7ad86e28384de"
-  out <- parse_instance(socket)
-  expect_equal(out, "cba033e58a8561d7f49ab87d72b7ad86e28384de")
-})
-
 crew_test("eval_tidyselect()", {
   expr <- rlang::new_quosure(quote(tidyselect::any_of(c("b", "c"))))
   out <- eval_tidyselect(expr = expr, choices = letters[seq_len(4L)])
@@ -27,4 +15,12 @@ crew_test("eval_tidyselect()", {
   expect_equal(out, character(0L))
   out <- eval_tidyselect(expr = rlang::new_quosure(NULL), choices = "x")
   expect_equal(out, character(0L))
+})
+
+crew_test("name_task_tempfile()", {
+  expect_true(is.character(name_task_tempfile()))
+})
+
+crew_test("name_task_nanonext()", {
+  expect_true(is.character(name_task_nanonext()))
 })
