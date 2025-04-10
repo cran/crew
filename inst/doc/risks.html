@@ -268,7 +268,7 @@ license</a>.</p>
 <ol style="list-style-type: decimal">
 <li>Worker processes to run tasks, which may include expensive jobs on
 cloud services like AWS Batch or traditional clusters like SLURM.</li>
-<li>The <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
+<li>The <a href="https://mirai.r-lib.org/"><code>mirai</code></a>
 dispatcher, an R process which send tasks to workers and retrieves
 results back. If <code>x</code> is a <code>crew</code> controller, a
 <code>ps::ps_handle()</code> process handle of the dispatcher is
@@ -290,9 +290,9 @@ Example: <a href="https://wlandau.github.io/crew.aws.batch/index.html#job-manage
 </div>
 <div id="crashes" class="section level2" number="1.2">
 <h2><span class="header-section-number">1.2</span> Crashes</h2>
-<p>The local process or <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
-dispatcher process could crash. A common cause of crashes is running out
-of computer memory. The “Resources” section of the <a href="https://wlandau.github.io/crew/articles/introduction.html">introduction</a>
+<p>The local process or <a href="https://mirai.r-lib.org/"><code>mirai</code></a> dispatcher
+process could crash. A common cause of crashes is running out of
+computer memory. The “Resources” section of the <a href="https://wlandau.github.io/crew/articles/introduction.html">introduction</a>
 explains how to monitor memory usage. If you are running
 <code>crew</code> in a <a href="https://docs.ropensci.org/targets/"><code>targets</code></a>
 pipeline (as explained <a href="https://books.ropensci.org/targets/crew.html">here in the
@@ -371,12 +371,12 @@ side of the connection.</li>
 </ol>
 <p>To use TLS in <code>crew</code> with automatic configuration, simply
 set <code>tls = crew_tls(mode = &quot;automatic&quot;)</code> in the controller,
-e.g. <code>crew_controller_local()</code>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
-generates a one-time key pair and encrypts data for the current
-<code>crew</code> client. The key pair expires when the client
-terminates, which reduces the risk of a breach. In addition, the public
-key is a self-signed certificate, which somewhat protects against
-tampering on its way from the client to the server.</p>
+e.g. <code>crew_controller_local()</code>.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> <a href="https://mirai.r-lib.org/"><code>mirai</code></a> generates a
+one-time key pair and encrypts data for the current <code>crew</code>
+client. The key pair expires when the client terminates, which reduces
+the risk of a breach. In addition, the public key is a self-signed
+certificate, which somewhat protects against tampering on its way from
+the client to the server.</p>
 </div>
 <div id="certificate-authorities" class="section level2" number="2.3">
 <h2><span class="header-section-number">2.3</span> Certificate
@@ -418,9 +418,8 @@ The final certificate should be the root certificate of the CA.</li>
 <code>crew_controller_local()</code> (and for plugin developers,
 <code>crew_client()</code>).</li>
 </ol>
-<p><a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>, <a href="https://github.com/shikokuchuo/nanonext"><code>nanonext</code></a>,
-and <a href="https://nng.nanomsg.org">NNG</a> manage encryption behind
-the scenes. For more details about configuring TLS, please read <a href="https://github.com/shikokuchuo/mirai#distributed-computing-tls-secure-connections" class="uri">https://github.com/shikokuchuo/mirai#distributed-computing-tls-secure-connections</a>.</p>
+<p><a href="https://mirai.r-lib.org/"><code>mirai</code></a>, <a href="https://nanonext.r-lib.org/"><code>nanonext</code></a>, and <a href="https://nng.nanomsg.org">NNG</a> manage encryption behind the
+scenes. For more details about configuring TLS, please read <a href="https://mirai.r-lib.org/articles/mirai#distributed-computing-tls-secure-connections" class="uri">https://mirai.r-lib.org/articles/mirai#distributed-computing-tls-secure-connections</a>.</p>
 </div>
 </div>
 <div class="footnotes footnotes-end-of-document">

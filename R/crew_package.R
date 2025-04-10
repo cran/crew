@@ -6,11 +6,11 @@
 #'   long-running tasks to distributed systems, ranging from
 #'   traditional clusters to cloud services.
 #'   The [NNG](https://nng.nanomsg.org)-powered
-#'   [`mirai`](https://github.com/shikokuchuo/mirai)
+#'   [`mirai`](https://github.com/r-lib/mirai)
 #'   R package is a sleek and sophisticated scheduler
 #'   that efficiently processes these intense workloads.
 #'   The `crew` package extends
-#'   [`mirai`](https://github.com/shikokuchuo/mirai)
+#'   [`mirai`](https://github.com/r-lib/mirai)
 #'   with a unifying interface
 #'   for third-party worker launchers.
 #'   Inspiration also comes from packages
@@ -22,7 +22,7 @@
 #' @importFrom data.table rbindlist
 #' @importFrom getip getip
 #' @importFrom later create_loop current_loop destroy_loop exists_loop later
-#' @importFrom mirai call_mirai_ daemon daemons is_mirai is_mirai_error
+#' @importFrom mirai call_mirai daemon daemons is_mirai is_mirai_error
 #'   mirai nextcode nextget nextstream status stop_mirai
 #' @importFrom nanonext %~>% cv cv_value mclock msleep nng_error random
 #'   .unresolved until_ tls_config

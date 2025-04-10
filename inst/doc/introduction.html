@@ -354,8 +354,8 @@ function call. A <em>worker</em> is a <a href="https://stat.ethz.ch/R-manual/R-d
 R process that runs one or more tasks. When tasks run on workers, the
 local R session is free and responsive, and work gets done faster. For
 example, <a href="https://wlandau.github.io/crew/articles/shiny.html">this
-vignette</a> shows how <code>crew</code> and <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a> work
-together to speed up <a href="https://rstudio.github.io/shiny/">Shiny</a> apps.</p>
+vignette</a> shows how <code>crew</code> and <a href="https://mirai.r-lib.org/"><code>mirai</code></a> work together to
+speed up <a href="https://rstudio.github.io/shiny/">Shiny</a> apps.</p>
 </div>
 <div id="how-to-use-crew" class="section level1">
 <h1>How to use <code>crew</code></h1>
@@ -366,8 +366,8 @@ together to speed up <a href="https://rstudio.github.io/shiny/">Shiny</a> apps.<
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">workers =</span> <span class="dv">2</span>,</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">seconds_idle =</span> <span class="dv">10</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span></code></pre></div>
-<p>Next, start the controller to create the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
-client. Later, when you are done with the controller, call
+<p>Next, start the controller to create the <a href="https://mirai.r-lib.org/"><code>mirai</code></a> client. Later,
+when you are done with the controller, call
 <code>controller$terminate()</code> to clean up your resources.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">start</span>()</span></code></pre></div>
 <p>Use <code>push()</code> to submit a new task and <code>pop()</code>
@@ -557,9 +557,9 @@ tasks threw warnings or errors, etc.</p>
 <div id="termination" class="section level1">
 <h1>Termination</h1>
 <p>Call <code>terminate()</code> on the controller after you finish
-using it. <code>terminate()</code> tries to close the the <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a>
-dispatcher and any workers that may still be running. It is important to
-free up these resources.</p>
+using it. <code>terminate()</code> tries to close the the <a href="https://mirai.r-lib.org/"><code>mirai</code></a> dispatcher and
+any workers that may still be running. It is important to free up these
+resources.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">terminate</span>()</span></code></pre></div>
 <p>The <code>mirai</code> dispatcher process should exit on its own, but
 if not, you can manually terminate the process with
@@ -575,8 +575,8 @@ running on your local machine.</p>
 processes. These include:</p>
 <ul>
 <li>Dispatchers: every controller has a special local process called a
-“dispatcher”. <a href="https://github.com/shikokuchuo/mirai"><code>mirai</code></a> needs
-this process to orchestrate tasks.</li>
+“dispatcher”. <a href="https://mirai.r-lib.org/"><code>mirai</code></a>
+needs this process to orchestrate tasks.</li>
 <li>Workers: the R processes that <code>crew</code> launches to run
 tasks. These may be local processes as in the case of
 <code>crew_controller_local()</code>, or they may be processes on
