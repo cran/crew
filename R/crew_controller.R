@@ -106,7 +106,7 @@ crew_class_controller <- R6::R6Class(
     .backup = NULL,
     .summary = NULL,
     .error = NULL,
-    .backlog = character(0L),
+    .backlog = NULL,
     .autoscaling = FALSE,
     .queue = NULL,
     .resolved = -1L,
@@ -125,7 +125,7 @@ crew_class_controller <- R6::R6Class(
         cancel = 0L,
         warning = 0L
       )
-      private$.backlog <- character(0L)
+      private$.backlog <- crew_queue()
       private$.queue <- crew_queue()
       private$.resolved <- -1L
     },
@@ -175,18 +175,18 @@ crew_class_controller <- R6::R6Class(
         USE.NAMES = TRUE
       )
       resolved <- names(status)[!as.logical(status)]
-      .subset2(queue, "set")(names = resolved)
+      .subset2(queue, "set")(data = resolved)
       private$.resolved <- observed
     },
     .wait_all_once = function() {
       if (.subset2(self, "unresolved")() > 0L) {
-        private$.client$relay$wait(throttle = private$.launcher$throttle)
+        private$.client$relay$wait()
       }
       .subset2(self, "unresolved")() < 1L
     },
     .wait_one_once = function() {
       if (.subset2(self, "unpopped")() < 1L) {
-        private$.client$relay$wait(throttle = private$.launcher$throttle)
+        private$.client$relay$wait()
       }
       .subset2(self, "unpopped")() > 0L
     },
@@ -261,7 +261,8 @@ crew_class_controller <- R6::R6Class(
     error = function() {
       .subset2(private, ".error")
     },
-    #' @field backlog Character vector of explicitly backlogged tasks.
+    #' @field backlog A [crew_queue()] object tracking explicitly
+    #'   backlogged tasks.
     backlog = function() {
       .subset2(private, ".backlog")
     },
@@ -346,7 +347,6 @@ crew_class_controller <- R6::R6Class(
       }
       crew_assert(private$.tasks, is.null(.) || is.environment(.))
       crew_assert(private$.summary, is.null(.) || is.list(.))
-      crew_assert(private$.backlog, is.null(.) || is.character(.))
       crew_assert(private$.autoscaling, is.null(.) || isTRUE(.) || isFALSE(.))
       crew_assert(
         private$.resolved,
@@ -357,6 +357,10 @@ crew_class_controller <- R6::R6Class(
       if (!is.null(private$.queue)) {
         crew_assert(private$.queue, inherits(., "crew_class_queue"))
         private$.queue$validate()
+      }
+      if (!is.null(private$.backlog)) {
+        crew_assert(private$.backlog, inherits(., "crew_class_queue"))
+        private$.backlog$validate()
       }
       invisible()
     },
@@ -419,26 +423,6 @@ crew_class_controller <- R6::R6Class(
     #' @param controller Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     saturated = function(collect = NULL, throttle = NULL, controller = NULL) {
-      crew_deprecate(
-        name = "collect",
-        date = "2023-10-02",
-        version = "0.5.0.9003",
-        alternative = "none (no longer necessary)",
-        condition = "message",
-        value = collect,
-        skip_cran = TRUE,
-        frequency = "once"
-      )
-      crew_deprecate(
-        name = "throttle",
-        date = "2023-10-02",
-        version = "0.5.0.9003",
-        alternative = "none (no longer necessary)",
-        condition = "message",
-        value = throttle,
-        skip_cran = TRUE,
-        frequency = "once"
-      )
       .subset2(self, "unresolved")() >=
         .subset2(.subset2(self, "launcher"), "workers")
     },
@@ -478,17 +462,8 @@ crew_class_controller <- R6::R6Class(
       invisible()
     },
     #' @description Auto-scale workers out to meet the demand of tasks.
-    #' @details The `scale()` method re-launches all inactive backlogged
-    #'   workers, then any additional inactive workers needed to
-    #'   accommodate the demand of unresolved tasks. A worker is
-    #'   "backlogged" if it was assigned more tasks than it has completed
-    #'   so far.
-    #'
-    #'   Methods `push()`, `pop()`, and `wait()` already invoke
-    #'   `scale()` if the `scale` argument is `TRUE`.
-    #'   For finer control of the number of workers launched,
-    #'   call `launch()` on the controller with the exact desired
-    #'   number of workers.
+    #' @details The `scale()` method launches new workers to
+    #'   run tasks if needed.
     #' @return Invisibly returns `TRUE` if there was any relevant
     #'   auto-scaling activity (new worker launches or worker
     #'   connection/disconnection events) (`FALSE` otherwise).
@@ -1076,7 +1051,6 @@ crew_class_controller <- R6::R6Class(
       names <- names(tasks)
       total <- length(tasks)
       relay <- .subset2(.subset2(self, "client"), "relay")
-      throttle_object <- .subset2(.subset2(self, "launcher"), "throttle")
       start <- nanonext::mclock()
       pushed <- private$.pushed
       this_envir <- environment()
@@ -1107,7 +1081,7 @@ crew_class_controller <- R6::R6Class(
           )
         }
         if (unresolved > 0L) {
-          .subset2(relay, "wait")(throttle = throttle_object)
+          .subset2(relay, "wait")()
         }
         .subset2(self, "unresolved")() < 1L
       }
@@ -1301,34 +1275,36 @@ crew_class_controller <- R6::R6Class(
         name = name,
         controller = .subset2(.subset2(private, ".launcher"), "name")
       )
-      .subset2(private, ".scan_crash")(name = name, task = out)
-      seconds <- .subset2(out, "seconds")
-      summary <- .subset2(private, ".summary")
-      summary$tasks <- .subset2(summary, "tasks") + 1L
-      if (!anyNA(seconds)) {
-        summary$seconds <- .subset2(summary, "seconds") + seconds
+      suppressWarnings({
+        .subset2(private, ".scan_crash")(name = name, task = out)
+        seconds <- .subset2(out, "seconds")
+        summary <- .subset2(private, ".summary")
+        summary$tasks <- .subset2(summary, "tasks") + 1L
+        if (!anyNA(seconds)) {
+          summary$seconds <- .subset2(summary, "seconds") + seconds
+        }
+      })
+      status <- .subset2(out, "status")
+      summary[[status]] <- .subset2(summary, status) + 1L
+      if (!anyNA(.subset2(out, "warnings"))) {
+        summary$warning <- .subset2(summary, "warning") + 1L
       }
-      for (status in c("success", "error", "crash", "cancel")) {
-        summary[[status]] <- .subset2(summary, status) +
-          (.subset2(out, "status") == status)
-      }
-      summary$warning <- .subset2(summary, "warning") +
-        !anyNA(.subset2(out, "warnings"))
       private$.summary <- summary
-      has_error <- !is.null(error) &&
-        any(.subset2(out, "status") != "success")
-      throw_error <- has_error && identical(error, "stop")
-      throw_warning <- has_error && identical(error, "warn")
-      if_any(
-        throw_error,
-        crew_error(message = .subset2(out, "error")),
-        NULL
-      )
-      if_any(
-        throw_warning,
-        crew_warning(message = .subset2(out, "error")),
-        NULL
-      )
+      if (!is.null(error)) {
+        has_error <- any(status != "success")
+        throw_error <- has_error && all(error == "stop")
+        throw_warning <- has_error && all(error == "warn")
+        if_any(
+          throw_error,
+          crew_error(message = .subset2(out, "error")),
+          NULL
+        )
+        if_any(
+          throw_warning,
+          crew_warning(message = .subset2(out, "error")),
+          NULL
+        )
+      }
       out
     },
     #' @description Pop all available task results and return them in a tidy
@@ -1578,16 +1554,7 @@ crew_class_controller <- R6::R6Class(
     #' @param controller Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     push_backlog = function(name, controller = NULL) {
-      crew_assert(
-        name,
-        is.character(.),
-        length(.) == 1L,
-        !anyNA(.),
-        nzchar(.),
-        message = "'name' in push_backlog() must be a valid character string"
-      )
-      n <- length(.subset2(private, ".backlog")) + 1L
-      private$.backlog[[n]] <- name
+      .subset2(.subset2(private, ".backlog"), "push")(name)
       invisible()
     },
     #' @description Pop the task names from the head of the backlog which
@@ -1600,13 +1567,11 @@ crew_class_controller <- R6::R6Class(
     pop_backlog = function(controllers = NULL) {
       n <- .subset2(.subset2(self, "launcher"), "workers") -
         .subset2(self, "unresolved")()
-      if (n < 1L) {
+      backlog <- .subset2(private, ".backlog")
+      if (n < 1L || .subset2(backlog, "empty")()) {
         return(character(0L))
       }
-      backlog <- .subset2(private, ".backlog")
-      out <- utils::head(x = backlog, n = n)
-      private$.backlog <- backlog[-seq_len(n)]
-      out
+      .subset2(backlog, "pop")(n)
     },
     #' @description Summarize the workers and tasks of the controller.
     #' @return A data frame of summary statistics on the tasks
