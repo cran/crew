@@ -32,6 +32,21 @@
 #' @param packages Character vector of packages to load for the task.
 #' @param library Library path to load the packages. See the `lib.loc`
 #'   argument of `require()`.
+#' @param reset_globals `TRUE` to reset global environment
+#'   variables between tasks, `FALSE` to leave them alone.
+#' @param reset_packages `TRUE` to detach any packages loaded during
+#'   a task (runs between each task), `FALSE` to leave packages alone.
+#'   In either case, the namespaces are not detached.
+#' @param reset_options `TRUE` to reset global options to their original
+#'   state between each task, `FALSE` otherwise. It is recommended to
+#'   only set `reset_options = TRUE` if `reset_packages` is also `TRUE`
+#'   because packages sometimes rely on options they set at loading time.
+#'   for this and other reasons, `reset_options` only resets options
+#'   that were nonempty at the beginning of the task.
+#'   If your task sets an entirely new option not already in `options()`,
+#'   then `reset_options = TRUE` does not delete the option.
+#' @param garbage_collection `TRUE` to run garbage collection after each task
+#'   task, `FALSE` to skip.
 #' @examples
 #' crew_eval(quote(1 + 1), name = "task_name")
 crew_eval <- function(
@@ -42,15 +57,48 @@ crew_eval <- function(
   seed = NULL,
   algorithm = NULL,
   packages = character(0),
-  library = NULL
+  library = NULL,
+  reset_globals = TRUE,
+  reset_packages = FALSE,
+  reset_options = FALSE,
+  garbage_collection = FALSE
 ) {
-  if (package_installed("autometric (>= 0.1.0)")) {
-    autometric::log_phase_set(phase = name)
-    on.exit(autometric::log_phase_reset())
+  # Begin cleanup.
+  # Cleanup partially borrowed from mirai under MIT license:
+  # do_cleanup() in https://github.com/r-lib/mirai/blob/main/R/daemon.R
+  if (reset_globals) {
+    old_globals <- names(.GlobalEnv)
+    on.exit({
+      new_globals <- names(.GlobalEnv)
+      rm(list = setdiff_chr(new_globals, old_globals), envir = .GlobalEnv)
+    }, add = TRUE)
   }
-  old_algorithm <- RNGkind()[1L]
-  old_seed <- .subset2(.GlobalEnv, ".Random.seed")
+  if (reset_packages) {
+    old_packages <- search()
+    on.exit({
+      new_packages <- search()
+      detach_packages <- setdiff_chr(new_packages, old_packages)
+      try(
+        lapply(detach_packages, detach, character.only = TRUE),
+        silent = TRUE
+      )
+    }, add = TRUE)
+  }
+  if (reset_options) {
+    old_options <- options()
+    # options(old_options) does not remove newly set options, only
+    # the values of previously nonempty options.
+    # However, a more aggressive approach causes mysterious errors, including
+    # false positives in targets:::compare_working_directories().
+    on.exit(options(old_options), add = TRUE)
+  }
+  if (garbage_collection) {
+    on.exit(gc(verbose = FALSE), add = TRUE)
+  }
+  # End cleanup.
   if (!is.null(algorithm) || !is.null(seed)) {
+    old_algorithm <- RNGkind()[1L]
+    old_seed <- .subset2(.GlobalEnv, ".Random.seed")
     if (!is.null(algorithm)) {
       RNGkind(kind = algorithm)
     }
@@ -59,6 +107,10 @@ crew_eval <- function(
     }
     on.exit(RNGkind(kind = old_algorithm), add = TRUE)
     on.exit(.GlobalEnv$.Random.seed <- old_seed, add = TRUE)
+  }
+  if (package_installed("autometric (>= 0.1.0)")) {
+    autometric::log_phase_set(phase = name)
+    on.exit(autometric::log_phase_reset(), add = TRUE)
   }
   load_packages(packages = packages, library = library)
   list2env(x = globals, envir = globalenv())
@@ -175,6 +227,10 @@ expr_crew_eval <- quote(
     seed = seed,
     algorithm = algorithm,
     packages = packages,
-    library = library
+    library = library,
+    reset_globals = reset_globals,
+    reset_packages = reset_packages,
+    reset_options = reset_options,
+    garbage_collection = garbage_collection
   )
 )

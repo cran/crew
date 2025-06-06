@@ -4,6 +4,7 @@
 #' @description This function is for developers of `crew` launcher plugins.
 #'   Users should use a specific controller helper such as
 #'   [crew_controller_local()].
+#' @inheritParams crew_eval
 #' @param client An `R6` client object created by [crew_client()].
 #' @param launcher An `R6` launcher object created by one of the
 #'   `crew_launcher_*()` functions such as [crew_launcher_local()].
@@ -54,6 +55,10 @@
 crew_controller <- function(
   client,
   launcher,
+  reset_globals = TRUE,
+  reset_packages = FALSE,
+  reset_options = FALSE,
+  garbage_collection = FALSE,
   crashes_max = 5L,
   backup = NULL,
   auto_scale = NULL
@@ -69,6 +74,10 @@ crew_controller <- function(
   controller <- crew_class_controller$new(
     client = client,
     launcher = launcher,
+    reset_globals = reset_globals,
+    reset_packages = reset_packages,
+    reset_options = reset_options,
+    garbage_collection = garbage_collection,
     crashes_max = crashes_max,
     backup = backup
   )
@@ -101,6 +110,10 @@ crew_class_controller <- R6::R6Class(
     .tasks = new.env(parent = emptyenv(), hash = TRUE),
     .pushed = 0L,
     .popped = 0L,
+    .reset_globals = NULL,
+    .reset_packages = NULL,
+    .reset_options = NULL,
+    .garbage_collection = NULL,
     .crashes_max = NULL,
     .crash_log = new.env(parent = emptyenv(), hash = TRUE),
     .backup = NULL,
@@ -248,6 +261,26 @@ crew_class_controller <- R6::R6Class(
     popped = function() {
       .subset2(private, ".popped")
     },
+    #' @field reset_globals See [crew_controller()].
+    #' since the controller was started.
+    reset_globals = function() {
+      .subset2(private, ".reset_globals")
+    },
+    #' @field reset_packages See [crew_controller()].
+    #' since the controller was started.
+    reset_packages = function() {
+      .subset2(private, ".reset_packages")
+    },
+    #' @field reset_options See [crew_controller()].
+    #' since the controller was started.
+    reset_options = function() {
+      .subset2(private, ".reset_options")
+    },
+    #' @field garbage_collection See [crew_controller()].
+    #' since the controller was started.
+    garbage_collection = function() {
+      .subset2(private, ".garbage_collection")
+    },
     #' @field crashes_max See [crew_controller()].
     crashes_max = function() {
       .subset2(private, ".crashes_max")
@@ -281,6 +314,10 @@ crew_class_controller <- R6::R6Class(
     #' @return An `R6` controller object.
     #' @param client Client object. See [crew_controller()].
     #' @param launcher Launcher object. See [crew_controller()].
+    #' @param reset_globals See [crew_controller()].
+    #' @param reset_packages See [crew_controller()].
+    #' @param reset_options See [crew_controller()].
+    #' @param garbage_collection See [crew_controller()].
     #' @param crashes_max See [crew_controller()].
     #' @param backup See [crew_controller()].
     #' @examples
@@ -297,11 +334,19 @@ crew_class_controller <- R6::R6Class(
     initialize = function(
       client = NULL,
       launcher = NULL,
+      reset_globals = NULL,
+      reset_packages = NULL,
+      reset_options = NULL,
+      garbage_collection = NULL,
       crashes_max = NULL,
       backup = NULL
     ) {
       private$.client <- client
       private$.launcher <- launcher
+      private$.reset_globals <- reset_globals
+      private$.reset_packages <- reset_packages
+      private$.reset_options <- reset_options
+      private$.garbage_collection <- garbage_collection
       private$.crashes_max <- crashes_max
       private$.backup <- backup
       invisible()
@@ -313,20 +358,30 @@ crew_class_controller <- R6::R6Class(
       crew_assert(inherits(private$.launcher, "crew_class_launcher"))
       private$.client$validate()
       private$.launcher$validate()
-      # TODO: re-enable checks on crashes_max and crashes
-      # when reverse dependencies catch up.
-      if (!is.null(private$.crashes_max)) {
+      fields <- c(
+        "reset_globals",
+        "reset_packages",
+        "reset_options",
+        "garbage_collection"
+      )
+      # TODO: re-enable checks on these 4 logical fields
+      # when reverse dependencies catch up:
+      for (field in fields) {
         crew_assert(
-          private$.crashes_max,
-          is.numeric(.),
-          length(.) == 1L,
-          is.finite(.),
-          . >= 0L,
-          message = c(
-            "crashes_max must be a finite non-negative integer scalar."
-          )
+          self[[field]], is.null(.) || isTRUE(.) || isFALSE(.),
+          message = paste(field, "must be a non-missing logical of length 1")
         )
       }
+      crew_assert(
+        private$.crashes_max,
+        is.numeric(.),
+        length(.) == 1L,
+        is.finite(.),
+        . >= 0L,
+        message = c(
+          "crashes_max must be a finite non-negative integer scalar."
+        )
+      )
       if (!is.null(private$.crash_log)) {
         crew_assert(is.environment(private$.crash_log))
       }
@@ -651,7 +706,11 @@ crew_class_controller <- R6::R6Class(
           seed = seed,
           algorithm = algorithm,
           packages = packages,
-          library = library
+          library = library,
+          reset_globals = .subset2(private, ".reset_globals"),
+          reset_packages = .subset2(private, ".reset_packages"),
+          reset_options = .subset2(private, ".reset_options"),
+          garbage_collection = .subset2(private, ".garbage_collection")
         ),
         .timeout = .timeout,
         .compute = .subset2(.subset2(private, ".client"), "profile")
@@ -728,6 +787,8 @@ crew_class_controller <- R6::R6Class(
     #'   then `iterate[[names]]` must be a character vector.
     #' @param save_command Deprecated on 2025-01-22 (`crew` version
     #'   0.10.2.9004). The command is always saved now.
+    #' @param verbose Logical of length 1, whether to print to a progress bar
+    #'   when pushing tasks.
     #' @param scale Logical, whether to automatically scale workers to meet
     #'   demand. See also the `throttle` argument.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
@@ -749,6 +810,7 @@ crew_class_controller <- R6::R6Class(
       seconds_timeout = NULL,
       names = NULL,
       save_command = NULL,
+      verbose = interactive(),
       scale = TRUE,
       throttle = TRUE,
       controller = NULL
@@ -832,6 +894,7 @@ crew_class_controller <- R6::R6Class(
         . %in% names(iterate),
         message = "names argument must be NULL or an element of names(iterate)"
       )
+      crew_assert(verbose, isTRUE(.) || isFALSE(.))
       crew_assert(scale, isTRUE(.) || isFALSE(.))
       crew_assert(throttle, isTRUE(.) || isFALSE(.))
       names <- if_any(
@@ -859,9 +922,37 @@ crew_class_controller <- R6::R6Class(
       if (!is.null(seed)) {
         seed <- 1L
       }
-      tasks <- list()
+      total <- length(names)
+      tasks <- vector(mode = "list", length = total)
+      names(tasks) <- names
       push <- self$push
-      for (index in seq_along(names)) {
+      # covered in tests/local/test-map.R
+      # nocov start
+      if (verbose) {
+        this_envir <- environment()
+        progress_envir <- new.env(parent = this_envir)
+        bar <- cli::cli_progress_bar(
+          total = total,
+          type = "custom",
+          format = paste(
+            "walk() {cli::pb_current}/{cli::pb_total}",
+            "{cli::pb_bar}",
+            "{cli::pb_elapsed}"
+          ),
+          format_done = "{cli::pb_total} tasks pushed in {cli::pb_elapsed}",
+          clear = FALSE,
+          .envir = progress_envir
+        )
+      }
+      # nocov end
+      index <- 1L
+      while (index <= total) {
+        # covered in tests/local/test-map.R
+        # nocov start
+        if (verbose) {
+          cli::cli_progress_update(id = bar, .envir = progress_envir)
+        }
+        # nocov end
         for (name in names_iterate) {
           data[[name]] <- .subset2(.subset2(iterate, name), index)
         }
@@ -870,8 +961,7 @@ crew_class_controller <- R6::R6Class(
         } else {
           task_seed <- seed - (sign * index)
         }
-        name <- .subset(names, index)
-        tasks[[name]] <- push(
+        tasks[[index]] <- push(
           command = command,
           substitute = FALSE,
           data = data,
@@ -881,9 +971,17 @@ crew_class_controller <- R6::R6Class(
           packages = packages,
           library = library,
           seconds_timeout = seconds_timeout,
-          name = name
+          scale = FALSE,
+          name = .subset(names, index)
         )
+        index <- index + 1L
       }
+      # covered in tests/local/test-map.R
+      # nocov start
+      if (verbose) {
+        cli::cli_progress_done(id = bar, .envir = progress_envir)
+      }
+      # nocov end
       if (scale) {
         self$scale(throttle = throttle)
       }
@@ -978,7 +1076,8 @@ crew_class_controller <- R6::R6Class(
     #'   and not trigger an error in `map()` unless `crashes_max` is reached.
     #' @param warnings Logical of length 1, whether to throw a warning in the
     #'   interactive session if at least one task encounters an error.
-    #' @param verbose Logical of length 1, whether to print progress messages.
+    #' @param verbose Logical of length 1, whether to print to a progress bar
+    #'   as tasks resolve.
     #' @param scale Logical, whether to automatically scale workers to meet
     #'   demand. See also the `throttle` argument.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
@@ -1053,18 +1152,18 @@ crew_class_controller <- R6::R6Class(
       relay <- .subset2(.subset2(self, "client"), "relay")
       start <- nanonext::mclock()
       pushed <- private$.pushed
-      this_envir <- environment()
-      progress_envir <- new.env(parent = this_envir)
       if (verbose) {
-        cli::cli_progress_bar(
+        this_envir <- environment()
+        progress_envir <- new.env(parent = this_envir)
+        bar <- cli::cli_progress_bar(
           total = total,
           type = "custom",
           format = paste(
-            "{cli::pb_current}/{cli::pb_total}",
+            "map() {cli::pb_current}/{cli::pb_total}",
             "{cli::pb_bar}",
-            "{cli::pb_percent}"
+            "{cli::pb_elapsed}"
           ),
-          format_done = "{cli::pb_total} tasks in {cli::pb_elapsed}",
+          format_done = "{cli::pb_total} tasks resolved in {cli::pb_elapsed}",
           clear = FALSE,
           .envir = progress_envir
         )
@@ -1077,6 +1176,7 @@ crew_class_controller <- R6::R6Class(
         if (verbose) {
           cli::cli_progress_update(
             set = total - unresolved,
+            id = bar,
             .envir = progress_envir
           )
         }
@@ -1093,11 +1193,12 @@ crew_class_controller <- R6::R6Class(
         assertions = FALSE
       )
       if (verbose) {
-        cli::cli_progress_done(.envir = progress_envir)
+        cli::cli_progress_done(id = bar, .envir = progress_envir)
       }
-      out <- list()
+      out <- vector(mode = "list", length = total)
       controller_name <- .subset2(.subset2(private, ".launcher"), "name")
-      for (index in seq_along(tasks)) {
+      index <- 1L
+      while (index <= total) {
         task <- .subset2(tasks, index)
         name <- .subset(names, index)
         monad <- as_monad(
@@ -1106,7 +1207,8 @@ crew_class_controller <- R6::R6Class(
           controller = controller_name
         )
         .subset2(private, ".scan_crash")(name = name, task = monad)
-        out[[length(out) + 1L]] <- monad
+        out[[index]] <- monad
+        index <- index + 1L
       }
       out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       out <- out[match(x = names, table = out$name),, drop = FALSE] # nolint

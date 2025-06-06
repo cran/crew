@@ -592,7 +592,7 @@ dispatcher starts.</p>
 the worker instance.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;get worker IP address and process ID&quot;</span>,</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">command =</span> <span class="fu">paste</span>(getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>), ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">command =</span> <span class="fu">paste</span>(nanonext<span class="sc">::</span><span class="fu">ip_addr</span>()[<span class="dv">1</span>], ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>)</span></code></pre></div>
 <p>Wait for the task to complete and look at the result.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>()</span>
@@ -608,7 +608,7 @@ worker is running on a different computer, the worker IP address should
 be different than the local IP address. Since our custom launcher
 creates local processes, the IP addresses are the same in this case, but
 they should be different for a <a href="https://slurm.schedmd.com/">SLURM</a> or <a href="https://aws.amazon.com/batch/">AWS Batch</a> launcher.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>getip<span class="sc">::</span><span class="fu">getip</span>(<span class="at">type =</span> <span class="st">&quot;local&quot;</span>)</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">as.character</span>(nanonext<span class="sc">::</span><span class="fu">ip_addr</span>())[<span class="dv">1</span>]</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; &quot;192.168.0.2&quot;</span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>controller<span class="sc">$</span>launcher<span class="sc">$</span>instances<span class="sc">$</span>handle[[<span class="dv">1</span>]]<span class="sc">$</span><span class="fu">get_pid</span>()</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] 27336</span></span></code></pre></div>
