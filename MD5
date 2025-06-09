@@ -1,8 +1,8 @@
-4e814aa1a248f08f1f8282cd5112ae42 *DESCRIPTION
+a868c965dd082d5b7c34fa05598dc1d2 *DESCRIPTION
 b218ea0b66a403e0a89f18a6ae83d998 *LICENSE
 c6e770f61c60e3e748bcc9c0ce4868f3 *LICENSE.note
 01e3cad59f51fe0f8af4b889c44644ed *NAMESPACE
-ce3e80666990777ee190382f232a08ad *NEWS.md
+2f0d7441f54d09523f0b26e0c88a691a *NEWS.md
 d21d602cca58c9b33af58e2af6a7ee08 *R/class_monad.R
 29dc89305c9a6b378d495960ba124552 *R/crew_assert.R
 c9ec903936a073822974a1d865b17d3c *R/crew_async.R
@@ -40,7 +40,7 @@ e0ecd8eb74c7b7c0bdf995b76cb56702 *R/utils_packages.R
 4f24359fda5b8becf5c228a5b3f16d2d *R/utils_promises.R
 74f0d570141e6d9910c004ac2029f938 *R/utils_units.R
 cef52c216ae355924c034afc6aa6ee9a *build/vignette.rds
-9f7fad75bc4ae5e425bc0ccee09790e8 *inst/WORDLIST
+25f97738933b439dd0c20c04873d6c80 *inst/WORDLIST
 789ac8939c6786b484683ff3058530f5 *inst/doc/groups.Rmd
 6d3e9dbf3301e9645e51e4540214d5aa *inst/doc/groups.html
 4c20f6a6d5e518cb803cb65c0faa8788 *inst/doc/introduction.Rmd
@@ -49,8 +49,8 @@ ffefed59791410f60d5de97d26cb9cf4 *inst/doc/logging.R
 96578b822984bfceb05d5a02e99de4a0 *inst/doc/logging.Rmd
 b8f27c48a0bc27adbf66ee5c95701846 *inst/doc/logging.html
 6ab8613ec7dc720d440ecb0210a2ae0c *inst/doc/plugins.R
-bd376187414bbf9e3502bc76ad9fd64b *inst/doc/plugins.Rmd
-5392409d2ba6912149bfe37fc29185ea *inst/doc/plugins.html
+e1e60e6f57c9e7059fdc92d1512649ac *inst/doc/plugins.Rmd
+7d8d829fd44bbeea6fb19887bf1a5be9 *inst/doc/plugins.html
 ab27dd801cf0193b4ecd3122b5553f2d *inst/doc/promises.Rmd
 c0e870b0e02fe018afb6dc676439e1de *inst/doc/promises.html
 5b6cd145a380fbf847d5e89a771268cf *inst/doc/risks.Rmd
@@ -135,7 +135,7 @@ e339dcfb41010d88dd4d99fa5d4da180 *tests/testthat/test-crew_options_local.R
 2a2b7c7cbc136fa87d8c9d2dbca410ce *tests/testthat/test-crew_options_metrics.R
 aebb0cf7163111dcc0973f688d1a93c7 *tests/testthat/test-crew_queue.R
 f9d78f224cdb81280e3f9a64554ef801 *tests/testthat/test-crew_random_name.R
-4f9ab8313f0f1a285db307a7abb1a6e6 *tests/testthat/test-crew_relay.R
+76594423987bbf556f299c6735fa8f7a *tests/testthat/test-crew_relay.R
 f8b865f1c613d16437b1f39254168264 *tests/testthat/test-crew_retry.R
 9e76b5ffef6b660305732ffef87f35b1 *tests/testthat/test-crew_terminate_process.R
 e4b38f5cd72a405f0759cc367a0db77c *tests/testthat/test-crew_throttle.R
@@ -155,7 +155,7 @@ b14a66e6842f56982052d976776d2e37 *tests/testthat/test-utils_packages.R
 789ac8939c6786b484683ff3058530f5 *vignettes/groups.Rmd
 4c20f6a6d5e518cb803cb65c0faa8788 *vignettes/introduction.Rmd
 96578b822984bfceb05d5a02e99de4a0 *vignettes/logging.Rmd
-bd376187414bbf9e3502bc76ad9fd64b *vignettes/plugins.Rmd
+e1e60e6f57c9e7059fdc92d1512649ac *vignettes/plugins.Rmd
 ab27dd801cf0193b4ecd3122b5553f2d *vignettes/promises.Rmd
 5b6cd145a380fbf847d5e89a771268cf *vignettes/risks.Rmd
 169bc8811765ab5bee743c589a46fd7d *vignettes/shiny.Rmd
