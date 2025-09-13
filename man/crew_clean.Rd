@@ -2,13 +2,13 @@
 % Please edit documentation in R/crew_clean.R
 \name{crew_clean}
 \alias{crew_clean}
-\title{Terminate dispatchers and/or workers}
+\title{Deprecated: terminate dispatchers and/or workers}
 \usage{
 crew_clean(
   dispatchers = TRUE,
   workers = TRUE,
   user = ps::ps_username(),
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   verbose = TRUE
 )
@@ -23,7 +23,7 @@ whether to terminate workers.}
 \item{user}{Character of length 1. Terminate dispatchers and/or
 workers associated with this user name.}
 
-\item{seconds_interval}{Seconds to between polling intervals
+\item{seconds_interval}{Seconds to wait between polling intervals
 waiting for a process to exit.}
 
 \item{seconds_timeout}{Seconds to wait for a process to exit.}
@@ -36,8 +36,8 @@ message every time a process is terminated.}
 print out a message for every terminated process.
 }
 \description{
-Terminate \code{mirai} dispatchers and/or \code{crew} workers
-which may be lingering from previous workloads.
+Deprecated on 2025-08-26 in \code{crew} version 1.2.1.9006.
+Please use \code{\link[=crew_monitor_local]{crew_monitor_local()}} instead.
 }
 \details{
 Behind the scenes, \code{mirai} uses an external R process

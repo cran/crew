@@ -374,10 +374,14 @@ when you are done with the controller, call
 to return a completed task.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">name =</span> <span class="st">&quot;get pid&quot;</span>, <span class="at">command =</span> ps<span class="sc">::</span><span class="fu">ps_pid</span>())</span></code></pre></div>
 <p>As a side effect, methods <code>push()</code>, <code>pop()</code>,
-and <code>scale()</code> also launch workers to run the tasks. If your
-controller uses transient workers and has a backlog of tasks, you may
-need to loop over <code>pop()</code> or <code>scale()</code> multiple
-times to make sure enough workers are always available.</p>
+and <code>scale()</code> also launch workers to run the tasks. However,
+by default<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> workers only launch at certain times. This
+is for efficiency: it avoids the slowdown of frequent system calls, and
+it gives plugins like <code>crew.cluster</code> enough time to collect
+tasks for large efficient job arrays. To ensure workers are launched,
+either set the <code>throttle</code> argument to <code>FALSE</code> or
+repeat calls to <code>pop()</code>, <code>collect()</code>, or
+<code>scale()</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">pop</span>() <span class="co"># No workers started yet and the task is not done.</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
@@ -389,7 +393,8 @@ times to make sure enough workers are always available.</p>
 <span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1 get pid ps::ps_pi… &lt;int&gt;  succe… NA        0 NA    NA             0    NA</span></span>
 <span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; # ℹ 3 more variables: algorithm &lt;chr&gt;, controller &lt;chr&gt;, worker &lt;chr&gt;</span></span></code></pre></div>
 <p>Alternatively, <code>wait()</code> is a loop that repeatedly checks
-tasks and launches workers until all tasks complete.</p>
+tasks and launches workers until all tasks complete, and it also
+launches workers as needed.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">wait</span>(<span class="at">mode =</span> <span class="st">&quot;all&quot;</span>)</span></code></pre></div>
 <p>The return value of the task is in the <code>result</code>
 column.</p>
@@ -438,8 +443,6 @@ task can be restored using
 output.</li>
 <li><code>controller</code>: name of the <code>crew</code> controller
 where the task ran.</li>
-<li><code>worker</code>: name of the <code>crew</code> worker that ran
-the task.</li>
 </ul>
 <p>If <code>seed</code> and <code>algorithm</code> are both non-missing
 in the output, then you can recover the pseudo-random number generator
@@ -626,7 +629,9 @@ are:</p>
 <li><code>seconds_idle</code>: shut down a worker if it spends too long
 waiting for a task.</li>
 <li><code>tasks_max</code>: shut down a worker after it completes a
-certain number of tasks.</li>
+certain number of tasks. This argument also determines how frequently
+the controller auto-scales (see auto-scaling section of
+<code>crew_throttle()</code> for details).</li>
 <li><code>seconds_wall</code>: soft wall time of a worker.</li>
 </ol>
 <p>Please tune these these arguments to achieve the desired balance for
@@ -647,17 +652,6 @@ transient worker to run it. Transient workers avoid excessive idling,
 but frequent worker launches cause significant overhead and slows down
 the computation as a whole.</li>
 </ol>
-</div>
-<div id="asynchronous-management-of-workers" class="section level1">
-<h1>Asynchronous management of workers</h1>
-<p>Some controllers support local processes to launch and terminate
-workers asynchronously. For example, a cloud-based controller may need
-to make HTTP requests to launch and terminate workers on e.g. AWS Batch,
-and these time-consuming requests should happen in the background.
-Controllers that support this will have a <code>processes</code>
-argument to specify the number of local R processes to churn through
-worker launches and terminations. Set <code>processes = NULL</code> to
-disable async, which can be helpful for troubleshooting.</p>
 </div>
 <div id="crashes-and-retries" class="section level1">
 <h1>Crashes and retries</h1>
@@ -695,7 +689,7 @@ and <code>map()</code>). You can simulate a crash for yourself:</p>
 <p>In the event of a crash like this one, you can choose to abandon the
 workflow and troubleshoot, or you can choose to retry the task on a
 different (possibly new) worker. Simply push the task again and use the
-same task name.<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a></p>
+same task name.<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>controller<span class="sc">$</span><span class="fu">push</span>(<span class="at">command =</span> <span class="fu">Sys.sleep</span>(<span class="dv">300</span>), <span class="at">name =</span> <span class="st">&quot;my_task&quot;</span>)</span></code></pre></div>
 <p>The controller enforces a maximum number of retries, given by the
 <code>crashes_max</code> argument to
@@ -720,9 +714,11 @@ group vignette</a>.</p>
 <div class="footnotes footnotes-end-of-document">
 <hr />
 <ol>
-<li id="fn1"><p>As of <code>targets</code> &gt;= 1.10.0.9002,
+<li id="fn1"><p>when the <code>throttle</code> argument is
+<code>TRUE</code><a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>As of <code>targets</code> &gt;= 1.10.0.9002,
 <code>targets</code> pipelines automatically retry tasks whose workers
-crash.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+crash.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
 

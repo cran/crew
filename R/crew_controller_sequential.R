@@ -4,16 +4,26 @@
 #' @description The sequential controller runs tasks on the same R process
 #'   where the controller object exists. Tasks run sequentially
 #'   rather than in parallel.
+#' @inheritParams crew_eval
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 #' controller <- crew_controller_sequential()
 #' controller$push(name = "task", command = sqrt(4))
 #' controller$pop()
 #' }
-crew_controller_sequential <- function() {
+crew_controller_sequential <- function(
+  reset_globals = TRUE,
+  reset_packages = FALSE,
+  reset_options = FALSE,
+  garbage_collection = FALSE
+) {
   controller <- crew_class_controller_sequential$new(
     client = crew_client(),
     launcher = crew_launcher(),
+    reset_globals = reset_globals,
+    reset_packages = reset_packages,
+    reset_options = reset_options,
+    garbage_collection = garbage_collection,
     crashes_max = 0L
   )
   controller$validate()
@@ -35,7 +45,44 @@ crew_class_controller_sequential <- R6::R6Class(
   classname = "crew_class_controller_sequential",
   inherit = crew_class_controller,
   cloneable = FALSE,
+  portable = FALSE,
+  private = list(
+    .resolved = 0L
+  ),
   public = list(
+    #' @description Number of resolved tasks.
+    #' @details `resolved()` is cumulative: it counts all the resolved
+    #'   tasks over the entire lifetime of the controller session.
+    #'   For the sequential controller, tasks are resolved as soon as they
+    #'   are pushed.
+    #' @return Non-negative integer of length 1,
+    #'   number of resolved tasks.
+    #'   The return value is 0 if the condition variable does not exist
+    #'   (i.e. if the client is not running).
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    resolved = function(controllers = NULL) {
+      .resolved
+    },
+    #' @description Number of unresolved tasks.
+    #' @return Returns 0 always because the sequential controller
+    #'   resolves tasks as soon as they are pushed.
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    unresolved = function(controllers = NULL) {
+      0L
+    },
+    #' @description Check if the controller is saturated.
+    #' @return Always returns `FALSE` for the sequential controller
+    #'   because tasks run immediately on the local process and there
+    #'   are no workers.
+    #' @param collect Deprecated in version 0.5.0.9003 (2023-10-02). Not used.
+    #' @param throttle Deprecated in version 0.5.0.9003 (2023-10-02). Not used.
+    #' @param controller Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    saturated = function(collect = NULL, throttle = NULL, controller = NULL) {
+      FALSE
+    },
     #' @description Start the controller if it is not already started.
     #' @details For the sequential controller, there is nothing to do
     #'   except register the client as started.
@@ -43,9 +90,10 @@ crew_class_controller_sequential <- R6::R6Class(
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     start = function(controllers = NULL) {
-      if (!.subset2(.subset2(self, "client"), "started")) {
-        private$.client$set_started()
-        private$.register_started()
+      if (!.subset2(.client, "started")) {
+        .client$set_started()
+        .register_started()
+        .resolved <<- 0L
       }
       invisible()
     },
@@ -66,10 +114,13 @@ crew_class_controller_sequential <- R6::R6Class(
       invisible(FALSE)
     },
     #' @description Not applicable to the sequential controller.
-    #' @param controllers Not used. Included to ensure the signature is
+    #' @param loop Not used by sequential controllers.
+    #'   Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
-    #' @return `NULL` (invisibly).
-    autoscale = function(controllers = NULL) {
+    #' @param controllers Not used by sequential controllers.
+    #'   Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    autoscale = function(loop = NULL, controllers = NULL) {
       invisible()
     },
     #' @description Not applicable to the sequential controller.
@@ -147,8 +198,8 @@ crew_class_controller_sequential <- R6::R6Class(
       save_command = NULL,
       controller = NULL
     ) {
-      .subset2(self, "start")()
-      name <- private$.name_new_task(name)
+      start()
+      name <- .name_new_task(name)
       if (substitute) {
         command <- substitute(command)
       }
@@ -167,9 +218,8 @@ crew_class_controller_sequential <- R6::R6Class(
         ),
         class = "mirai"
       )
-      .subset2(private, ".push_task")(name, task)
-      client <- .subset2(private, ".client")
-      nanonext::cv_signal(.subset2(client, "condition"))
+      .subset2(.tasks, "set")(key = name, value = task)
+      .resolved <<- .resolved + 1L
       invisible(task)
     },
     #' @description Not applicable to the sequential controller.
@@ -212,6 +262,14 @@ crew_class_controller_sequential <- R6::R6Class(
     #' @param names Not applicable to the sequential controller.
     #' @param all Not applicable to the sequential controller.
     cancel = function(names = character(0L), all = FALSE) {
+      invisible()
+    },
+    #' @description Terminate the controller.
+    #' @return `NULL` (invisibly).
+    #' @param controllers Not used. Included to ensure the signature is
+    #'   compatible with the analogous method of controller groups.
+    terminate = function(controllers = NULL) {
+      .resolved <<- 0L
       invisible()
     }
   )

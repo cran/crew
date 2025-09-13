@@ -14,13 +14,13 @@ crew_test("crew_controller_local()", {
   expect_false(x$client$started)
   expect_false(x$started())
   expect_null(x$summary())
-  expect_false(x$autoscaling)
-  expect_equal(length(x$pids()), 1L)
+  expect_null(x$loop)
+  expect_equal(suppressWarnings(length(x$pids())), 1L)
   x$start()
   expect_true(x$empty())
   expect_false(x$saturated())
   crew_retry(
-    ~{
+    ~ {
       x$wait(mode = "all", seconds_timeout = 30)
       TRUE
     },
@@ -35,8 +35,8 @@ crew_test("crew_controller_local()", {
     sort(
       c(
         "controller",
-        "tasks",
         "seconds",
+        "tasks",
         "success",
         "error",
         "crash",
@@ -45,20 +45,15 @@ crew_test("crew_controller_local()", {
       )
     )
   )
-  expect_equal(s$tasks, 0L)
   expect_true(x$client$started)
   expect_true(x$started())
-  expect_equal(length(x$pids()), 2L)
+  expect_equal(suppressWarnings(length(x$pids())), 1L)
   # first task
-  expect_equal(x$pushed, 0L)
-  expect_equal(x$popped, 0L)
   task <- x$push(
-    command = Sys.getenv("CREW_WORKER"),
+    command = Sys.getenv("CREW_CONTROLLER"),
     name = "task"
   )
   expect_s3_class(task, "mirai")
-  expect_equal(x$pushed, 1L)
-  expect_equal(x$popped, 0L)
   expect_false(x$empty())
   expect_true(x$nonempty())
   x$wait(mode = "one", seconds_timeout = 5)
@@ -66,25 +61,22 @@ crew_test("crew_controller_local()", {
   expect_true(x$nonempty())
   envir <- new.env(parent = emptyenv())
   crew_retry(
-    ~{
+    ~ {
       envir$out <- x$pop(scale = TRUE)
       !is.null(envir$out)
     },
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
-  expect_equal(x$pushed, 1L)
-  expect_equal(x$popped, 1L)
   out <- envir$out
   expect_true(x$empty())
   expect_false(x$nonempty())
-  expect_equal(x$summary()$tasks, 1L)
   expect_equal(x$summary()$error, 0L)
   expect_equal(x$summary()$warning, 0L)
   expect_equal(out$name, "task")
-  expect_equal(out$command, "Sys.getenv(\"CREW_WORKER\")")
-  expect_equal(out$result[[1]], out$worker)
-  expect_false(any(out$worker == Sys.getenv("CREW_WORKER")))
+  expect_equal(out$command, "Sys.getenv(\"CREW_CONTROLLER\")")
+  expect_equal(out$result[[1]], out$controller)
+  expect_false(any(out$controller == Sys.getenv("CREW_CONTROLLER")))
   expect_true(is.numeric(out$seconds))
   expect_false(anyNA(out$seconds))
   expect_true(out$seconds >= 0)
@@ -125,12 +117,12 @@ crew_test("crew_controller_local()", {
     expect_equal(out$result[[1]], "xy")
   }
   # terminate
-  handle <- x$launcher$instances$handle[[1]]
+  handle <- unlist(x$launcher$launches$handle)[[1]]
   x$terminate()
   expect_false(x$client$started)
   expect_false(x$started())
   crew_retry(
-    ~!handle$is_alive(),
+    ~ !handle$is_alive(),
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
@@ -152,7 +144,6 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   expect_silent(x$validate())
   expect_false(x$client$started)
   x$start()
-  expect_equal(x$summary()$tasks, 0L)
   expect_equal(x$summary()$error, 0L)
   expect_equal(x$summary()$warning, 0L)
   command <- quote(sqrt(4L) + sqrt(9L))
@@ -180,11 +171,11 @@ crew_test("crew_controller_local() substitute = FALSE and quick push", {
   expect_true(anyNA(out$warnings))
   expect_true(anyNA(out$trace))
   # cleanup
-  handle <- x$launcher$instances$handle[[1]]
+  handle <- unlist(x$launcher$launches$handle)[[1]]
   x$terminate()
   expect_false(x$client$started)
   crew_retry(
-    ~!handle$is_alive(),
+    ~ !handle$is_alive(),
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
@@ -204,16 +195,16 @@ crew_test("crew_controller_local() launch method", {
   })
   x$start()
   x$launch(n = 1L)
-  handle <- x$launcher$instances$handle[[1]]
+  handle <- unlist(x$launcher$launches$handle)[[1]]
   crew_retry(
-    ~handle$is_alive(),
+    ~ handle$is_alive(),
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
   expect_true(handle$is_alive())
   x$terminate()
   crew_retry(
-    ~!handle$is_alive(),
+    ~ !handle$is_alive(),
     seconds_interval = 0.1,
     seconds_timeout = 5
   )
@@ -247,7 +238,6 @@ crew_test("exit status and code", {
   task <- x$pop()
   expect_equal(task$status, "cancel")
   expect_equal(task$code, 20L)
-  expect_equal(x$client$resolved(), 3L)
 })
 
 crew_test("crew_controller_local() resource usage metric logging", {
@@ -334,11 +324,14 @@ crew_test("joined logs", {
   })
   x$start()
   x$push(print("this-print"))
+  # All these waits are needed to avoid an auto-scaling race condition.
+  x$wait(mode = "all")
   x$push(message("this-message"))
+  x$wait(mode = "all")
   x$push(warning("this-warning"))
+  x$wait(mode = "all")
   x$push(stop("this-stop"))
   x$wait(mode = "all")
-  Sys.sleep(0.25)
   dir <- x$launcher$options_local$log_directory
   logs <- list.files(dir, full.names = TRUE)
   expect_equal(length(logs), 1L)
@@ -371,11 +364,14 @@ crew_test("separate logs", {
   })
   x$start()
   x$push(print("this-print"))
+  # All these waits are needed to avoid an auto-scaling race condition.
+  x$wait(mode = "all")
   x$push(message("this-message"))
+  x$wait(mode = "all")
   x$push(warning("this-warning"))
+  x$wait(mode = "all")
   x$push(stop("this-stop"))
   x$wait(mode = "all")
-  Sys.sleep(0.25)
   logs <- list.files(dir, full.names = TRUE)
   expect_equal(length(logs), 2L)
   stderr <- readLines(logs[1L])
@@ -384,6 +380,20 @@ crew_test("separate logs", {
   expect_true(any(grepl("this-message", stderr, fixed = TRUE)))
   expect_true(any(grepl("Warning: this-warning", stderr, fixed = TRUE)))
   expect_true(any(grepl("Error: this-stop", stderr, fixed = TRUE)))
+})
+
+crew_test("custom compute profile", {
+  skip_on_cran()
+  x <- crew_controller_local(
+    host = "127.0.0.1",
+    port = "57000",
+    profile = "__abc__"
+  )
+  expect_equal(x$client$profile, "__abc__")
+  on.exit(x$terminate())
+  x$start()
+  url <- nanonext::parse_url(mirai::nextget("url", .compute = "__abc__"))
+  expect_equal(as.character(url["host"]), "127.0.0.1:57000")
 })
 
 crew_test("deprecate seconds_exit", {

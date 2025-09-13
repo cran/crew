@@ -2,6 +2,9 @@ crew_test("active bindings", {
   x <- crew_controller_local(crashes_max = 1L)
   expect_equal(x$crashes_max, 1L)
   expect_null(x$backup)
+  x$start()
+  on.exit(x$terminate())
+  expect_equal(x$profile, x$client$profile)
 })
 
 crew_test("warnings and errors", {
@@ -20,19 +23,22 @@ crew_test("warnings and errors", {
   expect_null(x$cancel())
   expect_false(x$client$started)
   expect_null(x$pop())
+  expect_equal(x$resolved(), 0L)
+  expect_equal(x$unresolved(), 0L)
   x$start()
   expect_silent(x$validate())
-  expect_equal(x$summary()$tasks, 0L)
   expect_equal(x$summary()$error, 0L)
   expect_equal(x$summary()$warning, 0L)
-  x$push(command = {
-    warning("this is a warning")
-    stop("this is an error")
-  }, name = "warnings_and_errors")
-  x$wait(seconds_timeout = 5)
+  x$push(
+    command = {
+      warning("this is a warning")
+      stop("this is an error")
+    },
+    name = "warnings_and_errors"
+  )
+  x$wait(seconds_timeout = 30)
   out <- x$pop(scale = FALSE)
   skip_on_covr() # error handling is mysteriously messed up with covr
-  expect_equal(x$summary()$tasks, 1L)
   expect_equal(x$summary()$error, 1L)
   expect_equal(x$summary()$warning, 1L)
   expect_equal(out$name, "warnings_and_errors")
@@ -42,11 +48,11 @@ crew_test("warnings and errors", {
   expect_equal(out$error, "this is an error")
   expect_equal(out$warnings, "this is a warning")
   expect_false(anyNA(out$trace))
-  handle <- x$launcher$instances$handle[[1]]
+  handle <- unlist(x$launcher$launches$handle)[[1L]]
   x$terminate()
   expect_false(x$client$started)
   crew_retry(
-    ~!handle$is_alive(),
+    ~ !handle$is_alive(),
     seconds_interval = 0.1,
     seconds_timeout = 10
   )
@@ -65,7 +71,7 @@ crew_test("can relay task errors as local errors", {
     crew_test_sleep()
   })
   x$start()
-  x$push(command =  stop("this is an error"), name = "warnings_and_errors")
+  x$push(command = stop("this is an error"), name = "warnings_and_errors")
   x$wait(seconds_timeout = 30)
   expect_silent(
     if_any(
@@ -94,7 +100,7 @@ crew_test("can relay task errors as local warnings", {
     crew_test_sleep()
   })
   x$start()
-  x$push(command =  stop("this is an error"), name = "warnings_and_errors")
+  x$push(command = stop("this is an error"), name = "warnings_and_errors")
   x$wait(seconds_timeout = 30)
   expect_silent(
     if_any(
@@ -106,51 +112,6 @@ crew_test("can relay task errors as local warnings", {
       )
     )
   )
-})
-
-crew_test("can terminate a lost worker", {
-  skip_on_cran()
-  skip_on_os("windows")
-  if (isTRUE(as.logical(Sys.getenv("CI", "false")))) {
-    skip_on_os("mac")
-  }
-  x <- crew_controller_local(
-    workers = 1L,
-    seconds_idle = 360,
-    seconds_launch = 180
-  )
-  x$start()
-  on.exit({
-    x$terminate()
-    rm(x)
-    gc()
-    crew_test_sleep()
-  })
-  private <- crew_private(x$launcher)
-  bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
-  path <- file.path(R.home("bin"), bin)
-  call <- "Sys.sleep(300)"
-  handle <- processx::process$new(command = path, args = c("-e", call))
-  crew_retry(
-    ~handle$is_alive(),
-    seconds_interval = 0.1,
-    seconds_timeout = 5
-  )
-  private$.instances <- tibble::add_row(
-    private$.instances,
-    handle = list(handle),
-    id = 99L,
-    start = - Inf,
-    online = FALSE,
-    discovered = FALSE
-  )
-  x$scale()
-  crew_retry(
-    ~!handle$is_alive(),
-    seconds_interval = 0.1,
-    seconds_timeout = 60
-  )
-  expect_false(handle$is_alive())
 })
 
 crew_test("deprecate auto_scale", {
@@ -243,14 +204,17 @@ crew_test("controller collect() success", {
   })
   x <- crew_controller_local(workers = 1L, seconds_idle = 30L)
   x$start()
-  for (index in seq_len(2L)) x$push("done")
+  for (index in seq_len(2L)) {
+    x$push("done")
+  }
   x$wait(mode = "all")
-  for (index in seq_len(2L)) x$push(Sys.sleep(120))
+  for (index in seq_len(2L)) {
+    x$push(Sys.sleep(120))
+  }
   expect_equal(length(x$tasks), 4L)
   out <- x$collect()
   expect_equal(length(x$tasks), 2L)
-  expect_equal(x$queue$data, character(0L))
-  expect_equal(x$queue$head, 1L)
+  expect_equal(x$queue_resolved$as_list(), list())
   expect_equal(nrow(out), 2L)
   expect_equal(as.character(out$result), rep("done", 2))
   expect_null(x$collect())
@@ -354,7 +318,6 @@ crew_test("controller map() works", {
   expect_equal(out$warnings, rep(NA_character_, 2L))
   expect_equal(out$controller, rep(x$launcher$name, 2L))
   sum <- x$summary()
-  expect_equal(sum$tasks, 2L)
   expect_equal(sum$error, 0L)
   expect_equal(sum$warning, 0L)
 })
@@ -430,7 +393,6 @@ crew_test("map() works with errors and names and command strings", {
   expect_false(anyNA(out$warnings))
   expect_equal(out$controller, rep(x$launcher$name, 2L))
   sum <- x$summary()
-  expect_equal(sum$tasks, 6L)
   expect_equal(sum$error, 6L)
   expect_equal(sum$warning, 6L)
 })
@@ -475,7 +437,6 @@ crew_test("map() needs an empty controller", {
 
 crew_test("map() can relay warnings", {
   skip_on_cran()
-  skip_on_os("windows")
   x <- crew_controller_local(
     workers = 1L,
     seconds_idle = 360
@@ -520,17 +481,23 @@ crew_test("backlog with no tasks", {
     crew_test_sleep()
   })
   x$start()
-  expect_true(inherits(x$backlog, "crew_class_queue"))
+  expect_true(is.environment(x$queue_backlog))
   expect_equal(x$pop_backlog(), character(0L))
   tasks <- paste0("my_task", seq_len(4L))
   for (task in tasks) {
     x$push_backlog(name = task)
   }
-  expect_equal(x$backlog$list(), tasks)
-  expect_equal(x$pop_backlog(), tasks[c(1L, 2L)])
-  expect_equal(x$backlog$list(), tasks[c(3L, 4L)])
-  expect_equal(x$pop_backlog(), tasks[c(3L, 4L)])
-  expect_equal(x$backlog$list(), character(0L))
+  expect_equal(as.character(x$queue_backlog$as_list()), tasks)
+  out <- x$pop_backlog()
+  expect_equal(length(out), 2L)
+  expect_equal(length(unique(out)), 2L)
+  expect_true(all(out %in% tasks))
+  expect_equal(
+    sort(as.character(x$queue_backlog$as_list())),
+    sort(setdiff(tasks, out))
+  )
+  expect_equal(sort(x$pop_backlog()), sort(setdiff(tasks, out)))
+  expect_equal(as.character(x$queue_backlog$as_list()), character(0L))
   expect_equal(x$pop_backlog(), character(0L))
 })
 
@@ -549,21 +516,38 @@ crew_test("backlog with one task and no saturation", {
   })
   x$start()
   x$push(Sys.sleep(30), scale = FALSE)
-  expect_equal(x$backlog$list(), character(0L))
+  expect_equal(as.character(x$queue_backlog$as_list()), character(0L))
   expect_equal(x$pop_backlog(), character(0L))
   tasks <- paste0("my_task", seq_len(4L))
   for (task in tasks) {
     x$push_backlog(name = task)
   }
-  expect_equal(x$backlog$list(), tasks)
-  expect_equal(x$pop_backlog(), tasks[1L])
-  expect_equal(x$backlog$list(), tasks[c(2L, 3L, 4L)])
-  expect_equal(x$pop_backlog(), tasks[2L])
-  expect_equal(x$backlog$list(), tasks[c(3L, 4L)])
-  expect_equal(x$pop_backlog(), tasks[3L])
-  expect_equal(x$backlog$list(), tasks[4L])
-  expect_equal(x$pop_backlog(), tasks[4L])
-  expect_equal(x$backlog$list(), character(0L))
+  expect_equal(sort(as.character(x$queue_backlog$as_list())), sort(tasks))
+  out1 <- x$pop_backlog()
+  expect_equal(length(out1), 1L)
+  expect_true(out1 %in% tasks)
+  expect_equal(
+    sort(as.character(x$queue_backlog$as_list())),
+    sort(setdiff(tasks, out1))
+  )
+  out2 <- x$pop_backlog()
+  expect_equal(length(out2), 1L)
+  expect_true(out2 %in% tasks)
+  expect_false(out2 == out1)
+  expect_equal(
+    sort(as.character(x$queue_backlog$as_list())),
+    sort(setdiff(tasks, c(out1, out2)))
+  )
+  out3 <- x$pop_backlog()
+  expect_equal(length(out3), 1L)
+  expect_true(out3 %in% tasks)
+  expect_false(out3 %in% c(out1, out2))
+  expect_equal(
+    sort(as.character(x$queue_backlog$as_list())),
+    setdiff(tasks, c(out1, out2, out3))
+  )
+  expect_equal(x$pop_backlog(), setdiff(tasks, c(out1, out2, out3)))
+  expect_equal(as.character(x$queue_backlog$as_list()), character(0L))
   expect_equal(x$pop_backlog(), character(0L))
 })
 
@@ -585,13 +569,13 @@ crew_test("backlog with saturation", {
     x$push(Sys.sleep(30), scale = FALSE)
   }
   tasks <- paste0("my_task", seq_len(4L))
-  expect_equal(x$backlog$list(), character(0L))
+  expect_equal(as.character(x$queue_backlog$as_list()), character(0L))
   expect_equal(x$pop_backlog(), character(0L))
   for (task in tasks) {
     x$push_backlog(name = task)
   }
   for (index in seq_len(4L)) {
-    expect_equal(x$backlog$list(), tasks)
+    expect_equal(sort(as.character(x$queue_backlog$as_list())), sort(tasks))
     expect_equal(x$pop_backlog(), character(0L))
     x$push(Sys.sleep(30), scale = FALSE)
   }
@@ -599,9 +583,9 @@ crew_test("backlog with saturation", {
 
 crew_test("descale", {
   controller <- crew_controller_local()
-  expect_false(controller$autoscaling)
+  expect_null(controller$loop)
   controller$descale()
-  expect_false(controller$autoscaling)
+  expect_null(controller$loop)
 })
 
 crew_test("cancel() all", {
@@ -655,7 +639,6 @@ crew_test("cancel() named", {
   expect_true(all(grepl("operation canceled", tolower(tasks$error))))
   expect_equal(names(x$tasks), "y")
   s <- x$summary()
-  expect_equal(s$tasks, 2L)
   expect_equal(s$success, 0L)
   expect_equal(s$error, 0L)
   expect_equal(s$crash, 0L)
@@ -700,21 +683,20 @@ crew_test("crash detection with crashes_max == 0L", {
   expect_equal(x$crashes(name = "x"), 0L)
   x$push(TRUE, name = "x")
   expect_equal(x$crashes(name = "x"), 0L)
-  x$wait()
+  x$wait(seconds_timeout = 30)
   expect_true(tibble::is_tibble(x$pop()))
   expect_equal(x$crashes(name = "x"), 0L)
-  x$push(Sys.sleep(300L), name = "x")
+  x$push(Sys.sleep(300L), name = "x", throttle = FALSE)
   crew_retry(
     ~ {
-      x$scale()
-      isTRUE(x$launcher$instances$online)
+      x$scale(throttle = FALSE)
+      isTRUE(x$client$status()["connections"] > 0L)
     },
     seconds_interval = 0.1,
     seconds_timeout = 60
   )
-  Sys.sleep(0.25)
-  x$launcher$terminate_workers()
-  x$wait()
+  mirai::daemons(n = 0L, .compute = x$client$profile)
+  x$wait(seconds_timeout = 30)
   expect_equal(x$crashes(name = "x"), 0L)
   expect_crew_error(x$pop())
   expect_equal(x$crashes(name = "x"), 1L)
@@ -725,7 +707,6 @@ crew_test("crash detection with crashes_max == 2L", {
   skip_on_os("windows")
   x <- crew_controller_local(
     workers = 1L,
-    seconds_idle = 360,
     crashes_max = 2L
   )
   on.exit({
@@ -737,33 +718,29 @@ crew_test("crash detection with crashes_max == 2L", {
   x$start()
   for (index in seq_len(2L)) {
     expect_equal(x$crashes(name = "x"), index - 1L)
-    x$push(Sys.sleep(300L), name = "x", scale = TRUE)
+    x$push(Sys.sleep(300L), name = "x", scale = TRUE, throttle = FALSE)
     crew_retry(
-      ~ {
-        x$scale()
-        isTRUE(x$launcher$instances$online)
-      },
+      ~ isTRUE(x$client$status()["connections"] > 0L),
       seconds_interval = 0.1,
       seconds_timeout = 60
     )
-    Sys.sleep(0.25)
-    x$launcher$terminate_workers()
-    x$wait()
+    for (handle in unlist(x$launcher$launches$handle)) {
+      handle$kill()
+    }
+    x$wait(mode = "one", seconds_timeout = 30, throttle = FALSE, scale = TRUE)
     expect_true(tibble::is_tibble(x$pop()))
     expect_equal(x$crashes(name = "x"), index)
   }
-  x$push(Sys.sleep(300L), name = "x", scale = TRUE)
+  x$push(Sys.sleep(300L), name = "x", scale = TRUE, throttle = FALSE)
   crew_retry(
-    ~ {
-      x$scale()
-      isTRUE(x$launcher$instances$online)
-    },
+    ~ isTRUE(x$client$status()["connections"] > 0L),
     seconds_interval = 0.1,
     seconds_timeout = 60
   )
-  Sys.sleep(0.25)
-  x$launcher$terminate_workers()
-  x$wait()
+  for (handle in unlist(x$launcher$launches$handle)) {
+    handle$kill()
+  }
+  x$wait(seconds_timeout = 30)
   expect_crew_error(x$pop())
   expect_equal(x$crashes(name = "x"), 3L)
   expect_equal(x$summary()$crash, 3L)
@@ -774,7 +751,6 @@ crew_test("crash detection resets, crashes_max == 2L", {
   skip_on_os("windows")
   x <- crew_controller_local(
     workers = 1L,
-    seconds_idle = 360,
     crashes_max = 2L
   )
   on.exit({
@@ -786,24 +762,25 @@ crew_test("crash detection resets, crashes_max == 2L", {
   x$start()
   for (index in seq_len(6L)) {
     expect_equal(x$crashes(name = "x"), 0L)
-    x$push(Sys.sleep(300L), name = "x", scale = TRUE)
+    x$push(Sys.sleep(300L), name = "x", scale = TRUE, throttle = FALSE)
     crew_retry(
-      ~ {
-        x$scale()
-        isTRUE(x$launcher$instances$online)
-      },
+      ~ isTRUE(x$client$status()["connections"] > 0L),
       seconds_interval = 0.1,
       seconds_timeout = 60
     )
-    Sys.sleep(0.25)
-    x$launcher$terminate_workers()
-    x$wait()
+    for (handle in unlist(x$launcher$launches$handle)) {
+      handle$kill()
+    }
+    x$wait(mode = "one", seconds_timeout = 30, scale = FALSE)
     expect_true(tibble::is_tibble(x$pop()))
     expect_equal(x$crashes(name = "x"), 1L)
-    x$push(TRUE, name = "x")
-    x$wait()
-    expect_true(tibble::is_tibble(x$pop()))
+    x$push(TRUE, name = "x", scale = TRUE, throttle = FALSE)
+    x$wait(mode = "one", seconds_timeout = 30, scale = FALSE)
+    expect_true(tibble::is_tibble(x$pop(throttle = FALSE)))
     expect_equal(x$crashes(name = "x"), 0L)
+    for (handle in unlist(x$launcher$launches$handle)) {
+      handle$kill()
+    }
   }
 })
 
@@ -824,33 +801,30 @@ crew_test("crash detection with crashes_max == 2L and collect()", {
   x$start()
   for (index in seq_len(2L)) {
     expect_equal(x$crashes(name = "x"), index - 1L)
-    x$push(Sys.sleep(300L), name = "x", scale = TRUE)
+    x$push(Sys.sleep(300L), name = "x", scale = TRUE, throttle = FALSE)
     crew_retry(
-      ~ {
-        x$scale()
-        isTRUE(x$launcher$instances$online)
-      },
+      ~ isTRUE(x$client$status()["connections"] > 0L),
       seconds_interval = 0.1,
       seconds_timeout = 60
     )
     Sys.sleep(0.25)
-    x$launcher$terminate_workers()
-    x$wait()
+    for (handle in unlist(x$launcher$launches$handle)) {
+      handle$kill()
+    }
+    x$wait(mode = "one", seconds_timeout = 30, scale = FALSE)
     expect_true(tibble::is_tibble(x$collect()))
     expect_equal(x$crashes(name = "x"), index)
   }
-  x$push(Sys.sleep(300L), name = "x", scale = TRUE)
+  x$push(Sys.sleep(300L), name = "x", scale = TRUE, throttle = FALSE)
   crew_retry(
-    ~ {
-      x$scale()
-      isTRUE(x$launcher$instances$online)
-    },
+    ~ isTRUE(x$client$status()["connections"] > 0L),
     seconds_interval = 0.1,
     seconds_timeout = 60
   )
-  Sys.sleep(0.25)
-  x$launcher$terminate_workers()
-  x$wait()
+  for (handle in unlist(x$launcher$launches$handle)) {
+    handle$kill()
+  }
+  x$wait(mode = "one", seconds_timeout = 30, scale = FALSE)
   expect_crew_error(x$collect())
   expect_equal(x$crashes(name = "x"), 3L)
 })

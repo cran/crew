@@ -1,8 +1,8 @@
-#' @title Terminate dispatchers and/or workers
+#' @title Deprecated: terminate dispatchers and/or workers
 #' @export
 #' @family utility
-#' @description Terminate `mirai` dispatchers and/or `crew` workers
-#'   which may be lingering from previous workloads.
+#' @description Deprecated on 2025-08-26 in `crew` version 1.2.1.9006.
+#'   Please use [crew_monitor_local()] instead.
 #' @details Behind the scenes, `mirai` uses an external R process
 #'   called a "dispatcher" to send tasks to `crew` workers.
 #'   This dispatcher usually shuts down when you terminate the controller
@@ -22,7 +22,7 @@
 #'   whether to terminate workers.
 #' @param user Character of length 1. Terminate dispatchers and/or
 #'   workers associated with this user name.
-#' @param seconds_interval Seconds to between polling intervals
+#' @param seconds_interval Seconds to wait between polling intervals
 #'   waiting for a process to exit.
 #' @param seconds_timeout Seconds to wait for a process to exit.
 #' @param verbose Logical of length 1, whether to print an informative
@@ -35,13 +35,20 @@ crew_clean <- function(
   dispatchers = TRUE,
   workers = TRUE,
   user = ps::ps_username(),
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   verbose = TRUE
 ) {
   # Tests interfere with other processes.
   # Tested in tests/local/test-crew_clean.R.
   # nocov start
+  crew_deprecate(
+    name = "crew_clean()",
+    date = "2025-08-26",
+    version = "1.2.1.9006",
+    alternative = "crew_monitor_local()",
+    condition = "warning"
+  )
   crew_assert(dispatchers, isTRUE(.) || isFALSE(.))
   crew_assert(workers, isTRUE(.) || isFALSE(.))
   crew_assert(user, is.character(.), length(.) == 1L, nzchar(.), !anyNA(.))
@@ -52,13 +59,15 @@ crew_clean <- function(
     pattern = "mirai::dispatcher(",
     x = ps$command,
     fixed = TRUE
-  ) & rep(dispatchers, nrow(ps))
+  ) &
+    rep(dispatchers, nrow(ps))
   ps$worker <- grepl(
     pattern = "crew::crew_worker(",
     x = ps$command,
     fixed = TRUE
-  ) & rep(workers, nrow(ps))
-  ps <- ps[ps$dispatcher | ps$worker,, drop = FALSE] # nolint
+  ) &
+    rep(workers, nrow(ps))
+  ps <- ps[ps$dispatcher | ps$worker, , drop = FALSE] # nolint
   if (verbose && nrow(ps) < 1L) {
     crew_message("nothing to clean up")
     return(invisible())
@@ -67,7 +76,7 @@ crew_clean <- function(
     handle <- ps$ps_handle[[index]]
     crew_terminate_process(ps::ps_pid(p = handle))
     crew_retry(
-      fun = ~!ps::ps_is_running(p = handle),
+      fun = ~ !ps::ps_is_running(p = handle),
       seconds_interval = seconds_interval,
       seconds_timeout = seconds_timeout
     )

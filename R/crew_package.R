@@ -19,16 +19,17 @@
 #'   [`clustermq`](https://mschubert.github.io/clustermq/),
 #'   and [`batchtools`](https://github.com/mlr-org/batchtools).
 #' @importFrom cli cli_progress_bar cli_progress_done cli_progress_update
+#' @importFrom collections dict queue
 #' @importFrom data.table rbindlist
 #' @importFrom later create_loop current_loop destroy_loop exists_loop later
-#' @importFrom mirai call_mirai daemon daemons is_mirai is_mirai_error
-#'   mirai nextcode nextget nextstream status stop_mirai
-#' @importFrom nanonext %~>% cv cv_value ip_addr mclock msleep nng_error
+#' @importFrom mirai call_mirai daemon daemons info is_mirai
+#'   is_mirai_error mirai nextcode nextget nextstream stop_mirai
+#' @importFrom nanonext %~>% cv ip_addr mclock msleep nng_error
 #'   random .unresolved until_ tls_config
 #' @importFrom processx process
 #' @importFrom promises promise
 #' @importFrom ps ps_cmdline ps_handle ps_pid ps_is_running
-#'   ps_status ps_username
+#'   ps_username
 #' @importFrom R6 R6Class
 #' @importFrom rlang abort as_function enquo is_installed is_named quo_squash
 #' @importFrom stats runif
@@ -37,7 +38,7 @@
 #'   everything last_col matches num_range one_of starts_with
 #' @importFrom tools pskill SIGINT SIGQUIT SIGTERM
 #' @importFrom utils capture.output compareVersion globalVariables head
-#'   sessionInfo
+#'   sessionInfo tail
 NULL
 
 utils::globalVariables(".")

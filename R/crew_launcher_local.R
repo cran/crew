@@ -25,7 +25,7 @@
 crew_launcher_local <- function(
   name = NULL,
   workers = 1L,
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   seconds_launch = 30,
   seconds_idle = Inf,
@@ -165,7 +165,8 @@ crew_launcher_local <- function(
 crew_class_launcher_local <- R6::R6Class(
   classname = "crew_class_launcher_local",
   inherit = crew_class_launcher,
-  cloneable = FALSE,
+  cloneable = TRUE,
+  portable = TRUE,
   private = list(
     .options_local = NULL,
     .log_prepare = function() {
@@ -289,12 +290,7 @@ crew_class_launcher_local <- R6::R6Class(
     #'   later on.
     #' @param call Character of length 1 with a namespaced call to
     #'   [crew_worker()] which will run in the worker and accept tasks.
-    #' @param name Character of length 1 with a long informative worker name
-    #'   which contains the `launcher` and `worker` arguments
-    #'   described below.
-    #' @param launcher Character of length 1, name of the launcher.
-    #' @param worker Character string, name of the worker within the launcher.
-    launch_worker = function(call, name, launcher, worker) {
+    launch_worker = function(call) {
       bin <- if_any(
         tolower(Sys.info()[["sysname"]]) == "windows",
         "Rscript.exe",
@@ -302,6 +298,7 @@ crew_class_launcher_local <- R6::R6Class(
       )
       path <- file.path(R.home("bin"), bin)
       private$.log_prepare()
+      name <- crew_random_name()
       processx::process$new(
         command = path,
         args = c(private$.r_arguments, "-e", call),
@@ -309,14 +306,6 @@ crew_class_launcher_local <- R6::R6Class(
         stdout = private$.log_stdout(name = name),
         stderr = private$.log_stderr(name = name)
       )
-    },
-    #' @description Terminate a local process worker.
-    #' @return A list with the process ID of the worker.
-    #' @param handle A process handle object previously
-    #'   returned by `launch_worker()`.
-    terminate_worker = function(handle) {
-      handle$signal(signal = crew_terminate_signal())
-      list(pid = handle$get_pid())
     }
   )
 )

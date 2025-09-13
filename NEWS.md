@@ -1,3 +1,30 @@
+# crew 1.3.0
+
+* Reinstate checks that were temporarily suppressed to help plugins transition to #217.
+* Support `reset_globals`, `reset_packages`, `reset_options`, and `garbage_collection` in `crew_controller_sequential()` (#217).
+* Change argument `tls` to `tlscert` in the call to `mirai::daemon()` (#227, @shikokuchuo).
+* Use `collections` queues instead of custom queues (#229).
+* Use `collections` dictionaries instead of hash environments to track tasks (#229).
+* Remove the long-deprecated `promise()` method of the controller.
+* Improve interoperability of `crew`'s workers by avoiding `nanonext::cv_value()` for condition variables (#225). Consequences:
+    * `wait(mode = "all")` no longer guarantees that a task is available for `pop()`. It just consumes a condition variable signal. `pop()` should always be checked for `NULL` return values.
+    * Until `mirai` gains a threaded dispatcher, `saturated()` needs to avoid the overhead of calling `status()` to get task counts. So the definition of "saturated" has changed: a controller is saturated if the number of *uncollected* tasks is greater than or equal to the maximum number of workers. Previously, it was the number of *unresolved* tasks.
+    * Internal counters `.pushed` and `.popped` are safely removed.
+    * Active bindings `pushed` and `popped` are removed.
+* Controllers no longer have a `unpopped()` method because it is unnecessary to export and it assumes only the controller submits tasks to the compute profile (affecting interoperability).
+* Allow a custom `later` loop in `autoscale()`.
+* Deprecate the `pids()` methods in controllers and clients and stop babysitting the dispatcher process (#236).
+* Deprecate `crew_clean()` in favor of `crew_monitor_local()` (#236).
+* Trim down the argument list of `launch_worker()` to just include arguments `call` and `name`.
+* Simplify the auto-scaling algorithm to support greater interoperability and the eventual threaded dispatcher in `mirai` (#232).
+* Deprecate `processes` and `async` in `crew` launchers in favor of job arrays (#218, #237).
+* Drop the unified controller group throttle. Let individual controllers handle their own throttling based on their own auto-scaling settings.
+* When `tasks_mask` is finite, set `seconds_min` to `seconds_interval` in the throttle to give tasks enough time to accumulate.
+* Use the counters in `mirai::info()` instead of `mirai::status()$events` (#232, @shikokuchuo).
+* Allow custom compute profiles in `crew_client()`. This is mainly to support the use of the default compute profile to make `crew` more compatible with non-`crew` `mirai`-based workflows. It's a quick solution for single controllers but does not work for controller groups.
+* `crew_client()$start()` now errors if a `mirai` compute profile of the same name is already active.
+* Shorten the length of strings from `crew_random_name()`.
+
 # crew 1.2.1
 
 * CRAN patch (address MKL "Additional issues").

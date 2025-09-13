@@ -1,17 +1,24 @@
-crew_test("custom launcher plugin based on system2()", {
+crew_test("test handling of launch failures", {
+  envir <- new.env(parent = emptyenv())
+  envir$result <- character(0L)
   system2_launcher_class <- R6::R6Class(
     classname = "system2_launcher_class",
     inherit = crew::crew_class_launcher,
     public = list(
       launch_worker = function(call, name) {
-        system2(
-          command = file.path(R.home("bin"), "R"),
-          args = c("-e", shQuote(call)),
-          wait = FALSE,
-          stdout = FALSE,
-          stderr = FALSE
-        )
-        invisible()
+        total <- self$launches$total[nrow(self$launches)]
+        if (length(total) > 0L && total %% 2L) {
+          system2(
+            command = file.path(R.home("bin"), "R"),
+            args = c("-e", shQuote(call)),
+            wait = FALSE,
+            stdout = FALSE,
+            stderr = FALSE
+          )
+          envir$result <- c(envir$result, "success")
+        } else {
+          envir$result <- c(envir$result, "failure")
+        }
       }
     )
   )
@@ -24,7 +31,7 @@ crew_test("custom launcher plugin based on system2()", {
     serialization = NULL,
     seconds_interval = 0.5,
     seconds_timeout = 10,
-    seconds_launch = 30,
+    seconds_launch = 1,
     seconds_idle = Inf,
     seconds_wall = Inf,
     tasks_max = Inf,
@@ -66,26 +73,27 @@ crew_test("custom launcher plugin based on system2()", {
     controller
   }
   controller <- crew_controller_system2(
-    seconds_idle = 2L,
-    workers = 2L
+    tasks_max = 1L,
+    workers = 1L,
+    seconds_launch = 3
   )
-  controller$start()
-  # Push 100 tasks
-  for (index in seq_len(100L)) {
-    name <- paste0("task_", index)
-    controller$push(name = name, command = index, data = list(index = index))
+  on.exit(controller$terminate())
+  n_tasks <- 7L
+  cli::cli_progress_bar(total = 7L)
+  for (index in seq_len(n_tasks)) {
+    controller$push(index, data = list(index = index))
+    controller$wait()
+    cli::cli_progress_update()
   }
-  # Wait for the tasks to complete.
-  controller$wait(mode = "all")
-  # Do the same for 100 more tasks.
-  for (index in (seq_len(100L) + 100L)) {
-    name <- paste0("task_", index)
-    controller$push(name = name, command = index, data = list(index = index))
-  }
-  controller$wait(mode = "all")
-  # Collect and check the results.
-  results <- sort(unlist(controller$collect()$result))
-  testthat::expect_true(all(results == seq_len(200L)))
-  # Terminate the controller.
-  controller$terminate()
+  cli::cli_progress_done()
+  expect_equal(envir$result, rep(c("failure", "success"), times = 7L))
+  results <- controller$collect()
+  expect_equal(sort(as.integer(results$result)), seq_len(n_tasks))
+  expect_equal(controller$launcher$failed, 7L)
+  status <- controller$client$status()
+  expect_equal(as.integer(status["connections"]), 0L)
+  expect_equal(as.integer(status["awaiting"]), 0L)
+  expect_equal(as.integer(status["executing"]), 0L)
+  expect_equal(as.integer(status["completed"]), 7L)
+  expect_equal(as.integer(status["cumulative"]), 7L)
 })

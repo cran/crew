@@ -9,6 +9,7 @@ crew_test("crew_client() active bindings", {
     port = 123L,
     seconds_interval = 123,
     seconds_timeout = 456,
+    profile = "abc",
     retry_tasks = FALSE
   )
   on.exit(client$terminate())
@@ -19,9 +20,7 @@ crew_test("crew_client() active bindings", {
   expect_equal(client$seconds_timeout, 456)
   expect_false(client$started)
   expect_null(client$url)
-  expect_null(client$profile)
-  expect_null(client$client)
-  expect_null(client$dispatcher)
+  expect_equal(client$profile, "abc")
   expect_null(client$serialization)
   expect_silent(client$validate())
 })
@@ -36,30 +35,19 @@ crew_test("crew_client() works", {
     crew_test_sleep()
   })
   expect_false(client$started)
-  expect_null(client$dispatcher)
   expect_null(client$url)
-  expect_equal(client$resolved(), 0L)
   expect_silent(client$start())
   expect_silent(client$validate())
   expect_true(client$started)
   url <- client$url
   expect_true(is.character(url) && length(url) == 1L)
   expect_true(nzchar(url) && !anyNA(url))
-  expect_s3_class(client$client, "ps_handle")
-  expect_s3_class(client$dispatcher, "ps_handle")
-  expect_equal(length(client$dispatcher), 1L)
-  handle <- client$dispatcher
-  crew_retry(
-    ~ps::ps_is_running(handle),
-    seconds_interval = 0.01,
-    seconds_timeout = 30
-  )
   bin <- if_any(tolower(Sys.info()[["sysname"]]) == "windows", "R.exe", "R")
   path <- file.path(R.home("bin"), bin)
   call <- sprintf("mirai::daemon('%s', dispatcher = TRUE)", url)
   px <- processx::process$new(command = path, args = c("-e", call))
   crew_retry(
-    ~{
+    ~ {
       identical(
         as.integer(mirai::status(.compute = client$profile)$connections),
         1L
@@ -70,7 +58,7 @@ crew_test("crew_client() works", {
   )
   task <- mirai::mirai(ps::ps_pid(), .compute = client$profile)
   crew_retry(
-    ~!nanonext::.unresolved(task),
+    ~ !nanonext::.unresolved(task),
     seconds_interval = 0.5,
     seconds_timeout = 10
   )
@@ -82,11 +70,6 @@ crew_test("crew_client() works", {
   for (index in seq_len(2L)) {
     expect_silent(client$terminate())
     expect_false(client$started)
-    crew_retry(
-      ~!ps::ps_is_running(handle),
-      seconds_interval = 0.01,
-      seconds_timeout = 30
-    )
   }
   px$signal(signal = crew_terminate_signal())
 })
@@ -111,4 +94,48 @@ crew_test("crew_client() deprecate tls_config", {
     crew_client(host = "127.0.0.1", tls_config = list()),
     class = "crew_deprecate"
   )
+})
+
+crew_test("crew_client() deprecate pids()", {
+  skip_on_cran()
+  expect_warning(pid <- crew_client()$pids(), class = "crew_deprecate")
+  skip_on_os("windows")
+  expect_equal(pid, Sys.getpid())
+})
+
+crew_test("crew_client() custom profile", {
+  skip_on_cran()
+  x <- crew_client(
+    host = "127.0.0.1",
+    port = "57000",
+    profile = "__abc__"
+  )
+  expect_equal(x$profile, "__abc__")
+  on.exit(x$terminate())
+  x$start()
+  url <- nanonext::parse_url(mirai::nextget("url", .compute = "__abc__"))
+  expect_equal(as.character(url["host"]), "127.0.0.1:57000")
+})
+
+crew_test("crew_client() profile conflicts", {
+  skip_on_cran()
+  skip_if_not(is.null(mirai::nextget("url", .compute = "__abc__")))
+  x <- crew_client(
+    host = "127.0.0.1",
+    port = "57000",
+    profile = "__abc__"
+  )
+  y <- crew_client(
+    host = "127.0.0.1",
+    port = "57001",
+    profile = "__abc__"
+  )
+  on.exit({
+    x$terminate()
+    y$terminate()
+  })
+  x$start()
+  expect_crew_error(y$start())
+  x$terminate()
+  expect_no_error(y$start())
 })

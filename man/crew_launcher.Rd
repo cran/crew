@@ -7,7 +7,7 @@
 crew_launcher(
   name = NULL,
   workers = 1L,
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   seconds_launch = 30,
   seconds_idle = 300,
@@ -47,7 +47,7 @@ in a \code{\link[=crew_throttle]{crew_throttle()}} object.}
 
 \item{seconds_timeout}{Number of seconds until timing
 out while waiting for certain synchronous operations to complete,
-such as checking \code{mirai::status()}.}
+such as checking \code{mirai::info()}.}
 
 \item{seconds_launch}{Seconds of startup time to allow.
 A worker is unconditionally assumed to be alive
@@ -73,11 +73,8 @@ See the \code{walltime} argument of \code{mirai::daemon()}.}
 No longer necessary.}
 
 \item{tasks_max}{Maximum number of tasks that a worker will do before
-exiting. See the \code{maxtasks} argument of \code{mirai::daemon()}.
-\code{crew} does not
-excel with perfectly transient workers because it does not micromanage
-the assignment of tasks to workers, it is recommended to set
-\code{tasks_max} to a value greater than 1.}
+exiting. Also determines how often the controller auto-scales.
+See the Auto-scaling section for details.}
 
 \item{tasks_timers}{Number of tasks to do before activating
 the timers for \code{seconds_idle} and \code{seconds_wall}.
@@ -106,14 +103,7 @@ Please use the \code{garbage_collection} option of
 
 \item{tls}{A TLS configuration object from \code{\link[=crew_tls]{crew_tls()}}.}
 
-\item{processes}{\code{NULL} or positive integer of length 1,
-number of local processes to
-launch to allow worker launches to happen asynchronously. If \code{NULL},
-then no local processes are launched. If 1 or greater, then the launcher
-starts the processes on \code{start()} and ends them on \code{terminate()}.
-Plugins that may use these processes should run asynchronous calls
-using \code{launcher$async$eval()} and expect a \code{mirai} task object
-as the return value.}
+\item{processes}{Deprecated on 2025-08-27 (\code{crew} version 1.2.1.9009).}
 
 \item{r_arguments}{Optional character vector of command line arguments
 to pass to \code{Rscript} (non-Windows) or \code{Rscript.exe} (Windows)
@@ -133,6 +123,30 @@ in functions that create custom third-party launchers. See
 \verb{@inheritParams crew::crew_launcher} in the source code file of
 \code{\link[=crew_launcher_local]{crew_launcher_local()}}.
 }
+\section{Auto-scaling}{
+
+\code{crew} launchers implement auto-scaling in the \code{scale()} method.
+When the task load increases, the number of workers increases in response
+to demand. When the task load decreases, the workers start to exit.
+This behavior happens dynamically over the course of a workflow,
+and it can be tuned with arguments \code{seconds_interval}, \code{seconds_wall},
+and \code{tasks_max}.
+
+\code{tasks_max} is special: it determines not only the number of tasks
+a worker runs before exiting, it also determines how often
+auto-scaling runs.
+If \code{tasks_max} is finite, then \code{crew} uses an aggressive
+deterministic exponential backoff algorithm to determine how frequently
+to auto-scale (see \code{\link[=crew_throttle]{crew_throttle()}}).
+But if \code{tasks_max} is \code{Inf}, then \code{crew} only scales at equally-spaced
+time intervals of \code{seconds_interval} to allow enough pending
+tasks to accumulate for job arrays.
+This last part is important because auto-scaling
+too frequently could lead to hundreds of separate job arrays with only
+job per array (as opposed to the desired outcome of 1 or 2 arrays
+with many jobs each).
+}
+
 \examples{
 if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
 client <- crew_client()

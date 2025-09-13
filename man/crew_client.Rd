@@ -9,11 +9,12 @@ crew_client(
   workers = NULL,
   host = NULL,
   port = NULL,
+  serialization = NULL,
+  profile = crew::crew_random_name(),
   tls = crew::crew_tls(),
   tls_enable = NULL,
   tls_config = NULL,
-  serialization = NULL,
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   retry_tasks = NULL
 )
@@ -31,6 +32,15 @@ then an available ephemeral port is automatically chosen.
 Controllers running simultaneously on the same computer
 (as in a controller group) must not share the same TCP port.}
 
+\item{serialization}{Either \code{NULL} (default) or an object produced by
+\code{\link[mirai:serial_config]{mirai::serial_config()}} to control the serialization
+of data sent to workers. This can help with either more efficient
+data transfers or to preserve attributes of otherwise
+non-exportable objects (such as \code{torch} tensors or \code{arrow} tables).
+See \code{?mirai::serial_config} for details.}
+
+\item{profile}{Character string, compute profile for \code{\link[mirai:daemons]{mirai::daemons()}}.}
+
 \item{tls}{A TLS configuration object from \code{\link[=crew_tls]{crew_tls()}}.}
 
 \item{tls_enable}{Deprecated on 2023-09-15 in version 0.4.1.
@@ -39,21 +49,14 @@ Use argument \code{tls} instead.}
 \item{tls_config}{Deprecated on 2023-09-15 in version 0.4.1.
 Use argument \code{tls} instead.}
 
-\item{serialization}{Either \code{NULL} (default) or an object produced by
-\code{\link[mirai:serial_config]{mirai::serial_config()}} to control the serialization
-of data sent to workers. This can help with either more efficient
-data transfers or to preserve attributes of otherwise
-non-exportable objects (such as \code{torch} tensors or \code{arrow} tables).
-See \code{?mirai::serial_config} for details.}
-
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
 synchronous operations to complete,
-such as checking \code{mirai::status()}}
+such as checking \code{mirai::info()}}
 
 \item{seconds_timeout}{Number of seconds until timing
 out while waiting for certain synchronous operations to complete,
-such as checking \code{mirai::status()}.}
+such as checking \code{mirai::info()}.}
 
 \item{retry_tasks}{Deprecated on 2025-01-13 (\code{crew} version 0.10.2.9002).}
 }

@@ -4,7 +4,7 @@
 \alias{crew_controller_group}
 \title{Create a controller group.}
 \usage{
-crew_controller_group(..., seconds_interval = 1)
+crew_controller_group(..., seconds_interval = 0.25)
 }
 \arguments{
 \item{...}{\code{R6} controller objects or lists of \code{R6} controller objects.
@@ -14,7 +14,7 @@ or another list.}
 \item{seconds_interval}{Number of seconds between
 polling intervals waiting for certain internal
 synchronous operations to complete,
-such as checking \code{mirai::status()}}
+such as checking \code{mirai::info()}}
 }
 \description{
 Create an \code{R6} object to submit tasks and launch workers

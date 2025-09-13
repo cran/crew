@@ -38,7 +38,7 @@
 #' throttle$poll()
 crew_throttle <- function(
   seconds_max = 1,
-  seconds_min = 1e-3,
+  seconds_min = 1e-6,
   seconds_start = seconds_min,
   base = 2
 ) {
@@ -48,7 +48,6 @@ crew_throttle <- function(
     seconds_start = seconds_start,
     base = base
   )
-  throttle$reset()
   throttle$validate()
   throttle
 }
@@ -65,40 +64,41 @@ crew_throttle <- function(
 crew_class_throttle <- R6::R6Class(
   classname = "crew_class_throttle",
   cloneable = FALSE,
+  portable = FALSE,
   private = list(
     .seconds_max = NULL,
     .seconds_min = NULL,
     .seconds_start = NULL,
     .base = NULL,
-    .seconds_interval = 1e-3,
-    .polled = -Inf
+    .seconds_interval = NULL,
+    .polled = NULL
   ),
   active = list(
     #' @field seconds_max See [crew_throttle()].
     seconds_max = function() {
-      .subset2(private, ".seconds_max")
+      .seconds_max
     },
     #' @field seconds_min See [crew_throttle()].
     seconds_min = function() {
-      .subset2(private, ".seconds_min")
+      .seconds_min
     },
     #' @field seconds_start See [crew_throttle()].
     seconds_start = function() {
-      .subset2(private, ".seconds_start")
+      .seconds_start
     },
     #' @field base See [crew_throttle()].
     base = function() {
-      .subset2(private, ".base")
+      .base
     },
     #' @field seconds_interval Current wait time interval.
     seconds_interval = function() {
-      .subset2(private, ".seconds_interval")
+      .seconds_interval
     },
     #' @field polled Positive numeric of length 1,
     #'  millisecond timestamp of the last time `poll()` returned `TRUE`.
     #'  `NULL` if `poll()` was never called on the current object.
     polled = function() {
-      .subset2(private, ".polled")
+      .polled
     }
   ),
   public = list(
@@ -118,10 +118,11 @@ crew_class_throttle <- R6::R6Class(
       seconds_start = NULL,
       base = NULL
     ) {
-      private$.seconds_max <- seconds_max
-      private$.seconds_min <- seconds_min
-      private$.seconds_start <- seconds_start
-      private$.base <- base
+      .seconds_max <<- seconds_max
+      .seconds_min <<- seconds_min
+      .seconds_start <<- seconds_start
+      .base <<- base
+      .seconds_interval <<- seconds_start
     },
     #' @description Validate the object.
     #' @return `NULL` (invisibly).
@@ -141,11 +142,11 @@ crew_class_throttle <- R6::R6Class(
         )
       }
       crew_assert(
-        self$base > 1,
+        .base > 1,
         message = "crew throttle base must be greater than 1."
       )
       crew_assert(
-        self$polled,
+        .polled %|||% 1,
         is.numeric(.),
         length(.) == 1L,
         !anyNA(.),
@@ -154,7 +155,7 @@ crew_class_throttle <- R6::R6Class(
         )
       )
       crew_assert(
-        self$seconds_min <= self$seconds_max,
+        .seconds_min <= .seconds_max,
         message = paste(
           "crew throttle seconds_min must be",
           "less than or equal to seconds_max."
@@ -162,8 +163,8 @@ crew_class_throttle <- R6::R6Class(
       )
       for (field in c("seconds_start", "seconds_interval")) {
         crew_assert(
-          self$seconds_min <= self[[field]] &&
-            self[[field]] <= self$seconds_max,
+          .seconds_min <= self[[field]] &&
+            self[[field]] <= .seconds_max,
           message = paste(
             "crew throttle",
             field,
@@ -178,38 +179,38 @@ crew_class_throttle <- R6::R6Class(
     #'   `max` seconds, `FALSE` otherwise.
     poll = function() {
       now <- now()
-      polled <- .subset2(private, ".polled")
-      interval <- .subset2(private, ".seconds_interval")
-      out <- (now - polled) > interval
+      # Skipping the first polling interval helps initial scaling with
+      # job arrays. It avoids the awkward single-job array that would
+      # be submitted if crew did not give a little chance for
+      # tasks to accumulate initially.
+      if (is.null(.polled)) {
+        .polled <<- now
+        return(FALSE)
+      }
+      out <- (now - .polled) > .seconds_interval
       if (out) {
-        private$.polled <- now
+        .polled <<- now
       }
       out
     },
     #' @description Divide `seconds_interval` by `base`.
     #' @return `NULL` (invisibly). Called for its side effects.
     accelerate = function() {
-      old <- .subset2(private, ".seconds_interval")
-      base <- .subset2(private, ".base")
-      min <- .subset2(private, ".seconds_min")
-      private$.seconds_interval <- max(min, old / base)
+      .seconds_interval <<- max(.seconds_min, .seconds_interval / .base)
       invisible()
     },
     #' @description Multiply `seconds_interval` by `base`.
     #' @return `NULL` (invisibly). Called for its side effects.
     decelerate = function() {
-      old <- .subset2(private, ".seconds_interval")
-      base <- .subset2(private, ".base")
-      max <- .subset2(private, ".seconds_max")
-      private$.seconds_interval <- min(max, old * base)
+      .seconds_interval <<- min(.seconds_max, .seconds_interval * .base)
       invisible()
     },
     #' @description Reset the throttle object so the next `poll()` returns
     #'   `TRUE`, and reset the wait time interval to its initial value.
     #' @return `NULL` (invisibly).
     reset = function() {
-      private$.seconds_interval <- .subset2(private, ".seconds_start")
-      private$.polled <- -Inf
+      .seconds_interval <<- .seconds_start
+      .polled <<- -Inf
       invisible()
     },
     #' @description Reset the throttle when there is activity and
@@ -218,9 +219,9 @@ crew_class_throttle <- R6::R6Class(
     #' @param activity `TRUE` if there is activity, `FALSE` otherwise.
     update = function(activity) {
       if (activity) {
-        .subset2(self, "reset")()
+        reset()
       } else {
-        .subset2(self, "decelerate")()
+        decelerate()
       }
       invisible()
     }

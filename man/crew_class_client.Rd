@@ -44,6 +44,8 @@ Other client:
 
 \item{\code{serialization}}{See \code{\link[=crew_client]{crew_client()}}.}
 
+\item{\code{profile}}{Compute profile of the client.}
+
 \item{\code{seconds_interval}}{See \code{\link[=crew_client]{crew_client()}}.}
 
 \item{\code{seconds_timeout}}{See \code{\link[=crew_client]{crew_client()}}.}
@@ -54,14 +56,6 @@ condition variable.}
 \item{\code{started}}{Whether the client is started.}
 
 \item{\code{url}}{Client websocket URL.}
-
-\item{\code{profile}}{Compute profile of the client.}
-
-\item{\code{condition}}{Condition variable of the client.}
-
-\item{\code{client}}{Process ID of the local process running the client.}
-
-\item{\code{dispatcher}}{Process ID of the \code{mirai} dispatcher}
 }
 \if{html}{\out{</div>}}
 }
@@ -73,7 +67,6 @@ condition variable.}
 \item \href{#method-crew_class_client-set_started}{\code{crew_class_client$set_started()}}
 \item \href{#method-crew_class_client-start}{\code{crew_class_client$start()}}
 \item \href{#method-crew_class_client-terminate}{\code{crew_class_client$terminate()}}
-\item \href{#method-crew_class_client-resolved}{\code{crew_class_client$resolved()}}
 \item \href{#method-crew_class_client-status}{\code{crew_class_client$status()}}
 \item \href{#method-crew_class_client-pids}{\code{crew_class_client$pids()}}
 }
@@ -89,6 +82,7 @@ condition variable.}
   port = NULL,
   tls = NULL,
   serialization = NULL,
+  profile = NULL,
   seconds_interval = NULL,
   seconds_timeout = NULL,
   relay = NULL
@@ -105,6 +99,8 @@ condition variable.}
 \item{\code{tls}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
 \item{\code{serialization}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
+
+\item{\code{profile}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
 \item{\code{seconds_interval}}{Argument passed from \code{\link[=crew_client]{crew_client()}}.}
 
@@ -191,51 +187,31 @@ worker websockets.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-crew_class_client-resolved"></a>}}
-\if{latex}{\out{\hypertarget{method-crew_class_client-resolved}{}}}
-\subsection{Method \code{resolved()}}{
-Get the true value of the \code{nanonext} condition variable.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{crew_class_client$resolved()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The value of the \code{nanonext} condition variable.
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_client-status"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_client-status}{}}}
 \subsection{Method \code{status()}}{
-Internal function:
-return the \code{mirai} status of the compute profile.
+Get the counters from \code{mirai::info()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_client$status()}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Should only be called by the launcher, never by the user.
-The returned \code{events} field changes on every call and must be
-interpreted by the launcher before it vanishes.
-}
-
 \subsection{Returns}{
-A list with status information.
+A named integer vector of task counts
+(awaiting, executing, completed) as well as the number of
+worker connections.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-crew_class_client-pids"></a>}}
 \if{latex}{\out{\hypertarget{method-crew_class_client-pids}{}}}
 \subsection{Method \code{pids()}}{
-Get the process IDs of the local process and the
-\code{mirai} dispatcher (if started).
+Deprecated on 2025-08-26 in \code{crew} version 1.2.1.9005.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{crew_class_client$pids()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-An integer vector of process IDs of the local process and the
-\code{mirai} dispatcher (if started).
+The integer process ID of the current process.
 }
 }
 }

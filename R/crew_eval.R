@@ -68,21 +68,27 @@ crew_eval <- function(
   # do_cleanup() in https://github.com/r-lib/mirai/blob/main/R/daemon.R
   if (reset_globals) {
     old_globals <- names(.GlobalEnv)
-    on.exit({
-      new_globals <- names(.GlobalEnv)
-      rm(list = setdiff_chr(new_globals, old_globals), envir = .GlobalEnv)
-    }, add = TRUE)
+    on.exit(
+      {
+        new_globals <- names(.GlobalEnv)
+        rm(list = setdiff_chr(new_globals, old_globals), envir = .GlobalEnv)
+      },
+      add = TRUE
+    )
   }
   if (reset_packages) {
     old_packages <- search()
-    on.exit({
-      new_packages <- search()
-      detach_packages <- setdiff_chr(new_packages, old_packages)
-      try(
-        lapply(detach_packages, detach, character.only = TRUE),
-        silent = TRUE
-      )
-    }, add = TRUE)
+    on.exit(
+      {
+        new_packages <- search()
+        detach_packages <- setdiff_chr(new_packages, old_packages)
+        try(
+          lapply(detach_packages, detach, character.only = TRUE),
+          silent = TRUE
+        )
+      },
+      add = TRUE
+    )
   }
   if (reset_options) {
     old_options <- options()
@@ -106,7 +112,12 @@ crew_eval <- function(
       set.seed(seed = seed)
     }
     on.exit(RNGkind(kind = old_algorithm), add = TRUE)
-    on.exit(.GlobalEnv$.Random.seed <- old_seed, add = TRUE)
+    if (is.null(old_seed)) {
+      # Testing this case depends on having a fresh R session outside RStudio.
+      set.seed(seed = NULL) # nocov
+    } else {
+      on.exit(.GlobalEnv$.Random.seed <- old_seed, add = TRUE)
+    }
   }
   if (package_installed("autometric (>= 0.1.0)")) {
     autometric::log_phase_set(phase = name)
@@ -186,8 +197,7 @@ crew_eval <- function(
     seconds = seconds,
     seed = seed,
     algorithm = algorithm,
-    controller = Sys.getenv("CREW_CONTROLLER", unset = NA_character_),
-    worker = Sys.getenv("CREW_WORKER", unset = NA_character_)
+    controller = Sys.getenv("CREW_CONTROLLER", unset = NA_character_)
   )
 }
 

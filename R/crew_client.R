@@ -15,19 +15,20 @@
 #'   Use argument `tls` instead.
 #' @param tls_config Deprecated on 2023-09-15 in version 0.4.1.
 #'   Use argument `tls` instead.
-#' @param seconds_interval Number of seconds between
-#'   polling intervals waiting for certain internal
-#'   synchronous operations to complete,
-#'   such as checking `mirai::status()`
-#' @param seconds_timeout Number of seconds until timing
-#'   out while waiting for certain synchronous operations to complete,
-#'   such as checking `mirai::status()`.
 #' @param serialization Either `NULL` (default) or an object produced by
 #'   [mirai::serial_config()] to control the serialization
 #'   of data sent to workers. This can help with either more efficient
 #'   data transfers or to preserve attributes of otherwise
 #'   non-exportable objects (such as `torch` tensors or `arrow` tables).
 #'   See `?mirai::serial_config` for details.
+#' @param profile Character string, compute profile for [mirai::daemons()].
+#' @param seconds_interval Number of seconds between
+#'   polling intervals waiting for certain internal
+#'   synchronous operations to complete,
+#'   such as checking `mirai::info()`
+#' @param seconds_timeout Number of seconds until timing
+#'   out while waiting for certain synchronous operations to complete,
+#'   such as checking `mirai::info()`.
 #' @param retry_tasks Deprecated on 2025-01-13 (`crew` version 0.10.2.9002).
 #' @examples
 #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
@@ -41,11 +42,12 @@ crew_client <- function(
   workers = NULL,
   host = NULL,
   port = NULL,
+  serialization = NULL,
+  profile = crew::crew_random_name(),
   tls = crew::crew_tls(),
   tls_enable = NULL,
   tls_config = NULL,
-  serialization = NULL,
-  seconds_interval = 1,
+  seconds_interval = 0.25,
   seconds_timeout = 60,
   retry_tasks = NULL
 ) {
@@ -88,31 +90,13 @@ crew_client <- function(
     condition = "message"
   )
   host <- as.character(host %|||% utils::head(nanonext::ip_addr(), n = 1L))
-  crew_assert(
-    host,
-    is.character(.),
-    length(.) == 1L,
-    nzchar(.),
-    !anyNA(.),
-    message = paste0(
-      "invalid host: ",
-      host,
-      ". In {crew} controllers, the `host` argument should have the ",
-      "(local) IP address or host name of the local machine. ",
-      "The default value of nanonext::ip_addr()[1] is usually enough ",
-      "for most situations."
-    )
-  )
   port <- as.integer(port %|||% 0L)
-  crew_assert(
-    inherits(tls, "crew_class_tls"),
-    message = "argument tls must be an object created by crew_tls()"
-  )
   client <- crew_class_client$new(
     host = host,
     port = port,
     tls = tls,
     serialization = serialization,
+    profile = profile,
     seconds_interval = seconds_interval,
     seconds_timeout = seconds_timeout,
     relay = crew_relay(
@@ -138,74 +122,60 @@ crew_client <- function(
 crew_class_client <- R6::R6Class(
   classname = "crew_class_client",
   cloneable = FALSE,
+  portable = FALSE,
   private = list(
     .host = NULL,
     .port = NULL,
     .tls = NULL,
     .serialization = NULL,
+    .profile = NULL,
     .seconds_interval = NULL,
     .seconds_timeout = NULL,
     .relay = NULL,
     .started = FALSE,
-    .url = NULL,
-    .profile = NULL,
-    .condition = NULL,
-    .client = NULL, # TODO: remove if/when the dispatcher becomes a thread.
-    .dispatcher = NULL # TODO: remove if/when the dispatcher becomes a thread.
+    .url = NULL
   ),
   active = list(
     #' @field host See [crew_client()].
     host = function() {
-      .subset2(private, ".host")
+      .host
     },
     #' @field port See [crew_client()].
     port = function() {
-      .subset2(private, ".port")
+      .port
     },
     #' @field tls See [crew_client()].
     tls = function() {
-      .subset2(private, ".tls")
+      .tls
     },
     #' @field serialization See [crew_client()].
     serialization = function() {
-      .subset2(private, ".serialization")
+      .serialization
+    },
+    #' @field profile Compute profile of the client.
+    profile = function() {
+      .profile
     },
     #' @field seconds_interval See [crew_client()].
     seconds_interval = function() {
-      .subset2(private, ".seconds_interval")
+      .seconds_interval
     },
     #' @field seconds_timeout See [crew_client()].
     seconds_timeout = function() {
-      .subset2(private, ".seconds_timeout")
+      .seconds_timeout
     },
     #' @field relay Relay object for event-driven programming on a downstream
     #'   condition variable.
     relay = function() {
-      .subset2(private, ".relay")
+      .relay
     },
     #' @field started Whether the client is started.
     started = function() {
-      .subset2(private, ".started")
+      .started
     },
     #' @field url Client websocket URL.
     url = function() {
-      .subset2(private, ".url")
-    },
-    #' @field profile Compute profile of the client.
-    profile = function() {
-      .subset2(private, ".profile")
-    },
-    #' @field condition Condition variable of the client.
-    condition = function() {
-      .subset2(private, ".condition")
-    },
-    #' @field client Process ID of the local process running the client.
-    client = function() {
-      .subset2(private, ".client")
-    },
-    #' @field dispatcher Process ID of the `mirai` dispatcher
-    dispatcher = function() {
-      .subset2(private, ".dispatcher")
+      .url
     }
   ),
   public = list(
@@ -215,6 +185,7 @@ crew_class_client <- R6::R6Class(
     #' @param port Argument passed from [crew_client()].
     #' @param tls Argument passed from [crew_client()].
     #' @param serialization Argument passed from [crew_client()].
+    #' @param profile Argument passed from [crew_client()].
     #' @param seconds_interval Argument passed from [crew_client()].
     #' @param seconds_timeout Argument passed from [crew_client()].
     #' @param relay Argument passed from [crew_client()].
@@ -230,36 +201,63 @@ crew_class_client <- R6::R6Class(
       port = NULL,
       tls = NULL,
       serialization = NULL,
+      profile = NULL,
       seconds_interval = NULL,
       seconds_timeout = NULL,
       relay = NULL
     ) {
-      private$.host <- host
-      private$.port <- port
-      private$.tls <- tls
-      private$.serialization <- serialization
-      private$.seconds_interval <- seconds_interval
-      private$.seconds_timeout <- seconds_timeout
-      # Creating the CV here instead of as a default R6 field value
-      # somehow appeases covr and R CMD check.
-      private$.condition <- nanonext::cv()
-      private$.relay <- relay
+      .host <<- host
+      .port <<- port
+      .tls <<- tls
+      .serialization <<- serialization
+      .profile <<- profile
+      .seconds_interval <<- seconds_interval
+      .seconds_timeout <<- seconds_timeout
+      .relay <<- relay
     },
     #' @description Validate the client.
     #' @return `NULL` (invisibly).
     validate = function() {
       crew_assert(
-        private$.host,
+        .host,
+        is.character(.),
+        length(.) == 1L,
+        nzchar(.),
+        !anyNA(.),
+        message = paste0(
+          "invalid host: ",
+          host,
+          ". In {crew} controllers, the `host` argument should have the ",
+          "(local) IP address or host name of the local machine. ",
+          "The default value of nanonext::ip_addr()[1] is usually enough ",
+          "for most situations."
+        )
+      )
+      crew_assert(
+        .port,
+        is.integer(.),
+        length(.) == 1L,
+        is.finite(.),
+        . >= 0L,
+        . <= 65535L,
+        message = "port must be a single finite integer between 0 and 65536."
+      )
+      crew_assert(
+        inherits(.tls, "crew_class_tls"),
+        message = "argument tls must be an object created by crew_tls()"
+      )
+      if_any(
+        is.null(.serialization),
+        NULL,
+        crew_assert(is.list(.serialization))
+      )
+      crew_assert(
+        .profile,
         is.character(.),
         length(.) == 1L,
         !anyNA(.),
-        nzchar(.)
-      )
-      crew_assert(private$.port, is.integer(.), length(.) == 1L, !anyNA(.))
-      crew_assert(private$.port, . >= 0L, . <= 65535L)
-      crew_assert(
-        inherits(private$.tls, "crew_class_tls"),
-        message = "argument tls must be an object created by crew_tls()"
+        nzchar(.),
+        message = "profile must be a nonempty non-missing character string"
       )
       fields <- c(
         ".seconds_interval",
@@ -271,27 +269,20 @@ crew_class_client <- R6::R6Class(
           is.numeric(.),
           length(.) == 1L,
           !is.na(.),
-          . >= 0
+          . >= 0,
+          message = paste(
+            field,
+            "must be a valid nonempty non-missing number"
+          )
         )
       }
-      if_any(
-        is.null(private$.client),
-        NULL,
-        crew_assert(inherits(private$.client, "ps_handle"))
+      crew_assert(
+        .seconds_timeout >= .seconds_interval,
+        message = "seconds_timeout cannot be less than seconds_interval"
       )
-      if_any(
-        is.null(private$.dispatcher),
-        NULL,
-        crew_assert(inherits(private$.dispatcher, "ps_handle"))
-      )
-      crew_assert(private$.seconds_timeout >= private$.seconds_interval)
-      crew_assert(inherits(private$.relay, "crew_class_relay"))
-      if_any(
-        is.null(private$.serialization),
-        NULL,
-        crew_assert(is.list(private$.serialization))
-      )
-      private$.relay$validate()
+
+      crew_assert(inherits(.relay, "crew_class_relay"))
+      .relay$validate()
       invisible()
     },
     #' @description Register the client as started.
@@ -300,122 +291,93 @@ crew_class_client <- R6::R6Class(
     #'   the sequential controller.
     #' @return `NULL` (invisibly).
     set_started = function() {
-      private$.started <- TRUE
+      .started <<- TRUE
     },
     #' @description Start listening for workers on the available sockets.
     #' @return `NULL` (invisibly).
     start = function() {
-      if (isTRUE(private$.started)) {
+      if (!is.null(.started) && .started) {
         return(invisible())
       }
-      private$.profile <- crew_random_name()
+      existing_url <- mirai::nextget("url", .compute = .profile)
+      crew_assert(
+        is.null(existing_url),
+        message = sprintf(
+          paste(
+            "{mirai} compute profile '%s' is already active at URL %s.",
+            "Each {crew} controller must have a unique compute profile",
+            "that does not conflict with",
+            "an existing call to mirai::daemons()."
+          ),
+          .profile,
+          existing_url
+        )
+      )
       mirai::daemons(
-        url = private$.tls$url(host = private$.host, port = private$.port),
+        url = .tls$url(host = .host, port = .port),
         dispatcher = TRUE,
         seed = NULL,
-        serial = private$.serialization,
-        tls = private$.tls$client(),
-        pass = private$.tls$password,
-        .compute = private$.profile
+        serial = .serialization,
+        tls = .tls$client(),
+        pass = .tls$password,
+        .compute = .profile
       )
-      private$.url <- self$status()$daemons
-      private$.client <- ps::ps_handle()
-      # TODO: remove code that gets the dispatcher PID if the dispatcher
-      # process becomes a C thread.
-      # Begin dispatcher code.
-      pid <- mirai::nextget("pid", .compute = private$.profile)
-      if (!is.null(pid)) {
-        private$.dispatcher <- ps::ps_handle(pid = pid)
-      }
-      # End dispatcher code.
-      private$.condition <- mirai::nextget(
-        x = "cv",
-        .compute = private$.profile
-      )
-      private$.relay$set_from(.subset2(private, ".condition"))
-      private$.relay$start()
-      private$.started <- TRUE
+      .url <<- mirai::nextget("url", .compute = .profile)
+      .relay$set_from(mirai::nextget(x = "cv", .compute = .profile))
+      .relay$start()
+      .started <<- TRUE
       invisible()
     },
     #' @description Stop the mirai client and disconnect from the
     #'   worker websockets.
     #' @return `NULL` (invisibly).
     terminate = function() {
-      if (!isTRUE(private$.started)) {
-        return(invisible())
-      }
-      if (!is.null(private$.profile)) {
-        mirai::daemons(n = 0L, .compute = private$.profile)
-      }
-      private$.profile <- NULL
-      private$.condition <- nanonext::cv()
-      private$.relay$terminate()
-      private$.url <- NULL
-      private$.started <- FALSE
-      # TODO: if the dispatcher process becomes a C thread,
-      # delete these superfluous checks on the dispatcher.
-      # Begin dispatcher checks.
-      if (is.null(private$.dispatcher)) {
-        return(invisible())
-      }
-      tryCatch(
-        crew_retry(
-          fun = ~!ps::ps_is_running(p = private$.dispatcher),
-          seconds_interval = private$.seconds_interval,
-          seconds_timeout = private$.seconds_timeout
-        ),
-        error = function(condition) NULL
-      )
-      if_any(
-        ps::ps_is_running(p = private$.dispatcher),
-        try(
-          crew_terminate_process(pid = ps::ps_pid(private$.dispatcher)),
-          silent = TRUE
-        ),
-        NULL
-      )
-      tryCatch(
-        crew_retry(
-          fun = ~!ps::ps_is_running(p = ps::ps_pid(private$.dispatcher)),
-          seconds_interval = private$.seconds_interval,
-          seconds_timeout = private$.seconds_timeout
-        ),
-        error = function(condition) NULL
-      )
-      # End dispatcher checks.
+      mirai::daemons(n = 0L, .compute = .profile)
+      .relay$terminate()
+      .url <<- NULL
+      .started <<- FALSE
       invisible()
     },
-    #' @description Get the true value of the `nanonext` condition variable.
-    #' @return The value of the `nanonext` condition variable.
-    resolved = function() {
-      nanonext::cv_value(.subset2(private, ".condition"))
-    },
-    #' @description Internal function:
-    #'   return the `mirai` status of the compute profile.
-    #' @details Should only be called by the launcher, never by the user.
-    #'   The returned `events` field changes on every call and must be
-    #'   interpreted by the launcher before it vanishes.
-    #' @return A list with status information.
+    #' @description Get the counters from `mirai::info()`.
+    #' @return A named integer vector of task counts
+    #'   (awaiting, executing, completed) as well as the number of
+    #'   worker connections.
     status = function() {
+      default <- c(
+        connections = 0L,
+        cumulative = 0L,
+        awaiting = 0L,
+        executing = 0L,
+        completed = 0L
+      )
+      # Need to perform these checks because the user could call
+      # mirai::daemons(0) on the compute profile manually,
+      # and we don't want to submit a request with retries that will just
+      # end up timing out.
+      not_listening <- !.started ||
+        is.null(.profile) || # Probably redundant but keeping anyway.
+        is.null(mirai::nextget("url", .compute = .profile))
+      if (not_listening) {
+        return(default)
+      }
       mirai_status(
-        profile = private$.profile,
-        seconds_interval = private$.seconds_interval,
-        seconds_timeout = private$.seconds_timeout
+        profile = .profile,
+        seconds_interval = .seconds_interval,
+        seconds_timeout = .seconds_timeout
       )
     },
-    #' @description Get the process IDs of the local process and the
-    #'   `mirai` dispatcher (if started).
-    #' @return An integer vector of process IDs of the local process and the
-    #'   `mirai` dispatcher (if started).
+    #' @description Deprecated on 2025-08-26 in `crew` version 1.2.1.9005.
+    #' @return The integer process ID of the current process.
     pids = function() {
-      # TODO: remove this function if/when the dispatcher becomes a thread.
-      out <- c(local = Sys.getpid())
-      dispatcher <- private$.dispatcher
-      if (!is.null(dispatcher)) {
-        out <- c(out, ps::ps_pid(dispatcher))
-        names(out)[2L] <- paste0("dispatcher-", private$.profile)
-      }
-      out
+      crew::crew_deprecate(
+        name = "pids()",
+        date = "2025-08-26",
+        version = "1.2.1.9006",
+        alternative = "none",
+        condition = "warning",
+        value = "x"
+      )
+      Sys.getpid()
     }
   )
 )

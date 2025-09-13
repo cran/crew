@@ -21,7 +21,7 @@
 #' group$pop()
 #' group$terminate()
 #' }
-crew_controller_group <- function(..., seconds_interval = 1) {
+crew_controller_group <- function(..., seconds_interval = 0.25) {
   controllers <- unlist(list(...), recursive = TRUE)
   crew_assert(
     length(controllers) > 0L,
@@ -31,18 +31,20 @@ crew_controller_group <- function(..., seconds_interval = 1) {
     map_lgl(controllers, inherits, what = "crew_class_controller"),
     message = "Found invalid controllers while creating a controller group."
   )
-  names(controllers) <- map_chr(controllers, ~.x$launcher$name)
-  walk(
+  names(controllers) <- map_chr(controllers, ~ .x$launcher$name)
+  lapply(
     names(controllers),
-    ~crew_assert(
-      !isTRUE(controllers[[.x]]$client$started),
-      message = paste(
-        "controller",
-        .x,
-        "supplied to crew_controller_group()",
-        "must not already be started."
+    function(name) {
+      crew_assert(
+        !isTRUE(controllers[[name]]$client$started),
+        message = paste(
+          "controller",
+          name,
+          "supplied to crew_controller_group()",
+          "must not already be started."
+        )
       )
-    )
+    }
   )
   relay <- crew_relay(
     throttle = crew_throttle(seconds_max = seconds_interval)
@@ -53,9 +55,7 @@ crew_controller_group <- function(..., seconds_interval = 1) {
   }
   out <- crew_class_controller_group$new(
     controllers = controllers,
-    relay = relay,
-    # For efficiency, controller groups and relays have different throttles.
-    throttle = crew_throttle(seconds_max = seconds_interval)
+    relay = relay
   )
   out$validate()
   out
@@ -83,13 +83,13 @@ crew_controller_group <- function(..., seconds_interval = 1) {
 crew_class_controller_group <- R6::R6Class(
   classname = "crew_class_controller_group",
   cloneable = FALSE,
+  portable = FALSE,
   private = list(
     .controllers = NULL,
     .relay = NULL,
-    .throttle = NULL,
     .select_controllers = function(names) {
       if (is.null(names)) {
-        return(private$.controllers)
+        return(.controllers)
       }
       message <- "'controllers' must be a valid nonempty character vector."
       crew_assert(
@@ -100,7 +100,7 @@ crew_class_controller_group <- R6::R6Class(
         nzchar(.),
         message = message
       )
-      invalid <- setdiff(names, names(private$.controllers))
+      invalid <- setdiff(names, names(.controllers))
       crew_assert(
         !length(invalid),
         message = sprintf(
@@ -108,97 +108,27 @@ crew_class_controller_group <- R6::R6Class(
           paste(invalid, collapse = ", ")
         )
       )
-      private$.controllers[names]
+      .controllers[names]
     },
     .select_single_controller = function(name) {
-      names <- names(private$.controllers)
+      names <- names(.controllers)
       name <- name %|||% utils::head(names, n = 1L)
       crew_assert(
         name %in% names,
         message = sprintf("controller not found: %s", name)
       )
-      private$.controllers[[name]]
-    },
-    .wait_one = function(
-      controllers,
-      control,
-      seconds_timeout,
-      scale,
-      throttle
-    ) {
-      if (sum(map_int(control, ~length(.x$tasks))) < 1L) {
-        return(FALSE)
-      }
-      envir <- new.env(parent = emptyenv())
-      envir$result <- FALSE
-      iterate <- function() {
-        if (scale) {
-          self$scale(throttle = throttle, controllers = controllers)
-        }
-        for (controller in control) {
-          if (controller$unpopped() > 0L) {
-            envir$result <- TRUE
-            return(TRUE)
-          }
-        }
-        private$.relay$wait()
-        FALSE
-      }
-      crew_retry(
-        fun = iterate,
-        seconds_interval = 0,
-        seconds_timeout = seconds_timeout,
-        error = FALSE,
-        assertions = FALSE
-      )
-      envir$result
-    },
-    .wait_all = function(
-      controllers,
-      control,
-      seconds_timeout,
-      scale,
-      throttle
-    ) {
-      if (sum(map_int(control, ~length(.x$tasks))) < 1L) {
-        return(TRUE)
-      }
-      envir <- new.env(parent = emptyenv())
-      envir$result <- FALSE
-      iterate <- function() {
-        if (scale) {
-          self$scale(throttle = throttle, controllers = controllers)
-        }
-        envir$result <- sum(map_int(control, ~.x$unresolved())) < 1L
-        if (!envir$result) {
-          private$.relay$wait()
-        }
-        envir$result
-      }
-      crew_retry(
-        fun = iterate,
-        seconds_interval = 0,
-        seconds_timeout = seconds_timeout,
-        error = FALSE,
-        assertions = FALSE
-      )
-      envir$result
+      .controllers[[name]]
     }
   ),
   active = list(
     #' @field controllers List of `R6` controller objects.
     controllers = function() {
-      .subset2(private, ".controllers")
+      .controllers
     },
     #' @field relay Relay object for event-driven programming on a downstream
     #'   condition variable.
     relay = function() {
-      .subset2(private, ".relay")
-    },
-    #' @field throttle [crew_throttle()] object to orchestrate exponential
-    #'  backoff in the relay and auto-scaling.
-    throttle = function() {
-      .subset2(private, ".throttle")
+      .relay
     }
   ),
   public = list(
@@ -207,8 +137,6 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers List of `R6` controller objects.
     #' @param relay Relay object for event-driven programming on a downstream
     #'   condition variable.
-    #' @param throttle [crew_throttle()] object to orchestrate exponential
-    #'  backoff in the relay and auto-scaling.
     #' @examples
     #' if (identical(Sys.getenv("CREW_EXAMPLES"), "true")) {
     #' persistent <- crew_controller_local(name = "persistent")
@@ -225,28 +153,33 @@ crew_class_controller_group <- R6::R6Class(
     #' }
     initialize = function(
       controllers = NULL,
-      relay = NULL,
-      throttle = NULL
+      relay = NULL
     ) {
-      private$.controllers <- controllers
-      private$.relay <- relay
-      private$.throttle <- throttle
+      .controllers <<- controllers
+      .relay <<- relay
       invisible()
     },
     #' @description Validate the client.
     #' @return `NULL` (invisibly).
     validate = function() {
       crew_assert(
-        map_lgl(private$.controllers, ~inherits(.x, "crew_class_controller")),
+        map_lgl(.controllers, ~ inherits(.x, "crew_class_controller")),
         message = "All objects in a controller group must be controllers."
       )
-      out <- unname(map_chr(private$.controllers, ~.x$launcher$name))
-      exp <- names(private$.controllers)
+      out <- unname(map_chr(.controllers, ~ .x$launcher$name))
+      exp <- names(.controllers)
       crew_assert(identical(out, exp), message = "bad controller names")
-      crew_assert(inherits(private$.relay, "crew_class_relay"))
-      private$.relay$validate()
-      private$.throttle$validate()
+      crew_assert(inherits(.relay, "crew_class_relay"))
+      .relay$validate()
       invisible()
+    },
+    #' @description Number of tasks in the selected controllers.
+    #' @return Non-negative integer, number of tasks in the controller.
+    #' @param controllers Character vector of controller names.
+    #'   Set to `NULL` to select all controllers.
+    size = function(controllers = NULL) {
+      control <- .select_controllers(controllers)
+      sum(map_int(control, ~ .x$size()))
     },
     #' @description See if the controllers are empty.
     #' @details A controller is empty if it has no running tasks
@@ -256,8 +189,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     empty = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      all(map_lgl(control, ~.x$empty()))
+      control <- .select_controllers(controllers)
+      all(map_lgl(control, ~ .x$empty()))
     },
     #' @description Check if the controller group is nonempty.
     #' @details A controller is empty if it has no running tasks
@@ -266,8 +199,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     nonempty = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      any(map_lgl(control, ~.x$nonempty()))
+      control <- .select_controllers(controllers)
+      any(map_lgl(control, ~ .x$nonempty()))
     },
     #' @description Number of resolved `mirai()` tasks.
     #' @details `resolved()` is cumulative: it counts all the resolved
@@ -279,8 +212,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     resolved = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      sum(map_int(control, ~.x$resolved()))
+      control <- .select_controllers(controllers)
+      sum(map_int(control, ~ .x$resolved()))
     },
     #' @description Number of unresolved `mirai()` tasks.
     #' @return Non-negative integer of length 1,
@@ -288,25 +221,15 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     unresolved = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      sum(map_int(control, ~.x$unresolved()))
-    },
-    #' @description Number of resolved `mirai()` tasks available via `pop()`.
-    #' @return Non-negative integer of length 1,
-    #'   number of resolved `mirai()` tasks available via `pop()`.
-    #' @param controllers Character vector of controller names.
-    #'   Set to `NULL` to select all controllers.
-    unpopped = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      sum(map_int(control, ~.x$unpopped()))
+      control <- .select_controllers(controllers)
+      sum(map_int(control, ~ .x$unresolved()))
     },
     #' @description Check if a controller is saturated.
-    #' @details A controller is saturated if the number of unresolved tasks
+    #' @details A controller is saturated if the number of uncollected tasks
     #'   is greater than or equal to the maximum number of workers.
-    #'   In other words, in a saturated controller, every available worker
-    #'   has a task.
     #'   You can still push tasks to a saturated controller, but
-    #'   tools that use `crew` such as `targets` may choose not to.
+    #'   tools that use `crew` such as `targets` may choose not to
+    #'   (for performance and user-friendliness).
     #' @return `TRUE` if all the selected controllers are saturated,
     #'   `FALSE` otherwise.
     #' @param collect Deprecated in version 0.5.0.9003 (2023-10-02). Not used.
@@ -315,7 +238,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   Set to `NULL` to select the default controller that `push()`
     #'   would choose.
     saturated = function(collect = NULL, throttle = NULL, controller = NULL) {
-      control <- private$.select_single_controller(name = controller)
+      control <- .select_single_controller(name = controller)
       control$saturated()
     },
     #' @description Start one or more controllers.
@@ -323,8 +246,9 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     start = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      walk(control, ~.x$start())
+      control <- .select_controllers(controllers)
+      lapply(control, function(controller) controller$start())
+      invisible()
     },
     #' @description Check whether all the given controllers are started.
     #' @details Actually checks whether all the given clients are started.
@@ -332,8 +256,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     started = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      all(map_lgl(control, ~.x$started()))
+      control <- .select_controllers(controllers)
+      all(map_lgl(control, ~ .x$started()))
     },
     #' @description Launch one or more workers on one or more controllers.
     #' @return `NULL` (invisibly).
@@ -341,8 +265,9 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     launch = function(n = 1L, controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      walk(control, ~.x$launch(n = n))
+      control <- .select_controllers(controllers)
+      lapply(control, function(controller) controller$launch(n = n))
+      invisible()
     },
     #' @description Automatically scale up the number of workers if needed
     #'   in one or more controller objects.
@@ -351,30 +276,26 @@ crew_class_controller_group <- R6::R6Class(
     #'   auto-scaling activity (new worker launches or worker
     #'   connection/disconnection events) (`FALSE` otherwise).
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     scale = function(throttle = TRUE, controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      if (throttle && !private$.throttle$poll()) {
-        return(invisible())
-      }
-      activity <- any(map_lgl(control, ~.x$scale(throttle = FALSE)))
-      private$.throttle$update(activity = activity)
-      invisible(activity)
+      control <- .select_controllers(controllers)
+      invisible(any(map_lgl(control, ~ .x$scale(throttle = throttle))))
     },
-    #' @description Run worker auto-scaling in a private `later` loop
-    #'   every `controller$client$seconds_interval` seconds.
+    #' @description Run worker auto-scaling in a `later` loop.
+    #' @param loop A `later` loop to run auto-scaling.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     #' @return `NULL` (invisibly).
-    autoscale = function(controllers = NULL) {
-      # Tested in tests/interactive/test-promises.R
+    autoscale = function(loop = later::current_loop(), controllers = NULL) {
+      # Tested in tests/interactive/test-autoscale.R
       # nocov start
-      control <- private$.select_controllers(controllers)
-      walk(control, ~.x$autoscale())
+      control <- .select_controllers(controllers)
+      lapply(control, function(controller) controller$autoscale(loop = loop))
+      invisible()
       # nocov end
     },
     #' @description Terminate the auto-scaling loop started by
@@ -383,8 +304,9 @@ crew_class_controller_group <- R6::R6Class(
     #'   Set to `NULL` to select all controllers.
     #' @return `NULL` (invisibly).
     descale = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      walk(control, ~.x$descale())
+      control <- .select_controllers(controllers)
+      lapply(control, function(controller) controller$descale())
+      invisible()
     },
     #' @description Report the number of consecutive crashes of a task,
     #'   summed over all selected controllers in the group.
@@ -395,8 +317,8 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Not used. Included to ensure the signature is
     #'   compatible with the analogous method of controller groups.
     crashes = function(name, controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      sum(map_int(control, ~.x$crashes(name = name)))
+      control <- .select_controllers(controllers)
+      sum(map_int(control, ~ .x$crashes(name = name)))
     },
     #' @description Push a task to the head of the task list.
     #' @return Invisibly return the `mirai` object of the pushed task.
@@ -443,7 +365,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   demand. See the `scale` argument of the `push()` method of
     #'   ordinary single controllers.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param name Character string, name of the task. If `NULL`,
@@ -478,10 +400,7 @@ crew_class_controller_group <- R6::R6Class(
       if (substitute) {
         command <- substitute(command)
       }
-      control <- .subset2(
-        private,
-        ".select_single_controller"
-      )(name = controller)
+      control <- .select_single_controller(name = controller)
       .subset2(control, "push")(
         command = command,
         data = data,
@@ -568,7 +487,7 @@ crew_class_controller_group <- R6::R6Class(
     #' @param scale Logical, whether to automatically scale workers to meet
     #'   demand. See also the `throttle` argument.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param controller Character of length 1,
@@ -597,7 +516,7 @@ crew_class_controller_group <- R6::R6Class(
       if (substitute) {
         command <- substitute(command)
       }
-      control <- private$.select_single_controller(name = controller)
+      control <- .select_single_controller(name = controller)
       control$walk(
         command = command,
         iterate = iterate,
@@ -700,7 +619,7 @@ crew_class_controller_group <- R6::R6Class(
     #' @param scale Logical, whether to automatically scale workers to meet
     #'   demand. See also the `throttle` argument.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param controller Character of length 1,
@@ -740,7 +659,7 @@ crew_class_controller_group <- R6::R6Class(
       if (substitute) {
         command <- substitute(command)
       }
-      control <- private$.select_single_controller(name = controller)
+      control <- .select_single_controller(name = controller)
       control$map(
         command = command,
         iterate = iterate,
@@ -769,7 +688,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   ordinary single controllers.
     #' @param collect Deprecated in version 0.5.0.9003 (2023-10-02). Not used.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param error `NULL` or character of length 1, choice of action if
@@ -787,7 +706,7 @@ crew_class_controller_group <- R6::R6Class(
       error = NULL,
       controllers = NULL
     ) {
-      control <- private$.select_controllers(controllers)
+      control <- .select_controllers(controllers)
       for (controller in control) {
         out <- controller$pop(
           scale = scale,
@@ -809,7 +728,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   whether to automatically call `scale()`
     #'   to auto-scale workers to meet the demand of the task load.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param error `NULL` or character of length 1, choice of action if
@@ -826,109 +745,39 @@ crew_class_controller_group <- R6::R6Class(
       error = NULL,
       controllers = NULL
     ) {
-      control <- private$.select_controllers(controllers)
-      out <- map(
+      control <- .select_controllers(controllers)
+      out <- lapply(
         control,
-        ~.x$collect(
-          scale = scale,
-          throttle = throttle,
-          error = error
-        )
+        function(controller) {
+          controller$collect(
+            scale = scale,
+            throttle = throttle,
+            error = error
+          )
+        }
       )
       out <- tibble::new_tibble(data.table::rbindlist(out, use.names = FALSE))
       if_any(nrow(out), out, NULL)
     },
-    #' @description Create a `promises::promise()` object to asynchronously
-    #'   pop or collect one or more tasks.
-    #' @details Please be aware that `pop()` or `collect()` will happen
-    #'   asynchronously at a some unpredictable time after the promise object
-    #'   is created, even if your local R process appears to be doing
-    #'   something completely different. This behavior is highly desirable
-    #'   in a Shiny reactive context, but please be careful as it may be
-    #'   surprising in other situations.
-    #' @return A `promises::promise()` object whose eventual value will
-    #'   be a `tibble` with results from one or more popped tasks.
-    #'   If `mode = "one"`, only one task is popped and returned (one row).
-    #'   If `mode = "all"`, then all the tasks are returned in a `tibble`
-    #'   with one row per task (or `NULL` is returned if there are no
-    #'   tasks to pop).
-    #' @param mode Character of length 1, what kind of promise to create.
-    #'   `mode` must be `"one"` or `"all"`. Details:
-    #'   * If `mode` is `"one"`, then the promise is fulfilled (or rejected)
-    #'     when at least one task is resolved and available to `pop()`.
-    #'     When that happens, `pop()` runs asynchronously, pops a result off
-    #'     the task list, and returns a value.
-    #'     If the task succeeded, then the promise
-    #'     is fulfilled and its value is the result of `pop()` (a one-row
-    #'     `tibble` with the result and metadata). If the task threw an error,
-    #'     the error message of the task is forwarded to any error callbacks
-    #'     registered with the promise.
-    #'   * If `mode` is `"all"`, then the promise is fulfilled (or rejected)
-    #'     when there are no unresolved tasks left in the controller.
-    #'     (Be careful: this condition is trivially met in the moment
-    #'     if the controller is empty and you have not submitted any tasks,
-    #'     so it is best to create this kind of promise only after you
-    #'     submit tasks.)
-    #'     When there are no unresolved tasks left,
-    #'     `collect()` runs asynchronously, pops all available results
-    #'     off the task list, and returns a value.
-    #'     If the task succeeded, then the promise
-    #'     is fulfilled and its value is the result of `collect()`
-    #'     (a `tibble` with one row per task result). If any of the tasks
-    #'     threw an error, then the first error message detected is forwarded
-    #'     to any error callbacks registered with the promise.
-    #' @param seconds_interval Positive numeric of length 1, delay in the
-    #'   `later::later()` polling interval to asynchronously check if
-    #'   the promise can be resolved.
-    #' @param scale Deprecated on 2024-04-10 (version 0.9.1.9003)
-    #'   and no longer used. Now, `promise()` always turns on auto-scaling
-    #'   in a private `later` loop (if not already activated).
-    #' @param throttle Deprecated on 2024-04-10 (version 0.9.1.9003)
-    #'   and no longer used. Now, `promise()` always turns on auto-scaling
-    #'   in a private `later` loop (if not already activated).
-    #' @param controllers Not used. Included to ensure the signature is
-    #'   compatible with the analogous method of controller groups.
-    promise = function(
-      mode = "one",
-      seconds_interval = 0.1,
-      scale = NULL,
-      throttle = NULL,
-      controllers = NULL
-    ) {
-      # Tested in tests/interactive/test-promises.R.
-      # nocov start
-      crew_deprecate(
-        name = "controller$promise()",
-        date = "2024-04-19",
-        version = "> 0.9.2",
-        alternative = paste(
-          "see https://wlandau.github.io/crew/articles/shiny.html for the",
-          "latest on using {crew} in promise-driven Shiny apps"
-        ),
-        value = TRUE,
-        frequency = "once"
-      )
-      self$autoscale(controllers = controllers)
-      controller_promise(
-        controller = self,
-        mode = mode,
-        seconds_interval = seconds_interval,
-        controllers = controllers
-      )
-      # nocov end
-    },
     #' @description Wait for tasks.
-    #' @details The `wait()` method blocks the calling R session and
-    #'   repeatedly auto-scales workers for tasks that need them.
-    #'   The function runs until it either times out or the condition
-    #'   in `mode` is met.
-    #' @return A logical of length 1, invisibly. `TRUE` if the condition
-    #'   in `mode` was met, `FALSE` otherwise.
-    #' @param mode Character of length 1: `"all"` to wait for
-    #'   all tasks in all controllers to complete, `"one"` to wait for
-    #'   a single task in a single controller to complete. In this scheme,
-    #'   the timeout limit is applied to each controller sequentially,
-    #'   and a timeout is treated the same as a completed controller.
+    #' @details The `wait()` method blocks the calling R session
+    #'   until the condition in the `mode` argument is met.
+    #'   During the wait, `wait()` iteratively auto-scales the workers.
+    #' @return A logical of length 1, invisibly.
+    #'   `wait(mode = "all")` returns `TRUE` if all tasks in the `mirai`
+    #'   compute profile have resolved (`FALSE` otherwise).
+    #'   `wait(mode = "one")` returns `TRUE` if the controller is ready
+    #'   to pop or collect at least one resolved task (`FALSE` otherwise).
+    #'   `wait(mode = "one")` assumes all
+    #'   tasks were submitted through the controller and not by other means.
+    #' @param mode Character string, name of the waiting condition.
+    #'   `wait(mode = "all")` waits until all tasks in the `mirai`
+    #'   compute profile resolve, and
+    #'   `wait(mode = "one")` waits until at least one task is available
+    #'   to `push()` or `collect()` from the controller.
+    #'   The former still works if the controller is not the only
+    #'   means of submitting tasks to the compute profile,
+    #'   whereas the latter assumes only the controller submits tasks.
     #' @param seconds_interval Deprecated on 2025-01-17 (`crew` version
     #'   0.10.2.9003). Instead, the `seconds_interval` argument passed
     #'   to [crew_controller_group()] is used as `seconds_max`
@@ -941,7 +790,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   See the `scale` argument of the `wait()` method of
     #'   ordinary single controllers.
     #' @param throttle `TRUE` to skip auto-scaling if it already happened
-    #'   within the last `seconds_interval` seconds. `FALSE` to auto-scale
+    #'   within the last polling interval. `FALSE` to auto-scale
     #'   every time `scale()` is called. Throttling avoids
     #'   overburdening the `mirai` dispatcher and other resources.
     #' @param controllers Character vector of controller names.
@@ -964,25 +813,41 @@ crew_class_controller_group <- R6::R6Class(
       )
       mode <- as.character(mode)
       crew_assert(mode, identical(., "all") || identical(., "one"))
-      control <- private$.select_controllers(controllers)
-      out <- if_any(
-        identical(mode, "one"),
-        private$.wait_one(
-          controllers = controllers,
-          control = control,
-          seconds_timeout = seconds_timeout,
-          scale = scale,
-          throttle = throttle
-        ),
-        private$.wait_all(
-          controllers = controllers,
-          control = control,
-          seconds_timeout = seconds_timeout,
-          scale = scale,
-          throttle = throttle
-        )
+      if (self$size(controllers) < 1L) {
+        return(identical(mode, "all"))
+      }
+      if (identical(mode, "all")) {
+        wait_event <- function() {
+          if (self$unresolved(controllers) > 0L) {
+            private$.relay$wait()
+          }
+          self$unresolved(controllers) < 1L
+        }
+      } else {
+        wait_event <- function() {
+          if (self$size(controllers) - self$unresolved(controllers) < 1L) {
+            private$.relay$wait()
+          }
+          self$size(controllers) - self$unresolved(controllers) > 0L
+        }
+      }
+      envir <- new.env(parent = emptyenv())
+      envir$result <- FALSE
+      iterate <- function() {
+        if (!envir$result && scale) {
+          self$scale(throttle = throttle)
+        }
+        envir$result <- wait_event()
+        envir$result
+      }
+      crew_retry(
+        fun = iterate,
+        seconds_interval = 0,
+        seconds_timeout = seconds_timeout,
+        error = FALSE,
+        assertions = FALSE
       )
-      invisible(out)
+      invisible(envir$result)
     },
     #' @description Push the name of a task to the backlog.
     #' @details `pop_backlog()` pops the tasks that can be pushed
@@ -994,10 +859,7 @@ crew_class_controller_group <- R6::R6Class(
     #'   Set to `NULL` to select the default controller that `push_backlog()`
     #'   would choose.
     push_backlog = function(name, controller = NULL) {
-      control <- .subset2(
-        private,
-        ".select_single_controller"
-      )(name = controller)
+      control <- .select_single_controller(name = controller)
       control$push_backlog(name = name)
     },
     #' @description Pop the task names from the head of the backlog which
@@ -1008,8 +870,11 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     pop_backlog = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      out <- map(control, ~.subset2(.x, "pop_backlog")())
+      control <- .select_controllers(controllers)
+      out <- lapply(
+        control,
+        function(controller) .subset2(controller, "pop_backlog")()
+      )
       unlist(out, use.names = FALSE)
     },
     #' @description Summarize the workers of one or more controllers.
@@ -1021,24 +886,27 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     summary = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      out <- map(control, ~.x$summary())
+      control <- .select_controllers(controllers)
+      out <- lapply(control, function(controller) controller$summary())
       if (all(map_lgl(out, is.null))) {
         return(NULL) # nocov
       }
       tibble::as_tibble(do.call(what = rbind, args = out))
     },
-    #' @description Get the process IDs of the local process and the
-    #'   `mirai` dispatchers (if started).
-    #' @return An integer vector of process IDs of the local process and the
-    #'   `mirai` dispatcher (if started).
+    #' @description Deprecated on 2025-08-26 in `crew` version 1.2.1.9005.
+    #' @return The integer process ID of the current process.
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     pids = function(controllers = NULL) {
-      control <- private$.select_controllers(controllers)
-      out <- map(control, ~.x$pids())
-      out <- map(unname(out), ~.x[names(.x) != "local"])
-      c(local = Sys.getpid(), unlist(out))
+      crew::crew_deprecate(
+        name = "pids()",
+        date = "2025-08-26",
+        version = "1.2.1.9006",
+        alternative = "none",
+        condition = "warning",
+        value = "x"
+      )
+      Sys.getpid()
     },
     #' @description Terminate the workers and disconnect the client
     #'   for one or more controllers.
@@ -1046,7 +914,11 @@ crew_class_controller_group <- R6::R6Class(
     #' @param controllers Character vector of controller names.
     #'   Set to `NULL` to select all controllers.
     terminate = function(controllers = NULL) {
-      walk(private$.select_controllers(controllers), ~.x$terminate())
+      lapply(
+        .select_controllers(controllers),
+        function(controller) controller$terminate()
+      )
+      invisible()
     }
   )
 )
